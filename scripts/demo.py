@@ -25,7 +25,7 @@ def main() -> None:
     if status.get("refreshed_at"):
         print(f"Source: OpenStreetMap · refreshed {status['refreshed_at']}")
 
-    for entity_type, label in (("HOTEL", "Hotel places"), ("ATTRACTION", "Experience places")):
+    for entity_type, label in (("HOTEL", "Hotel places"), ("ATTRACTION", "Experiences & other places")):
         response = session.get(
             f"{base}/api/v1/inventory/search",
             params={"country_code": "IN", "destination": "Delhi", "entity_type": entity_type},

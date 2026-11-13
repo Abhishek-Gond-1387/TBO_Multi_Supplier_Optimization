@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TBO | India Discovery Map</title>
+  <title>TBO | Delhi Discovery Map</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.18.0/dist/maplibre-gl.css">
   <style>
     :root { color-scheme: light; --ink:#1b2936; --muted:#687581; --line:#e4e9ee; --accent:#087f8c; --accent-dark:#075e68; --canvas:#edf1f4; }
@@ -93,8 +93,8 @@
       <select id="country" aria-label="Country" disabled><option value="IN">India · Delhi pilot</option></select>
       <select id="destination" aria-label="City or destination" disabled><option value="Delhi">Delhi</option></select>
       <input id="query" aria-label="Search inventory" placeholder="Hotel, area, or amenity" autocomplete="off">
-      <select id="category" aria-label="Inventory type"><option value="HOTEL">Hotels</option><option value="ATTRACTION">Experiences</option><option value="ANY">All inventory</option></select>
-      <select id="stars" aria-label="Minimum star rating"><option value="">Any rating</option><option value="3">3+ stars</option><option value="4">4+ stars</option><option value="5">5 stars</option></select>
+      <select id="category" aria-label="Inventory type"><option value="ANY" selected>All Delhi places</option><option value="HOTEL">Hotels</option><option value="ATTRACTION">Experiences &amp; places</option></select>
+      <select id="stars" aria-label="Minimum OSM-listed hotel class"><option value="">Any OSM-listed class</option><option value="3">3+ listed stars</option><option value="4">4+ listed stars</option><option value="5">5 listed stars</option></select>
       <select id="currency" aria-label="Price currency" disabled><option value="ANY">Live rates unavailable</option></select>
       <input id="max-price" type="number" min="1" placeholder="No live rates" aria-label="Maximum price" disabled>
       <button class="primary" id="search-button" type="submit">Search</button>
@@ -106,7 +106,7 @@
       <p class="eyebrow" id="section-label">Delhi · Hotel stays</p>
       <h1>Explore Delhi</h1>
       <div class="data-status-row"><span class="data-state" id="data-state" aria-live="polite">Checking Delhi open data…</span><button id="refresh-data" type="button">↻ Refresh</button></div>
-      <p class="subhead" id="data-note">Open place listings are separate from live room rates and supplier availability.</p>
+      <p class="subhead" id="data-note">Open place listings are separate from customer review scores, live room rates, and availability.</p>
       <div class="summary"><span id="result-count" aria-live="polite">Loading stays…</span><label><input id="search-on-move" type="checkbox" checked> Filter to map view</label></div>
       <div id="results"></div>
     </aside>
@@ -198,8 +198,8 @@
         const isOpenData = String(item.source_id || '').startsWith('osm/');
         const card = document.createElement('article');
         card.className = 'card';
-        const route = item.entity_type === 'HOTEL' ? `<button class="route-button" type="button" data-route-id="${escapeHtml(item.id)}">Route to nearest experience</button><span class="route-note" id="route-${escapeHtml(item.id)}"></span>` : '';
-        const starsText = item.entity_type === 'HOTEL' ? (item.star_rating ? `${item.star_rating} stars` : 'Hotel place') : 'Experience place';
+        const route = item.entity_type === 'HOTEL' ? `<button class="route-button" type="button" data-route-id="${escapeHtml(item.id)}">Route to nearest place</button><span class="route-note" id="route-${escapeHtml(item.id)}"></span>` : '';
+        const starsText = item.entity_type === 'HOTEL' ? (item.star_rating ? `${item.star_rating} OSM-listed stars` : 'Hotel place') : (item.source_category || 'Experience & place');
         const offerSummary = isOpenData ? 'OpenStreetMap place record' : `${item.offers.length} illustrative supplier offers`;
         const badge = isOpenData ? 'OPEN DATA' : (badges[0] || 'DEMO');
         card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${offerSummary}</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badge)}</span></div>${route}`;
@@ -343,7 +343,7 @@
       if (price && currencySelect.value !== 'ANY') params.set('max_price',price);
       const scope = selectedScope();
       const place = scope.city;
-      document.getElementById('section-label').textContent = `${place} · ${category === 'HOTEL' ? 'Hotel stays' : category === 'ATTRACTION' ? 'Experiences' : 'All inventory'}`;
+      document.getElementById('section-label').textContent = `${place} · ${category === 'HOTEL' ? 'Hotel stays' : category === 'ATTRACTION' ? 'Experiences & places' : 'All Delhi places'}`;
       try {
         const response = await fetch(`${API}/inventory/search?${params}`,{signal:searchController.signal});
         if (!response.ok) throw new Error(`Search API returned ${response.status}`);
@@ -443,10 +443,12 @@
       } else if (status.has_live_data) {
         const when = refreshedAt ? new Date(refreshedAt).toLocaleString() : 'recently';
         dataState.textContent = `OpenStreetMap · updated ${when}${status.stale ? ' · stale' : ''}`;
-        dataNote.textContent = `${status.hotel_count} hotel places and ${status.attraction_count} experience places. This open data has no bookable rates, availability, or cancellation terms.`;
+        dataNote.textContent = `${status.hotel_count} hotel places + ${status.attraction_count} experiences & other places. OSM stars are classifications, not user ratings; no live rates or availability are supplied.`;
       } else if (status.state === 'error') {
-        dataState.textContent = 'Live place feed unavailable';
-        dataNote.textContent = 'Showing the local Delhi sample fallback. Its rates are illustrative, not supplier quotes.';
+        dataState.textContent = status.has_live_data ? 'Refresh failed · showing cached OSM places' : 'Live place feed unavailable';
+        dataNote.textContent = status.has_live_data
+          ? `Last snapshot ${status.refreshed_at ? new Date(status.refreshed_at).toLocaleString() : 'saved locally'}: ${status.hotel_count} hotels, ${status.attraction_count} other places. OSM stars are classifications; no live customer ratings or rates.`
+          : 'Showing the local Delhi sample fallback. Its rates are illustrative, not supplier quotes.';
       } else {
         dataState.textContent = 'Delhi live place feed not loaded';
         dataNote.textContent = 'Refresh to fetch open Delhi listings. Until then, the local sample data is illustrative.';

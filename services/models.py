@@ -30,6 +30,7 @@ class InventoryItem(BaseModel):
     longitude: float = Field(ge=-180, le=180)
     star_rating: float | None = Field(default=None, ge=0, le=5)
     description: str = ""
+    source_category: str | None = None
     amenities: list[str] = Field(default_factory=list)
     images: list[str] = Field(default_factory=list)
     offers: list[SupplierOffer] = Field(default_factory=list)

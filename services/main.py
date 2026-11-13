@@ -99,6 +99,14 @@ def open_data_status() -> dict[str, Any]:
     metadata = status.get("metadata", {})
     if not isinstance(metadata, dict):
         metadata = {}
+    if not metadata and OPEN_DATA_INVENTORY_PATH.exists():
+        try:
+            with OPEN_DATA_INVENTORY_PATH.open(encoding="utf-8") as inventory_file:
+                snapshot_metadata = json.load(inventory_file).get("metadata", {})
+            if isinstance(snapshot_metadata, dict):
+                metadata = snapshot_metadata
+        except (OSError, json.JSONDecodeError):
+            pass
     last_updated = metadata.get("refreshed_at")
     has_live_data = (
         metadata.get("source") == "OpenStreetMap/Overpass"
@@ -162,7 +170,7 @@ def _start_open_data_refresh(*, force: bool = False) -> bool:
         "--source",
         "osm",
         "--limit",
-        "300",
+        "500",
     ]
     try:
         _OPEN_DATA_REFRESH_PROCESS = subprocess.Popen(
@@ -274,6 +282,7 @@ async def load_inventory() -> list[InventoryItem]:
                             "longitude": record["longitude"],
                             "star_rating": record.get("star_rating"),
                             "description": record.get("description", ""),
+                            "source_category": record.get("source_category"),
                             "amenities": record.get("amenities", []),
                             "offers": record.get("offers", []),
                             "conversion_prior": 0.3,
@@ -378,7 +387,7 @@ def _has_inclusions(item: InventoryItem, requested: list[str]) -> bool:
 def _item_matches_landmark(item: InventoryItem, landmark: str | None) -> bool:
     if not landmark:
         return True
-    searchable = f"{item.name} {item.description} {' '.join(item.amenities)}".casefold()
+    searchable = f"{item.name} {item.description} {item.source_category or ''} {' '.join(item.amenities)}".casefold()
     landmark = landmark.casefold()
     if landmark in {"beach", "airport", "downtown", "marina", "city center"}:
         terms = {"city center": ("downtown", "city centre", "city center"), "beach": ("beach", "sea", "coast"), "airport": ("airport",), "marina": ("marina",), "downtown": ("downtown", "city centre", "city center")}[landmark]
@@ -544,7 +553,7 @@ async def search_inventory(
         items = [item for item in items if item.star_rating is not None and item.star_rating >= min_stars]
     if q.strip():
         terms = [term for term in q.casefold().split() if len(term) > 1]
-        items = [item for item in items if all(term in f"{item.name} {item.destination} {' '.join(item.amenities)} {item.description}".casefold() for term in terms)]
+        items = [item for item in items if all(term in f"{item.name} {item.destination} {' '.join(item.amenities)} {item.description} {item.source_category or ''}".casefold() for term in terms)]
     if landmark:
         items = [item for item in items if _item_matches_landmark(item, landmark)]
     if inclusions:

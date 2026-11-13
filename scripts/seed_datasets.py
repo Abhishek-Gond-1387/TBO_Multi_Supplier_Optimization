@@ -1,4 +1,4 @@
-"""Fetch a small public OpenStreetMap hotel and attraction sample for a city."""
+"""Fetch up to 500 named hotel and visitor-place records from OpenStreetMap."""
 
 from __future__ import annotations
 
@@ -22,12 +22,14 @@ def fetch_osm_inventory(city_name: str = "Delhi", limit: int = 100, country_code
         raise ValueError("Enter a city name containing letters or numbers.")
     if not 1 <= limit <= 500:
         raise ValueError("Limit must be between 1 and 500.")
-    query = f'''[out:json][timeout:45];
+    query = f'''[out:json][timeout:60];
 area["name"="{city}"]["boundary"="administrative"]->.searchArea;
 (
-  nwr["tourism"~"^(hotel|guest_house|hostel|motel|resort|apartment|bed_and_breakfast|attraction|museum|viewpoint|zoo|gallery|theme_park|aquarium)$"](area.searchArea);
-  nwr["historic"~"^(monument|memorial|archaeological_site|fort|castle)$"](area.searchArea);
-  nwr["amenity"~"^(arts_centre|cinema|theatre)$"](area.searchArea);
+  nwr["tourism"~"^(hotel|guest_house|hostel|motel|resort|apartment|bed_and_breakfast|attraction|museum|viewpoint|zoo|gallery|theme_park|aquarium|artwork)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
+  nwr["historic"~"^(monument|memorial|archaeological_site|fort|castle|ruins|heritage)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
+  nwr["amenity"~"^(restaurant|cafe|fast_food|food_court|pub|bar|marketplace|place_of_worship|arts_centre|cinema|theatre|library|community_centre|spa|public_bath)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
+  nwr["leisure"~"^(park|garden|sports_centre|stadium|water_park|nature_reserve|marina|golf_course|playground)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
+  nwr["shop"~"^(mall|department_store|supermarket|gift|books|clothes|marketplace)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
 );
 out center tags {limit};'''
     response = requests.post(
@@ -52,6 +54,16 @@ out center tags {limit};'''
         tourism_type = tags.get("tourism", "")
         hospitality_types = {"hotel", "guest_house", "hostel", "motel", "resort", "apartment", "bed_and_breakfast"}
         bucket = "hotels" if tourism_type in hospitality_types else "attractions"
+        category_key = next((key for key in ("tourism", "historic", "amenity", "leisure", "shop") if tags.get(key)), "place")
+        category_value = tags.get(category_key, "place").replace("_", " ").title()
+        category_group = {
+            "tourism": "Accommodation" if bucket == "hotels" else "Tourism",
+            "historic": "Historic site",
+            "amenity": "Food, culture & services",
+            "leisure": "Parks & recreation",
+            "shop": "Shopping",
+            "place": "Place",
+        }[category_key]
         try:
             stars = float(tags["stars"]) if tags.get("stars") else None
         except ValueError:
@@ -67,6 +79,7 @@ out center tags {limit};'''
                 "country_code": country_code.upper(),
                 "street": tags.get("addr:street", ""),
                 "star_rating": stars,
+                "source_category": f"{category_group} · {category_value}",
                 "last_edited_at": element.get("timestamp"),
                 "description": " · ".join(
                     value for value in (
@@ -75,11 +88,12 @@ out center tags {limit};'''
                         tags.get("access"),
                     ) if value
                 ),
-                "amenities": sorted(
-                    key
-                    for key in ("internet_access", "swimming_pool", "air_conditioning", "wheelchair")
-                    if tags.get(key) not in (None, "no")
-                ),
+                "amenities": sorted({
+                    value.replace("_", " ")
+                    for key, value in tags.items()
+                    if key in {"internet_access", "swimming_pool", "air_conditioning", "wheelchair", "cuisine", "sport", "religion", "denomination", "access", "opening_hours"}
+                    and value not in (None, "", "no")
+                }),
             }
         )
     return result
@@ -145,7 +159,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--city", default="Delhi")
     parser.add_argument("--country-code", choices=("IN", "AE"), default="IN")
-    parser.add_argument("--limit", type=int, default=100)
+    parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--source", choices=("osm", "wikidata", "both"), default="osm")
     parser.add_argument(
         "--output", type=Path, default=PROJECT_ROOT / "data" / "osm_inventory.json"
@@ -190,7 +204,7 @@ def main() -> None:
             f"Updated {metadata['hotel_count']} hotel places and "
             f"{metadata['attraction_count']} experiences for {args.city} from OpenStreetMap at {refreshed_at}."
         )
-        print("OSM place data has no live room prices or availability.")
+        print("OSM place data has no live room prices, availability, or customer review scores.")
     except Exception as exc:
         write_status({"state": "error", "started_at": started_at, "error": str(exc)[:500]})
         raise

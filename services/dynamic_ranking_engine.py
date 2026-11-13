@@ -123,7 +123,7 @@ def rank_items(items: Sequence[InventoryItem], query: str = "") -> list[dict[str
     query_terms = [term for term in query.casefold().split() if len(term) > 1]
     ranked: list[dict[str, object]] = []
     for item in items:
-        searchable = f"{item.name} {item.destination} {' '.join(item.amenities)} {item.description}".casefold()
+        searchable = f"{item.name} {item.destination} {' '.join(item.amenities)} {item.description} {item.source_category or ''}".casefold()
         relevance = sum(term in searchable for term in query_terms) / len(query_terms) if query_terms else 0.9
         selected, offer_scores = select_supplier_offer(item.offers, median_price)
         if offer_scores:
