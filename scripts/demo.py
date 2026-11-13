@@ -20,11 +20,11 @@ def main() -> None:
 
     search = session.get(
         f"{base}/api/v1/inventory/search",
-        params={"destination": "Dubai", "entity_type": "HOTEL", "max_price": 400},
+        params={"country_code": "IN", "destination": "Delhi", "currency": "INR", "entity_type": "HOTEL", "max_price": 10000},
         timeout=5,
     )
     search.raise_for_status()
-    print("\nTop supplier-ranked stays:")
+    print("\nIndia first — top Delhi demo stays (illustrative INR prices):")
     for result in search.json()["results"][:3]:
         item, offer = result["item"], result["selected_supplier"]
         price = f"{offer['currency']} {offer['price']:,.0f}" if offer else "Price on request"
@@ -32,7 +32,7 @@ def main() -> None:
 
     voice = session.post(
         f"{base}/api/v1/voice/query",
-        json={"transcript": "Find 3-star hotels in Dubai with breakfast under 150 dollars"},
+        json={"transcript": "Find hotels in India under 8000 rupees with breakfast"},
         timeout=5,
     )
     voice.raise_for_status()
@@ -48,15 +48,23 @@ def main() -> None:
     tour = session.post(
         f"{base}/api/v1/sightseeing/compare",
         json={
-            "left_title": "At The Top Level 124 standard entry",
+            "left_title": "Taj Mahal standard entry",
             "left_description": "General admission. No transfer included.",
-            "right_title": "Sky Lounge Level 148 with Private Chauffeur and Lunch",
-            "right_description": "VIP access, private hotel pickup, lunch and free cancellation up to 24 hours.",
+            "right_title": "Taj Mahal priority entry with private car and lunch",
+            "right_description": "Priority access, private hotel pickup, lunch and free cancellation up to 24 hours.",
         },
         timeout=5,
     )
     tour.raise_for_status()
     print("Tour differences:", tour.json()["differences"])
+
+    dubai = session.get(
+        f"{base}/api/v1/inventory/search",
+        params={"country_code": "AE", "destination": "Dubai", "currency": "USD", "entity_type": "HOTEL", "max_price": 400},
+        timeout=5,
+    )
+    dubai.raise_for_status()
+    print(f"\nNext: Dubai has {dubai.json()['count']} illustrative USD hotel records.")
     print(f"\nOpen the map: {base.replace(':8000', ':5500')}/map_view.html")
     print(f"Review queue: {base.replace(':8000', ':5500')}/admin.html")
 

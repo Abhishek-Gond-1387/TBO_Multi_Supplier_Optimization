@@ -1,8 +1,10 @@
 # TBO Multi-Supplier Inventory Optimization
 
-This repository is a runnable local discovery and operations demo based on the attached platform specification. It covers supplier-feed validation, hotel matching, room normalization, sightseeing differences, supplier-rate selection, map search, voice queries, match review, metrics, optional PostgreSQL/PostGIS/pgvector, Redis caching, and a Celery worker.
+[![Python checks](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml/badge.svg)](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml)
 
-The bundled prices and supplier names are demonstration data. This repository does not connect to paid hotel suppliers or make bookings.
+This repository is a runnable, India-first local discovery and operations demo based on the attached platform specification. It starts on India with Delhi, Mumbai, Goa, Jaipur, Agra, Bengaluru, Hyderabad and Kochi demo inventory; users can then switch to Dubai/UAE or all destinations. It covers supplier-feed validation, hotel matching, room normalization, sightseeing differences, supplier-rate selection, map search, voice queries, match review, metrics, optional PostgreSQL/PostGIS/pgvector, Redis caching, and a Celery worker.
+
+All bundled hotel rates and supplier names are illustrative demo data, not live quotes. This repository does not connect to hotel suppliers or make bookings.
 
 ## Run the demo without Docker
 
@@ -45,8 +47,8 @@ The regular Python quickstart intentionally uses the bundled JSON catalog. To co
 
 ## Demo flow
 
-1. Search Dubai hotels by text, star rating, and price; compare supplier offers and ranking badges.
-2. Pan the map to refresh the visible markers. Hotel pins are clustered and show the lowest available rate.
+1. Start with India, select a city such as Delhi, Mumbai, Jaipur or Goa, then filter hotels by text, star rating, currency, and budget.
+2. Switch to Dubai/UAE or All destinations when ready. Hotel pins are clustered and show the lowest available rate in the selected currency.
 3. Use the microphone button for browser speech search. The API returns a parsed query and a spoken reply.
 4. On the operations page, choose **Create demo match**, inspect the name/address/distance features, then confirm or keep the two listings separate.
 5. Try room normalization and sightseeing inclusion comparison in the API docs, or run `scripts/demo.py` for a terminal walkthrough.
@@ -66,7 +68,7 @@ The regular Python quickstart intentionally uses the bundled JSON catalog. To co
 
 ## Public sample data and optional models
 
-No paid supplier, geocoding, routing, map tile, model-hosting, or dataset API is configured. Demo supplier rates and hotel records are bundled sample data. Optional geographic data comes from OpenStreetMap via Overpass (ODbL) and Wikidata (CC0); [OSM data licensing](https://www.openstreetmap.org/copyright) and [Wikidata licensing](https://www.wikidata.org/wiki/Wikidata:Licensing). `python scripts/seed_datasets.py --city Dubai --source both --limit 100` fetches it only when requested. The dataset script reads `OVERPASS_API_URL`, `WIKIDATA_API_URL`, and `WIKIDATA_SPARQL_URL` from `.env` so public endpoints can be changed without editing code.
+No paid supplier, geocoding, routing, map tile, model-hosting, or dataset API is configured. India and Dubai hotel rates are synthetic demo rows; optional place imports use OpenStreetMap via Overpass (ODbL) and Wikidata (CC0), not a paid feed. See [OSM data licensing](https://www.openstreetmap.org/copyright) and [Wikidata licensing](https://www.wikidata.org/wiki/Wikidata:Licensing). Run `python scripts/seed_datasets.py --city Delhi --country-code IN --source both --limit 100` to fetch open place data when wanted. The app automatically includes `data/osm_inventory.json` after you create it. For Dubai, pass `--city Dubai --country-code AE`. The dataset script reads `OVERPASS_API_URL`, `WIKIDATA_API_URL`, and `WIKIDATA_SPARQL_URL` from `.env` so public endpoints can be changed without editing code.
 
 The map uses the no-key OpenStreetMap standard tile service and displays its required attribution. OSM map data is open data, but the community tile servers are donation-funded, best-effort, and rate-limited; this app requests only tiles for the current interactive view. Do not bulk-download tiles. The public Nominatim helper is limited to one request per second per app process and is for user-initiated, moderate demo use; it must not be used for autocomplete or bulk geocoding. The public OSRM demo server is throttled to one request per second per app process, is best-effort, and is intended for reasonable non-commercial use. For higher traffic or commercial deployment, keep the code on these open formats but run your own OSM-derived tile, geocoding, and routing services; self-hosting can still have infrastructure costs. See the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/), [Nominatim policy](https://operations.osmfoundation.org/policies/nominatim/), and [OSRM demo server policy](https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server).
 

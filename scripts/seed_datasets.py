@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 
 
-def fetch_osm_inventory(city_name: str = "Dubai", limit: int = 100) -> dict[str, list[dict]]:
+def fetch_osm_inventory(city_name: str = "Delhi", limit: int = 100, country_code: str = "IN") -> dict[str, list[dict]]:
     city = re.sub(r"[^\w .'-]", "", city_name).strip()
     if not city:
         raise ValueError("Enter a city name containing letters or numbers.")
@@ -59,6 +59,7 @@ out center tags {limit};'''
                 "latitude": latitude,
                 "longitude": longitude,
                 "city": city,
+                "country_code": country_code.upper(),
                 "street": tags.get("addr:street", ""),
                 "star_rating": stars,
                 "amenities": sorted(
@@ -71,7 +72,7 @@ out center tags {limit};'''
     return result
 
 
-def fetch_wikidata_attractions(city_name: str = "Dubai", limit: int = 100) -> list[dict]:
+def fetch_wikidata_attractions(city_name: str = "Delhi", limit: int = 100, country_code: str = "IN") -> list[dict]:
     """Resolve a city in Wikidata, then fetch coordinate-tagged nearby attractions."""
     city = re.sub(r"[^\w .'-]", "", city_name).strip()
     headers = {"User-Agent": "TBO-MultiSupplier-Platform/0.2 (open-data demo)"}
@@ -118,6 +119,7 @@ SELECT ?item ?itemLabel ?itemDescription ?coordinate WHERE {{
                 "latitude": float(point.group(2)),
                 "longitude": float(point.group(1)),
                 "city": city,
+                "country_code": country_code.upper(),
                 "description": binding.get("itemDescription", {}).get("value", ""),
                 "star_rating": None,
                 "amenities": [],
@@ -128,7 +130,8 @@ SELECT ?item ?itemLabel ?itemDescription ?coordinate WHERE {{
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--city", default="Dubai")
+    parser.add_argument("--city", default="Delhi")
+    parser.add_argument("--country-code", choices=("IN", "AE"), default="IN")
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--source", choices=("osm", "wikidata", "both"), default="osm")
     parser.add_argument(
@@ -137,11 +140,11 @@ def main() -> None:
     args = parser.parse_args()
     inventory = {"hotels": [], "attractions": []}
     if args.source in {"osm", "both"}:
-        osm = fetch_osm_inventory(args.city, args.limit)
+        osm = fetch_osm_inventory(args.city, args.limit, args.country_code)
         inventory["hotels"].extend(osm["hotels"])
         inventory["attractions"].extend(osm["attractions"])
     if args.source in {"wikidata", "both"}:
-        inventory["attractions"].extend(fetch_wikidata_attractions(args.city, args.limit))
+        inventory["attractions"].extend(fetch_wikidata_attractions(args.city, args.limit, args.country_code))
     # Keep the first record for each source id when both datasets overlap.
     inventory["attractions"] = list({row["source_id"]: row for row in inventory["attractions"]}.values())
     args.output.parent.mkdir(parents=True, exist_ok=True)
