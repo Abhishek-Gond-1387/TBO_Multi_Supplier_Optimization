@@ -1,0 +1,61 @@
+"""Environment-backed settings with safe development defaults."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_float(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+
+
+APP_NAME = os.getenv("APP_NAME", "TBO Multi-Supplier Inventory Engine")
+APP_ENV = os.getenv("APP_ENV", "development")
+DEBUG = env_bool("DEBUG", True)
+HOST = os.getenv("HOST", "127.0.0.1")
+PORT = env_int("PORT", 8000)
+API_V1_PREFIX = os.getenv("API_V1_PREFIX", "/api/v1").rstrip("/")
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500",
+    ).split(",")
+    if origin.strip()
+]
+AUTO_MERGE_THRESHOLD = env_float("DEDUP_AUTO_MERGE_THRESHOLD", 0.88)
+HUMAN_REVIEW_THRESHOLD = env_float("DEDUP_HUMAN_REVIEW_THRESHOLD", 0.65)
+MAX_GEO_DISTANCE_METERS = env_float("DEDUP_MAX_GEO_DISTANCE_METERS", 250.0)
+MAP_TILE_SERVER_URL = os.getenv(
+    "MAP_TILE_SERVER_URL",
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+)
+MAP_ATTRIBUTION = os.getenv(
+    "MAP_ATTRIBUTION", "© OpenStreetMap contributors © CARTO"
+)
+MAP_DEFAULT_LATITUDE = env_float("MAP_DEFAULT_LATITUDE", 25.1972)
+MAP_DEFAULT_LONGITUDE = env_float("MAP_DEFAULT_LONGITUDE", 55.2744)
+MAP_DEFAULT_ZOOM = env_int("MAP_DEFAULT_ZOOM", 12)
