@@ -1,9 +1,862 @@
 [
-  {"id":"hotel-burj-al-arab","name":"Jumeirah Burj Al Arab","entity_type":"HOTEL","destination":"Dubai","latitude":25.1412,"longitude":55.1853,"star_rating":5,"description":"Luxury all-suite hotel on a private island with sea views.","amenities":["wifi","pool","breakfast","beach access","spa"],"conversion_prior":0.82,"source_id":"sample:burj-al-arab","offers":[{"supplier_name":"Supplier Alpha","price":1380,"currency":"USD","available":true,"cancellation_flexible":true,"reliability_score":0.96},{"supplier_name":"Supplier Beta","price":1450,"currency":"USD","available":true,"cancellation_flexible":false,"reliability_score":0.91}]},
-  {"id":"hotel-address-sky-view","name":"Address Sky View","entity_type":"HOTEL","destination":"Dubai","latitude":25.2106,"longitude":55.2781,"star_rating":5,"description":"Downtown hotel with infinity pool and views of Burj Khalifa.","amenities":["wifi","pool","breakfast","gym"],"conversion_prior":0.78,"source_id":"sample:address-sky-view","offers":[{"supplier_name":"Supplier Alpha","price":325,"currency":"USD","available":true,"cancellation_flexible":false,"reliability_score":0.96},{"supplier_name":"Supplier Gamma","price":299,"currency":"USD","available":true,"cancellation_flexible":true,"reliability_score":0.88}]},
-  {"id":"hotel-rove-downtown","name":"Rove Downtown","entity_type":"HOTEL","destination":"Dubai","latitude":25.1975,"longitude":55.2796,"star_rating":3,"description":"Modern city hotel a short walk from Dubai Mall.","amenities":["wifi","pool","breakfast","parking"],"conversion_prior":0.74,"source_id":"sample:rove-downtown","offers":[{"supplier_name":"Supplier Beta","price":124,"currency":"USD","available":true,"cancellation_flexible":true,"reliability_score":0.91},{"supplier_name":"Supplier Gamma","price":119,"currency":"USD","available":true,"cancellation_flexible":false,"reliability_score":0.88}]},
-  {"id":"hotel-atlantis-the-palm","name":"Atlantis The Palm","entity_type":"HOTEL","destination":"Dubai","latitude":25.1304,"longitude":55.1171,"star_rating":5,"description":"Resort with waterpark access, aquarium and a private beach.","amenities":["wifi","pool","breakfast","beach access","waterpark"],"conversion_prior":0.86,"source_id":"sample:atlantis-the-palm","offers":[{"supplier_name":"Supplier Alpha","price":490,"currency":"USD","available":true,"cancellation_flexible":true,"reliability_score":0.96},{"supplier_name":"Supplier Beta","price":465,"currency":"USD","available":true,"cancellation_flexible":true,"reliability_score":0.91}]},
-  {"id":"hotel-premier-inn-airport","name":"Premier Inn Dubai International Airport","entity_type":"HOTEL","destination":"Dubai","latitude":25.2528,"longitude":55.3644,"star_rating":3,"description":"Convenient airport hotel with a rooftop pool and free shuttle.","amenities":["wifi","pool","breakfast","airport shuttle"],"conversion_prior":0.68,"source_id":"sample:premier-inn-airport","offers":[{"supplier_name":"Supplier Gamma","price":92,"currency":"USD","available":true,"cancellation_flexible":false,"reliability_score":0.88}]},
-  {"id":"attraction-burj-khalifa","name":"Burj Khalifa At The Top","entity_type":"ATTRACTION","destination":"Dubai","latitude":25.1972,"longitude":55.2744,"description":"Observation decks on levels 124 and 125 of the Burj Khalifa.","amenities":["admission ticket","city views"],"conversion_prior":0.8,"source_id":"sample:burj-khalifa"},
-  {"id":"attraction-dubai-frame","name":"Dubai Frame","entity_type":"ATTRACTION","destination":"Dubai","latitude":25.2354,"longitude":55.3004,"description":"Landmark viewing gallery connecting old and modern Dubai.","amenities":["admission ticket","city views"],"conversion_prior":0.65,"source_id":"sample:dubai-frame"}
+  {
+    "id": "hotel-burj-al-arab",
+    "name": "Jumeirah Burj Al Arab",
+    "entity_type": "HOTEL",
+    "destination": "Dubai",
+    "latitude": 25.1412,
+    "longitude": 55.1853,
+    "star_rating": 5,
+    "description": "Luxury all-suite hotel on a private island with sea views.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "beach access",
+      "spa"
+    ],
+    "conversion_prior": 0.82,
+    "source_id": "sample:burj-al-arab",
+    "offers": [
+      {
+        "supplier_name": "Supplier Alpha",
+        "price": 1380,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.96
+      },
+      {
+        "supplier_name": "Supplier Beta",
+        "price": 1450,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": false,
+        "reliability_score": 0.91
+      }
+    ],
+    "country_code": "AE"
+  },
+  {
+    "id": "hotel-address-sky-view",
+    "name": "Address Sky View",
+    "entity_type": "HOTEL",
+    "destination": "Dubai",
+    "latitude": 25.2106,
+    "longitude": 55.2781,
+    "star_rating": 5,
+    "description": "Downtown hotel with infinity pool and views of Burj Khalifa.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "gym"
+    ],
+    "conversion_prior": 0.78,
+    "source_id": "sample:address-sky-view",
+    "offers": [
+      {
+        "supplier_name": "Supplier Alpha",
+        "price": 325,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": false,
+        "reliability_score": 0.96
+      },
+      {
+        "supplier_name": "Supplier Gamma",
+        "price": 299,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.88
+      }
+    ],
+    "country_code": "AE"
+  },
+  {
+    "id": "hotel-rove-downtown",
+    "name": "Rove Downtown",
+    "entity_type": "HOTEL",
+    "destination": "Dubai",
+    "latitude": 25.1975,
+    "longitude": 55.2796,
+    "star_rating": 3,
+    "description": "Modern city hotel a short walk from Dubai Mall.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "parking"
+    ],
+    "conversion_prior": 0.74,
+    "source_id": "sample:rove-downtown",
+    "offers": [
+      {
+        "supplier_name": "Supplier Beta",
+        "price": 124,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.91
+      },
+      {
+        "supplier_name": "Supplier Gamma",
+        "price": 119,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": false,
+        "reliability_score": 0.88
+      }
+    ],
+    "country_code": "AE"
+  },
+  {
+    "id": "hotel-atlantis-the-palm",
+    "name": "Atlantis The Palm",
+    "entity_type": "HOTEL",
+    "destination": "Dubai",
+    "latitude": 25.1304,
+    "longitude": 55.1171,
+    "star_rating": 5,
+    "description": "Resort with waterpark access, aquarium and a private beach.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "beach access",
+      "waterpark"
+    ],
+    "conversion_prior": 0.86,
+    "source_id": "sample:atlantis-the-palm",
+    "offers": [
+      {
+        "supplier_name": "Supplier Alpha",
+        "price": 490,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.96
+      },
+      {
+        "supplier_name": "Supplier Beta",
+        "price": 465,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.91
+      }
+    ],
+    "country_code": "AE"
+  },
+  {
+    "id": "hotel-premier-inn-airport",
+    "name": "Premier Inn Dubai International Airport",
+    "entity_type": "HOTEL",
+    "destination": "Dubai",
+    "latitude": 25.2528,
+    "longitude": 55.3644,
+    "star_rating": 3,
+    "description": "Convenient airport hotel with a rooftop pool and free shuttle.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "airport shuttle"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:premier-inn-airport",
+    "offers": [
+      {
+        "supplier_name": "Supplier Gamma",
+        "price": 92,
+        "currency": "USD",
+        "available": true,
+        "cancellation_flexible": false,
+        "reliability_score": 0.88
+      }
+    ],
+    "country_code": "AE"
+  },
+  {
+    "id": "attraction-burj-khalifa",
+    "name": "Burj Khalifa At The Top",
+    "entity_type": "ATTRACTION",
+    "destination": "Dubai",
+    "latitude": 25.1972,
+    "longitude": 55.2744,
+    "description": "Observation decks on levels 124 and 125 of the Burj Khalifa.",
+    "amenities": [
+      "admission ticket",
+      "city views"
+    ],
+    "conversion_prior": 0.8,
+    "source_id": "sample:burj-khalifa",
+    "country_code": "AE"
+  },
+  {
+    "id": "attraction-dubai-frame",
+    "name": "Dubai Frame",
+    "entity_type": "ATTRACTION",
+    "destination": "Dubai",
+    "latitude": 25.2354,
+    "longitude": 55.3004,
+    "description": "Landmark viewing gallery connecting old and modern Dubai.",
+    "amenities": [
+      "admission ticket",
+      "city views"
+    ],
+    "conversion_prior": 0.65,
+    "source_id": "sample:dubai-frame",
+    "country_code": "AE"
+  },
+  {
+    "id": "in-delhi-connaught-demo",
+    "name": "TBO Demo Connaught Place Stay",
+    "entity_type": "HOTEL",
+    "destination": "Delhi",
+    "country_code": "IN",
+    "latitude": 28.6315,
+    "longitude": 77.2167,
+    "star_rating": 3,
+    "description": "Illustrative central Delhi stay near Connaught Place.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "city center"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-delhi-connaught-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 6200,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 6900,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-delhi-aerocity-demo",
+    "name": "TBO Demo Aerocity Suites",
+    "entity_type": "HOTEL",
+    "destination": "Delhi",
+    "country_code": "IN",
+    "latitude": 28.5562,
+    "longitude": 77.1,
+    "star_rating": 4,
+    "description": "Illustrative airport-area stay with breakfast and shuttle access.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "airport shuttle"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-delhi-aerocity-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 8900,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 9600,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-delhi-india-gate",
+    "name": "India Gate",
+    "entity_type": "ATTRACTION",
+    "destination": "Delhi",
+    "country_code": "IN",
+    "latitude": 28.6129,
+    "longitude": 77.2295,
+    "description": "Public memorial and landmark in central New Delhi.",
+    "amenities": [
+      "landmark",
+      "outdoor"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-delhi-india-gate"
+  },
+  {
+    "id": "in-delhi-qutub-minar",
+    "name": "Qutub Minar",
+    "entity_type": "ATTRACTION",
+    "destination": "Delhi",
+    "country_code": "IN",
+    "latitude": 28.5244,
+    "longitude": 77.1855,
+    "description": "Historic minaret complex in South Delhi.",
+    "amenities": [
+      "heritage",
+      "admission ticket"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-delhi-qutub-minar"
+  },
+  {
+    "id": "in-mumbai-marine-demo",
+    "name": "TBO Demo Marine Drive Hotel",
+    "entity_type": "HOTEL",
+    "destination": "Mumbai",
+    "country_code": "IN",
+    "latitude": 18.943,
+    "longitude": 72.8238,
+    "star_rating": 4,
+    "description": "Illustrative South Mumbai stay near Marine Drive.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "sea view"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-mumbai-marine-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 12500,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 13800,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-mumbai-andheri-demo",
+    "name": "TBO Demo Andheri Airport Stay",
+    "entity_type": "HOTEL",
+    "destination": "Mumbai",
+    "country_code": "IN",
+    "latitude": 19.1136,
+    "longitude": 72.8697,
+    "star_rating": 3,
+    "description": "Illustrative airport-area stay in Andheri East.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "airport shuttle"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-mumbai-andheri-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 7200,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 7900,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-mumbai-gateway",
+    "name": "Gateway of India",
+    "entity_type": "ATTRACTION",
+    "destination": "Mumbai",
+    "country_code": "IN",
+    "latitude": 18.922,
+    "longitude": 72.8347,
+    "description": "Harbour-front landmark in South Mumbai.",
+    "amenities": [
+      "landmark",
+      "heritage"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-mumbai-gateway"
+  },
+  {
+    "id": "in-mumbai-marine-drive",
+    "name": "Marine Drive",
+    "entity_type": "ATTRACTION",
+    "destination": "Mumbai",
+    "country_code": "IN",
+    "latitude": 18.9432,
+    "longitude": 72.8235,
+    "description": "Coastal promenade along Mumbai harbour.",
+    "amenities": [
+      "waterfront",
+      "outdoor"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-mumbai-marine-drive"
+  },
+  {
+    "id": "in-goa-candolim-demo",
+    "name": "TBO Demo Candolim Beach Resort",
+    "entity_type": "HOTEL",
+    "destination": "Goa",
+    "country_code": "IN",
+    "latitude": 15.516,
+    "longitude": 73.762,
+    "star_rating": 4,
+    "description": "Illustrative beach-area resort in North Goa.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast",
+      "beach access"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-goa-candolim-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 9400,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 10800,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-goa-panaji-demo",
+    "name": "TBO Demo Panaji City Stay",
+    "entity_type": "HOTEL",
+    "destination": "Goa",
+    "country_code": "IN",
+    "latitude": 15.4909,
+    "longitude": 73.8278,
+    "star_rating": 3,
+    "description": "Illustrative city stay near central Panaji.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "city center"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-goa-panaji-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 5100,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 5800,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-goa-baga-beach",
+    "name": "Baga Beach",
+    "entity_type": "ATTRACTION",
+    "destination": "Goa",
+    "country_code": "IN",
+    "latitude": 15.5553,
+    "longitude": 73.7517,
+    "description": "Popular North Goa beach.",
+    "amenities": [
+      "beach",
+      "outdoor"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-goa-baga-beach"
+  },
+  {
+    "id": "in-goa-bom-jesus",
+    "name": "Basilica of Bom Jesus",
+    "entity_type": "ATTRACTION",
+    "destination": "Goa",
+    "country_code": "IN",
+    "latitude": 15.5009,
+    "longitude": 73.9114,
+    "description": "Historic church in Old Goa.",
+    "amenities": [
+      "heritage",
+      "architecture"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-goa-bom-jesus"
+  },
+  {
+    "id": "in-jaipur-pink-city-demo",
+    "name": "TBO Demo Pink City Stay",
+    "entity_type": "HOTEL",
+    "destination": "Jaipur",
+    "country_code": "IN",
+    "latitude": 26.9124,
+    "longitude": 75.7873,
+    "star_rating": 3,
+    "description": "Illustrative stay in central Jaipur.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "heritage area"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-jaipur-pink-city-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 4900,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 5600,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-jaipur-jal-mahal-demo",
+    "name": "TBO Demo Jal Mahal View Hotel",
+    "entity_type": "HOTEL",
+    "destination": "Jaipur",
+    "country_code": "IN",
+    "latitude": 26.9537,
+    "longitude": 75.846,
+    "star_rating": 4,
+    "description": "Illustrative stay near the Jal Mahal viewpoint.",
+    "amenities": [
+      "wifi",
+      "pool",
+      "breakfast"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-jaipur-jal-mahal-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 7800,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 8900,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-jaipur-hawa-mahal",
+    "name": "Hawa Mahal",
+    "entity_type": "ATTRACTION",
+    "destination": "Jaipur",
+    "country_code": "IN",
+    "latitude": 26.9239,
+    "longitude": 75.8267,
+    "description": "Historic palace and city landmark.",
+    "amenities": [
+      "heritage",
+      "admission ticket"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-jaipur-hawa-mahal"
+  },
+  {
+    "id": "in-jaipur-amber-fort",
+    "name": "Amber Fort",
+    "entity_type": "ATTRACTION",
+    "destination": "Jaipur",
+    "country_code": "IN",
+    "latitude": 26.9855,
+    "longitude": 75.8513,
+    "description": "Hilltop fort complex outside central Jaipur.",
+    "amenities": [
+      "heritage",
+      "admission ticket"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-jaipur-amber-fort"
+  },
+  {
+    "id": "in-agra-taj-view-demo",
+    "name": "TBO Demo Taj View Stay",
+    "entity_type": "HOTEL",
+    "destination": "Agra",
+    "country_code": "IN",
+    "latitude": 27.1751,
+    "longitude": 78.0421,
+    "star_rating": 3,
+    "description": "Illustrative Agra stay near the Taj Mahal visitor area.",
+    "amenities": [
+      "wifi",
+      "breakfast"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-agra-taj-view-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 5500,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 6300,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-agra-taj-mahal",
+    "name": "Taj Mahal",
+    "entity_type": "ATTRACTION",
+    "destination": "Agra",
+    "country_code": "IN",
+    "latitude": 27.1751,
+    "longitude": 78.0421,
+    "description": "Mausoleum and UNESCO World Heritage Site in Agra.",
+    "amenities": [
+      "heritage",
+      "admission ticket"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-agra-taj-mahal"
+  },
+  {
+    "id": "in-bengaluru-mg-road-demo",
+    "name": "TBO Demo MG Road Suites",
+    "entity_type": "HOTEL",
+    "destination": "Bengaluru",
+    "country_code": "IN",
+    "latitude": 12.975,
+    "longitude": 77.605,
+    "star_rating": 4,
+    "description": "Illustrative business stay near MG Road.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "gym"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-bengaluru-mg-road-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 8700,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 9600,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-bengaluru-lalbagh",
+    "name": "Lalbagh Botanical Garden",
+    "entity_type": "ATTRACTION",
+    "destination": "Bengaluru",
+    "country_code": "IN",
+    "latitude": 12.9507,
+    "longitude": 77.5848,
+    "description": "Botanical garden in central Bengaluru.",
+    "amenities": [
+      "garden",
+      "outdoor"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-bengaluru-lalbagh"
+  },
+  {
+    "id": "in-hyderabad-charminar-demo",
+    "name": "TBO Demo Charminar Residency",
+    "entity_type": "HOTEL",
+    "destination": "Hyderabad",
+    "country_code": "IN",
+    "latitude": 17.3616,
+    "longitude": 78.4747,
+    "star_rating": 3,
+    "description": "Illustrative stay in Hyderabad old city.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "heritage area"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-hyderabad-charminar-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 4800,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 5500,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-hyderabad-charminar",
+    "name": "Charminar",
+    "entity_type": "ATTRACTION",
+    "destination": "Hyderabad",
+    "country_code": "IN",
+    "latitude": 17.3616,
+    "longitude": 78.4747,
+    "description": "Historic monument and market landmark.",
+    "amenities": [
+      "heritage",
+      "architecture"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-hyderabad-charminar"
+  },
+  {
+    "id": "in-kochi-fort-kochi-demo",
+    "name": "TBO Demo Fort Kochi Stay",
+    "entity_type": "HOTEL",
+    "destination": "Kochi",
+    "country_code": "IN",
+    "latitude": 9.9658,
+    "longitude": 76.2421,
+    "star_rating": 3,
+    "description": "Illustrative stay in Fort Kochi.",
+    "amenities": [
+      "wifi",
+      "breakfast",
+      "waterfront"
+    ],
+    "conversion_prior": 0.68,
+    "source_id": "sample:in-kochi-fort-kochi-demo",
+    "offers": [
+      {
+        "supplier_name": "Demo Supplier Alpha",
+        "price": 6400,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.94,
+        "meal_plan": "BB"
+      },
+      {
+        "supplier_name": "Demo Supplier Beta",
+        "price": 7200,
+        "currency": "INR",
+        "available": true,
+        "cancellation_flexible": true,
+        "reliability_score": 0.9,
+        "meal_plan": "RO"
+      }
+    ]
+  },
+  {
+    "id": "in-kochi-fishing-nets",
+    "name": "Chinese Fishing Nets",
+    "entity_type": "ATTRACTION",
+    "destination": "Kochi",
+    "country_code": "IN",
+    "latitude": 9.9616,
+    "longitude": 76.2426,
+    "description": "Historic fishing nets along Fort Kochi waterfront.",
+    "amenities": [
+      "waterfront",
+      "heritage"
+    ],
+    "conversion_prior": 0.72,
+    "source_id": "sample:in-kochi-fishing-nets"
+  }
 ]

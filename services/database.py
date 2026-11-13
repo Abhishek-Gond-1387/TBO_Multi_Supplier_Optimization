@@ -55,6 +55,7 @@ async def load_inventory() -> list[dict[str, Any]]:
         raise RuntimeError("Database pool is not initialized")
     hotel_query = """
         SELECT h.id::text AS id, h.name, 'HOTEL' AS entity_type, h.city AS destination,
+               h.country_code,
                ST_Y(h.location::geometry) AS latitude, ST_X(h.location::geometry) AS longitude,
                h.star_rating, COALESCE(h.description, '') AS description,
                COALESCE(h.amenities, '[]'::jsonb) AS amenities,
@@ -79,7 +80,7 @@ async def load_inventory() -> list[dict[str, Any]]:
     """
     attraction_query = """
         SELECT c.id::text AS id, c.title AS name, 'ATTRACTION' AS entity_type,
-               c.city AS destination, ST_Y(c.location::geometry) AS latitude,
+               c.city AS destination, c.country_code, ST_Y(c.location::geometry) AS latitude,
                ST_X(c.location::geometry) AS longitude, NULL::numeric AS star_rating,
                COALESCE(c.description, '') AS description, '[]'::jsonb AS amenities,
                COALESCE(c.canonical_images, '[]'::jsonb) AS images,

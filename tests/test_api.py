@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
+import json
+import pytest
 
+from services import main
 from services.main import REVIEW_QUEUE, app
 
 client = TestClient(app)
@@ -17,6 +20,60 @@ def test_public_map_configuration_defaults_to_no_key_osm_tiles():
     assert response.status_code == 200
     assert response.json()["tile_url"] == "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     assert "OpenStreetMap contributors" in response.json()["attribution"]
+    assert response.json()["default_latitude"] == 22.9734
+    assert response.json()["default_zoom"] == 4
+
+
+def test_destinations_start_with_india_then_include_dubai():
+    response = client.get("/api/v1/destinations")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["countries"][0]["code"] == "IN"
+    assert {"Delhi", "Mumbai", "Goa", "Jaipur"}.issubset(
+        {row["destination"] for row in payload["destinations"] if row["country_code"] == "IN"}
+    )
+    assert any(row["destination"] == "Dubai" and row["country_code"] == "AE" for row in payload["destinations"])
+
+
+@pytest.mark.asyncio
+async def test_free_open_dataset_is_loaded_into_local_inventory(tmp_path, monkeypatch):
+    dataset = tmp_path / "osm_inventory.json"
+    dataset.write_text(json.dumps({
+        "hotels": [{
+            "source_id": "osm/node/987", "name": "Open Delhi Guesthouse", "city": "Delhi",
+            "country_code": "IN", "latitude": 28.63, "longitude": 77.21, "amenities": ["wifi"],
+        }],
+        "attractions": [],
+    }), encoding="utf-8")
+    monkeypatch.setattr(main, "OPEN_DATA_INVENTORY_PATH", dataset)
+    rows = await main.load_inventory()
+    open_row = next(row for row in rows if row.source_id == "osm/node/987")
+    assert open_row.entity_type == "HOTEL"
+    assert open_row.destination == "Delhi"
+    assert open_row.country_code == "IN"
+    assert open_row.offers == []
+
+
+def test_india_search_filters_to_inr_supplier_offers():
+    response = client.get(
+        "/api/v1/inventory/search",
+        params={"country_code": "in", "currency": "INR", "entity_type": "HOTEL"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] >= 1
+    assert all(row["item"]["country_code"] == "IN" for row in payload["results"])
+    assert all(row["selected_supplier"]["currency"] == "INR" for row in payload["results"])
+
+
+def test_country_filter_can_switch_from_india_to_dubai():
+    response = client.get(
+        "/api/v1/inventory/search",
+        params={"country_code": "AE", "destination": "Dubai", "currency": "USD", "entity_type": "HOTEL"},
+    )
+    assert response.status_code == 200
+    assert response.json()["count"] >= 1
+    assert all(row["item"]["country_code"] == "AE" for row in response.json()["results"])
 
 
 def test_search_returns_ranked_supplier_offers():
@@ -41,6 +98,19 @@ def test_voice_endpoint_returns_parsed_filters_and_results():
     assert payload["parsed_filters"]["destination"] == "Dubai"
     assert payload["count"] >= 1
     assert payload["voice_reply"].startswith("I found")
+
+
+def test_voice_endpoint_searches_india_and_rupee_budget():
+    response = client.post(
+        "/api/v1/voice/query",
+        json={"transcript": "Find hotels in India under 8000 rupees with breakfast"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["parsed_filters"]["country_code"] == "IN"
+    assert payload["parsed_filters"]["currency"] == "INR"
+    assert payload["count"] >= 1
+    assert all(row["item"]["country_code"] == "IN" for row in payload["results"])
 
 
 def test_map_viewport_uses_bounding_box_and_returns_price_pins():

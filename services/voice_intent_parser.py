@@ -6,11 +6,15 @@ import re
 
 DESTINATIONS = (
     "abu dhabi", "new york", "ras al khaimah", "singapore", "dubai", "goa",
-    "london", "paris", "mumbai", "delhi", "bangkok", "rome", "istanbul",
+    "london", "paris", "mumbai", "delhi", "bangalore", "bengaluru", "jaipur",
+    "agra", "hyderabad", "kochi", "chennai", "kolkata", "pune", "varanasi",
+    "bangkok", "rome", "istanbul",
 )
 LANDMARKS = (
     "burj khalifa", "palm jumeirah", "dubai mall", "city center", "downtown",
-    "airport", "beach", "marina", "museum", "desert safari",
+    "airport", "beach", "marina", "museum", "desert safari", "india gate",
+    "qutub minar", "gateway of india", "marine drive", "baga beach", "hawa mahal",
+    "amber fort", "taj mahal", "lalbagh", "charminar", "fishing nets",
 )
 INCLUSION_TERMS = {
     "free breakfast": "BREAKFAST",
@@ -37,7 +41,11 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
     lowered = text.casefold()
     sightseeing = bool(
         re.search(r"\b(tour|ticket|experience|sightseeing|attraction|museum|safari|cruise)\b", lowered)
-        or any(place in lowered for place in ("burj khalifa", "dubai frame", "at the top"))
+        or any(place in lowered for place in (
+            "burj khalifa", "dubai frame", "at the top", "india gate", "qutub minar",
+            "gateway of india", "marine drive", "baga beach", "hawa mahal", "amber fort",
+            "taj mahal", "lalbagh", "charminar",
+        ))
     )
     result: dict[str, object] = {
         "raw_query": text,
@@ -45,7 +53,8 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
         "entity_type": "SIGHTSEEING" if sightseeing else "HOTEL",
         "star_rating": None,
         "max_price": None,
-        "currency": "USD",
+        "country_code": "IN",
+        "currency": "INR",
         "inclusions": [],
         "landmark": None,
         "date_window": None,
@@ -59,13 +68,27 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
     ) or re.search(r"(?:\$|\b(?:usd|aed|inr)\s*)([\d,]+(?:\.\d+)?)", lowered)
     if price:
         result["max_price"] = float(price.group(1).replace(",", ""))
-    currency = re.search(r"\b(usd|aed|inr|eur|gbp)\b|\$|€|£", lowered)
+    currency = re.search(r"\b(usd|aed|inr|rupees?|rs\.?|dollars?|dirhams?|eur|gbp)\b|\$|€|£|₹", lowered)
     if currency:
         symbol = currency.group(0)
-        result["currency"] = {"$": "USD", "€": "EUR", "£": "GBP"}.get(symbol, symbol.upper())
+        result["currency"] = {
+            "$": "USD", "€": "EUR", "£": "GBP", "₹": "INR",
+            "rupee": "INR", "rupees": "INR", "rs": "INR", "rs.": "INR",
+            "dollar": "USD", "dollars": "USD", "dirham": "AED", "dirhams": "AED",
+        }.get(symbol, symbol.upper())
+    if re.search(r"\b(united arab emirates|uae|emirates)\b", lowered):
+        result["country_code"] = "AE"
+        if not currency:
+            result["currency"] = "USD"
+    elif re.search(r"\b(india|indian)\b", lowered):
+        result["country_code"] = "IN"
     for destination in DESTINATIONS:
         if re.search(rf"\b{re.escape(destination)}\b", lowered):
-            result["destination"] = destination.title()
+            result["destination"] = {"bengaluru": "Bengaluru", "bangalore": "Bengaluru"}.get(destination, destination.title())
+            if destination in {"dubai", "abu dhabi", "ras al khaimah"}:
+                result["country_code"] = "AE"
+                if not currency:
+                    result["currency"] = "USD"
             break
     for landmark in LANDMARKS:
         if re.search(rf"\b{re.escape(landmark)}\b", lowered):

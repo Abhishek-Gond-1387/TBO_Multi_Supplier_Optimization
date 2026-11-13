@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import json
 import logging
 import os
@@ -54,6 +55,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tbo.api")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = PROJECT_ROOT / "data" / "sample_inventory.json"
+OPEN_DATA_INVENTORY_PATH = PROJECT_ROOT / "data" / "osm_inventory.json"
 
 REQUESTS = Counter("tbo_http_requests_total", "HTTP requests served", ("method", "route", "status"))
 LATENCY = Histogram("tbo_http_request_seconds", "HTTP request latency", ("method", "route"))
@@ -107,6 +109,29 @@ async def load_inventory() -> list[InventoryItem]:
     else:
         with INVENTORY_PATH.open(encoding="utf-8") as inventory_file:
             rows = json.load(inventory_file)
+        if OPEN_DATA_INVENTORY_PATH.exists():
+            with OPEN_DATA_INVENTORY_PATH.open(encoding="utf-8") as open_data_file:
+                open_data = json.load(open_data_file)
+            for bucket, entity_type in (("hotels", "HOTEL"), ("attractions", "ATTRACTION")):
+                for record in open_data.get(bucket, []):
+                    source_id = str(record.get("source_id") or record.get("id") or "")
+                    if not source_id or record.get("latitude") is None or record.get("longitude") is None:
+                        continue
+                    rows.append({
+                        "id": "open-" + hashlib.sha256(source_id.encode()).hexdigest()[:16],
+                        "source_id": source_id,
+                        "name": record.get("name", "Unnamed open-data place"),
+                        "entity_type": entity_type,
+                        "destination": record.get("city") or record.get("destination") or "Unknown",
+                        "country_code": record.get("country_code", "IN"),
+                        "latitude": record["latitude"],
+                        "longitude": record["longitude"],
+                        "star_rating": record.get("star_rating"),
+                        "description": record.get("description", ""),
+                        "amenities": record.get("amenities", []),
+                        "offers": record.get("offers", []),
+                        "conversion_prior": 0.3,
+                    })
     return [InventoryItem.model_validate(row) for row in rows]
 
 
@@ -223,6 +248,7 @@ def _map_record(item: InventoryItem) -> dict[str, Any]:
         "name": item.name,
         "entity_type": item.entity_type,
         "destination": item.destination,
+        "country_code": item.country_code,
         "star_rating": item.star_rating,
         "latitude": item.latitude,
         "longitude": item.longitude,
@@ -233,6 +259,14 @@ def _map_record(item: InventoryItem) -> dict[str, Any]:
         "supplier_count": len([item_offer for item_offer in item.offers if item_offer.available]),
         "amenities": item.amenities,
     }
+
+
+COUNTRY_NAMES = {"IN": "India", "AE": "United Arab Emirates"}
+
+
+def _stable_cache_key(prefix: str, value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()
+    return f"{prefix}:{hashlib.sha256(encoded).hexdigest()[:24]}"
 
 
 @app.get("/")
@@ -276,10 +310,43 @@ def map_config() -> dict[str, Any]:
     }
 
 
+@app.get(f"{API_V1_PREFIX}/destinations")
+async def list_destinations() -> dict[str, Any]:
+    """Return countries and city centers represented in the local inventory."""
+    items = await load_inventory()
+    groups: dict[tuple[str, str], list[InventoryItem]] = {}
+    for item in items:
+        groups.setdefault((item.country_code.upper(), item.destination), []).append(item)
+    destinations = []
+    for (country_code, city), rows in groups.items():
+        destinations.append({
+            "country_code": country_code,
+            "country": COUNTRY_NAMES.get(country_code, country_code),
+            "destination": city,
+            "count": len(rows),
+            "latitude": sum(row.latitude for row in rows) / len(rows),
+            "longitude": sum(row.longitude for row in rows) / len(rows),
+        })
+    destinations.sort(key=lambda row: (row["country_code"] != "IN", row["destination"].casefold()))
+    countries = []
+    for code in sorted({row["country_code"] for row in destinations}, key=lambda value: (value != "IN", value)):
+        rows = [row for row in destinations if row["country_code"] == code]
+        countries.append({
+            "code": code,
+            "name": COUNTRY_NAMES.get(code, code),
+            "count": sum(row["count"] for row in rows),
+            "latitude": sum(row["latitude"] * row["count"] for row in rows) / sum(row["count"] for row in rows),
+            "longitude": sum(row["longitude"] * row["count"] for row in rows) / sum(row["count"] for row in rows),
+        })
+    return {"countries": countries, "destinations": destinations}
+
+
 @app.get(f"{API_V1_PREFIX}/inventory/search")
 async def search_inventory(
     q: str = "",
     destination: str | None = None,
+    country_code: str | None = Query(default=None, min_length=2, max_length=2),
+    currency: str | None = Query(default=None, min_length=3, max_length=3),
     entity_type: Literal["HOTEL", "ATTRACTION"] | None = None,
     max_price: float | None = Query(default=None, gt=0),
     min_stars: float | None = Query(default=None, ge=0, le=5),
@@ -289,6 +356,16 @@ async def search_inventory(
     items = await load_inventory()
     if destination:
         items = [item for item in items if destination.casefold() in item.destination.casefold()]
+    if country_code:
+        code = country_code.upper()
+        items = [item for item in items if item.country_code.upper() == code]
+    if currency:
+        code = currency.upper()
+        items = [
+            item.model_copy(update={"offers": [offer for offer in item.offers if offer.currency.upper() == code]})
+            for item in items
+        ]
+        items = [item for item in items if item.offers]
     if entity_type:
         items = [item for item in items if item.entity_type == entity_type]
     if max_price is not None:
@@ -303,14 +380,13 @@ async def search_inventory(
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
     cache_descriptor = json.dumps(
-        {"q": q, "destination": destination, "entity_type": entity_type, "max_price": max_price, "min_stars": min_stars, "landmark": landmark, "inclusions": inclusions},
+        {"q": q, "destination": destination, "country_code": country_code, "currency": currency, "entity_type": entity_type, "max_price": max_price, "min_stars": min_stars, "landmark": landmark, "inclusions": inclusions},
         sort_keys=True,
     )
-    ranked = rank_items(items, " ".join([q, landmark or ""]).strip())
     cached = get_or_set(
-        "inventory:search:" + str(abs(hash(cache_descriptor))),
+        _stable_cache_key("inventory:search", cache_descriptor),
         CACHE_TTL_LIVE_RATES,
-        lambda: {"count": len(ranked), "results": ranked},
+        lambda: {"count": len(items), "results": rank_items(items, " ".join([q, landmark or ""]).strip())},
     )
     return cached
 
@@ -323,6 +399,8 @@ async def inventory_viewport(
     north: float | None = Query(default=None, ge=-90, le=90),
     entity_type: Literal["HOTEL", "ATTRACTION"] | None = None,
     destination: str | None = None,
+    country_code: str | None = Query(default=None, min_length=2, max_length=2),
+    currency: str | None = Query(default=None, min_length=3, max_length=3),
 ) -> dict[str, Any]:
     items = await load_inventory()
     bounds = (west, south, east, north)
@@ -336,7 +414,19 @@ async def inventory_viewport(
         items = [item for item in items if item.entity_type == entity_type]
     if destination:
         items = [item for item in items if destination.casefold() in item.destination.casefold()]
-    cache_key = "geo:viewport:" + str(abs(hash((west, south, east, north, entity_type, destination))))
+    if country_code:
+        code = country_code.upper()
+        items = [item for item in items if item.country_code.upper() == code]
+    if currency:
+        code = currency.upper()
+        items = [
+            item.model_copy(update={"offers": [offer for offer in item.offers if offer.currency.upper() == code]})
+            for item in items
+        ]
+        items = [item for item in items if item.entity_type != "HOTEL" or item.offers]
+    cache_key = _stable_cache_key(
+        "geo:viewport", (west, south, east, north, entity_type, destination, country_code, currency)
+    )
     return get_or_set(
         cache_key,
         CACHE_TTL_GEO_VIEWPORT,
@@ -367,9 +457,19 @@ async def voice_query(request: VoiceRequest) -> dict[str, Any]:
     category = "ATTRACTION" if filters["entity_type"] == "SIGHTSEEING" else "HOTEL"
     items = await load_inventory()
     items = [item for item in items if item.entity_type == category]
+    country_code = filters.get("country_code")
+    if country_code:
+        items = [item for item in items if item.country_code.upper() == str(country_code).upper()]
     destination = filters.get("destination")
     if destination:
         items = [item for item in items if str(destination).casefold() in item.destination.casefold()]
+    currency = str(filters.get("currency") or "").upper()
+    if currency:
+        items = [
+            item.model_copy(update={"offers": [offer for offer in item.offers if offer.currency.upper() == currency]})
+            for item in items
+        ]
+        items = [item for item in items if item.offers]
     stars = filters.get("star_rating")
     if isinstance(stars, (float, int)):
         items = [item for item in items if item.star_rating is not None and item.star_rating >= stars]

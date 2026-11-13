@@ -30,12 +30,12 @@ async def main() -> None:
                     await connection.execute(
                         """INSERT INTO canonical_hotels
                         (id,name,slug,star_rating,address_street,city,country_code,location,description,amenities,canonical_images,content_quality_score)
-                        VALUES($1,$2,$3,$4,$5,$6,'AE',ST_SetSRID(ST_MakePoint($7,$8),4326),$9,$10::jsonb,$11::jsonb,$12)
+                        VALUES($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11::jsonb,$12::jsonb,$13)
                         ON CONFLICT(slug) DO UPDATE SET name=EXCLUDED.name,star_rating=EXCLUDED.star_rating,
                             location=EXCLUDED.location,description=EXCLUDED.description,amenities=EXCLUDED.amenities,
                             canonical_images=EXCLUDED.canonical_images,updated_at=NOW()""",
                         canonical_id, item["name"], slug(item["id"]), item.get("star_rating"), None,
-                        item["destination"], item["longitude"], item["latitude"], item.get("description", ""),
+                        item["destination"], item.get("country_code", "IN"), item["longitude"], item["latitude"], item.get("description", ""),
                         json.dumps(item.get("amenities", [])), json.dumps(item.get("images", [])), 75.0,
                     )
                     for offer in item.get("offers", []):
@@ -52,13 +52,13 @@ async def main() -> None:
                                (supplier_id,supplier_hotel_id,raw_name,raw_city,raw_country,raw_star_rating,
                                 location,raw_amenities,raw_payload,data_quality_score,canonical_hotel_id,
                                 match_confidence,match_status)
-                               VALUES($1,$2,$3,$4,'AE',$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8::jsonb,
-                                      $9::jsonb,75,$10,1.0,'AUTO_MATCHED')
+                               VALUES($1,$2,$3,$4,$5,$6,ST_SetSRID(ST_MakePoint($7,$8),4326),$9::jsonb,
+                                      $10::jsonb,75,$11,1.0,'AUTO_MATCHED')
                                ON CONFLICT(supplier_id,supplier_hotel_id) DO UPDATE SET
                                  canonical_hotel_id=EXCLUDED.canonical_hotel_id,raw_payload=EXCLUDED.raw_payload,
                                  match_confidence=1.0,match_status='AUTO_MATCHED',updated_at=NOW()
                                RETURNING id""",
-                            supplier_id, source_id, item["name"], item["destination"], item.get("star_rating"),
+                            supplier_id, source_id, item["name"], item["destination"], item.get("country_code", "IN"), item.get("star_rating"),
                             item["longitude"], item["latitude"], json.dumps(item.get("amenities", [])),
                             json.dumps(item), canonical_id,
                         )
@@ -78,10 +78,10 @@ async def main() -> None:
                     await connection.execute(
                         """INSERT INTO canonical_sightseeing_products
                            (id,title,slug,category,primary_landmark,city,country_code,location,description,canonical_images,content_quality_score)
-                           VALUES($1,$2,$3,'Attraction Ticket',$2,$4,'AE',ST_SetSRID(ST_MakePoint($5,$6),4326),$7,$8::jsonb,65)
+                           VALUES($1,$2,$3,'Attraction Ticket',$2,$4,$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8,$9::jsonb,65)
                            ON CONFLICT(slug) DO UPDATE SET title=EXCLUDED.title,location=EXCLUDED.location,
                              description=EXCLUDED.description,updated_at=NOW()""",
-                        canonical_id, item["name"], slug(item["id"]), item["destination"],
+                        canonical_id, item["name"], slug(item["id"]), item["destination"], item.get("country_code", "IN"),
                         item["longitude"], item["latitude"], item.get("description", ""), json.dumps(item.get("images", [])),
                     )
                     supplier_id = await connection.fetchval(

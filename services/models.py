@@ -25,6 +25,7 @@ class InventoryItem(BaseModel):
     name: str
     entity_type: Literal["HOTEL", "ATTRACTION"]
     destination: str
+    country_code: str = Field(default="IN", min_length=2, max_length=2)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     star_rating: float | None = Field(default=None, ge=0, le=5)
