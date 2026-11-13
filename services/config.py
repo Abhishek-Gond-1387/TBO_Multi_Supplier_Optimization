@@ -38,6 +38,10 @@ DEBUG = env_bool("DEBUG", True)
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = env_int("PORT", 8000)
 API_V1_PREFIX = os.getenv("API_V1_PREFIX", "/api/v1").rstrip("/")
+USE_DATABASE = env_bool("USE_DATABASE", False)
+USE_REDIS = env_bool("USE_REDIS", False)
+ENABLE_CELERY = env_bool("ENABLE_CELERY", False)
+ENABLE_SEMANTIC_MATCHING = env_bool("ENABLE_SEMANTIC_MATCHING", False)
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -59,3 +63,5 @@ MAP_ATTRIBUTION = os.getenv(
 MAP_DEFAULT_LATITUDE = env_float("MAP_DEFAULT_LATITUDE", 25.1972)
 MAP_DEFAULT_LONGITUDE = env_float("MAP_DEFAULT_LONGITUDE", 55.2744)
 MAP_DEFAULT_ZOOM = env_int("MAP_DEFAULT_ZOOM", 12)
+CACHE_TTL_LIVE_RATES = env_int("CACHE_TTL_LIVE_RATES", 300)
+CACHE_TTL_GEO_VIEWPORT = env_int("CACHE_TTL_GEO_VIEWPORT", 1800)

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TBO | Match review</title>
+  <style>
+    :root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#172b3a;background:#f3f6f7;--line:#e1e8eb;--muted:#687984;--blue:#087f8c}
+    *{box-sizing:border-box}body{margin:0}header{height:66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+    a{color:var(--blue);text-decoration:none;font-weight:700}.brand{font-weight:800;letter-spacing:.04em}.brand span{color:var(--blue)}main{max-width:1100px;margin:36px auto;padding:0 20px}
+    .top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}h1{margin:4px 0;font-size:28px}.muted{color:var(--muted)}.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:.12em;font-weight:750;color:var(--muted)}
+    button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}button.danger{color:#8f3333}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 18px #1734470b;margin:14px 0;padding:22px}.toolbar{display:flex;gap:10px;align-items:center}.status{font-size:13px;color:var(--muted);min-height:22px}
+    .review{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:20px;background:#fff}.review-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.score{background:#fff3d9;color:#845c10;padding:7px 11px;border-radius:20px;font-weight:750;white-space:nowrap}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}.listing{padding:16px;border:1px solid var(--line);border-radius:10px;background:#f8fafb}.listing h3{margin:5px 0 4px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#f1f5f6;padding:12px;border-radius:10px}.metric{background:white;border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center}.metric small{display:block;color:var(--muted);margin-bottom:4px}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.empty{padding:24px 4px;color:var(--muted)}.error{color:#a52d2d}
+    @media(max-width:700px){.top{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.review-head{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header><div class="brand">TBO <span>OPERATIONS</span></div><a href="/map_view.html">← Back to discovery map</a></header>
+  <main>
+    <div class="top"><div><div class="eyebrow">Human-in-the-loop matching</div><h1>Potential duplicate listings</h1><div class="muted">Review borderline matches and keep the decision traceable.</div></div><div class="toolbar"><button id="sample" class="primary">Create demo match</button><button id="refresh">Refresh queue</button></div></div>
+    <section class="panel"><div id="status" class="status">Loading review queue…</div><div id="queue"></div></section>
+  </main>
+  <script>
+    const API='http://127.0.0.1:8000/api/v1';
+    const queue=document.getElementById('queue'), status=document.getElementById('status');
+    const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    async function refresh(){status.textContent='Loading…';try{const data=await fetch(`${API}/admin/matches/review-queue?status=PENDING`).then(r=>{if(!r.ok)throw Error(`API ${r.status}`);return r.json()});status.textContent=`${data.count} pending review${data.count===1?'':'s'}`;queue.replaceChildren();if(!data.items.length){queue.innerHTML='<div class="empty">Queue is clear. Create a demo match to try the review flow.</div>';return}data.items.forEach(render)}catch(error){status.textContent=`Could not load queue: ${error.message}`;status.className='status error'}}
+    function render(item){const left=item.left||{},right=item.right||{},f=item.feature_breakdown||{};const row=document.createElement('article');row.className='review';row.innerHTML=`<div class="review-head"><div><div class="eyebrow">Borderline match</div><h2>${esc(left.name)} <span class="muted">↔</span> ${esc(right.name)}</h2><div class="muted">${esc(left.destination||'')} · Compare score and location before resolving.</div></div><div class="score">${(Number(item.score)*100).toFixed(1)}% confidence</div></div><div class="grid"><div class="listing"><div class="eyebrow">Supplier listing</div><h3>${esc(left.name)}</h3><div>${esc(left.address||left.street_address||'Address unavailable')}</div><p class="muted">${Number(left.latitude).toFixed(5)}, ${Number(left.longitude).toFixed(5)}</p></div><div class="listing"><div class="eyebrow">Proposed canonical</div><h3>${esc(right.name)}</h3><div>${esc(right.address||right.street_address||'Address unavailable')}</div><p class="muted">${Number(right.latitude).toFixed(5)}, ${Number(right.longitude).toFixed(5)}</p></div></div><div class="metrics"><div class="metric"><small>Distance</small><strong>${esc(f.geo_dist_m??item.distance_meters??'—')} m</strong></div><div class="metric"><small>Name similarity</small><strong>${Math.round(Number(f.jaro_sim||item.name_similarity||0)*100)}%</strong></div><div class="metric"><small>Semantic / token</small><strong>${Math.round(Number(f.cosine_sim||0)*100)}%</strong></div><div class="metric"><small>Address overlap</small><strong>${Math.round(Number(f.addr_sim||0)*100)}%</strong></div></div><div class="actions"><button class="danger" data-action="REJECTED">Keep separate</button><button class="primary" data-action="APPROVED">Confirm match</button></div>`;
+      row.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>resolve(item.id,button.dataset.action)));queue.append(row)}
+    async function resolve(id,statusValue){try{const response=await fetch(`${API}/review-queue/${encodeURIComponent(id)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:statusValue,reviewer:'demo-operator',notes:'Reviewed in local demo'})});if(!response.ok)throw Error(`API ${response.status}`);await refresh()}catch(error){status.textContent=`Could not save decision: ${error.message}`;status.className='status error'}}
+    async function createSample(){status.textContent='Creating borderline hotel pair…';const body={left:{name:'Address Sky View Downtown',destination:'Dubai',address:'Sheikh Zayed Road, Downtown Dubai',latitude:25.2106,longitude:55.2781},right:{name:'Address Downtown Sky View',destination:'Dubai',address:'Downtown Dubai, Sheikh Zayed Road',latitude:25.2120,longitude:55.2800}};try{const result=await fetch(`${API}/matches/compare`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());if(result.decision!=='HUMAN_REVIEW')status.textContent=`Demo pair scored ${result.decision} (${(result.score*100).toFixed(1)}%).`;await refresh()}catch(error){status.textContent=`Could not create match: ${error.message}`;status.className='status error'}}
+    document.getElementById('refresh').addEventListener('click',refresh);document.getElementById('sample').addEventListener('click',createSample);refresh();
+  </script>
+</body>
+</html>

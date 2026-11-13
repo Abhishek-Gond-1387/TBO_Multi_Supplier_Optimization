@@ -3,18 +3,42 @@
 from __future__ import annotations
 
 import math
+import os
 import re
 import unicodedata
-from difflib import SequenceMatcher
+from functools import lru_cache
 
 from rapidfuzz import fuzz
+from rapidfuzz.distance import JaroWinkler
 
-from services.config import AUTO_MERGE_THRESHOLD, HUMAN_REVIEW_THRESHOLD, MAX_GEO_DISTANCE_METERS
+from services.config import AUTO_MERGE_THRESHOLD, HUMAN_REVIEW_THRESHOLD
 
 
 def _normalized_name(value: str) -> str:
     ascii_name = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode()
-    return re.sub(r"[^a-z0-9]+", " ", ascii_name.casefold()).strip()
+    name = re.sub(r"[^a-z0-9]+", " ", ascii_name.casefold()).strip()
+    return re.sub(r"\b(hotel|resort|the)\b", " ", name).strip()
+
+
+@lru_cache(maxsize=1)
+def _load_embedding_model():
+    """Load MiniLM only when explicitly enabled; normal demo startup is offline."""
+    from sentence_transformers import SentenceTransformer
+
+    return SentenceTransformer(os.getenv("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2"))
+
+
+def _semantic_similarity(left: str, right: str) -> float:
+    if os.getenv("ENABLE_SEMANTIC_MATCHING", "false").strip().lower() in {"1", "true", "yes"}:
+        try:
+            model = _load_embedding_model()
+            vectors = model.encode([left, right], normalize_embeddings=True)
+            return max(0.0, min(1.0, float(vectors[0] @ vectors[1])))
+        except (ImportError, OSError, RuntimeError):
+            # Missing optional model/dependency must not make ingestion unavailable.
+            pass
+    # Deterministic lightweight proxy keeps local matching useful without downloads.
+    return fuzz.token_set_ratio(left, right) / 100.0
 
 
 def haversine_meters(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> float:
@@ -29,25 +53,55 @@ def haversine_meters(lat_a: float, lon_a: float, lat_b: float, lon_b: float) -> 
     return 2 * radius * math.asin(math.sqrt(min(1.0, value)))
 
 
-def compare_hotels(left: dict, right: dict) -> dict[str, float | str]:
-    name_a, name_b = _normalized_name(str(left.get("name", ""))), _normalized_name(
-        str(right.get("name", ""))
-    )
-    token_score = fuzz.token_sort_ratio(name_a, name_b) / 100.0
-    sequence_score = SequenceMatcher(None, name_a, name_b).ratio()
-    name_score = 0.7 * token_score + 0.3 * sequence_score
-    distance = haversine_meters(
-        float(left["latitude"]), float(left["longitude"]),
-        float(right["latitude"]), float(right["longitude"]),
-    )
-    same_destination = str(left.get("destination", "")).casefold() == str(
-        right.get("destination", "")
-    ).casefold()
-    if distance > MAX_GEO_DISTANCE_METERS or not same_destination:
-        score = name_score * 0.55
+def compute_hotel_match_score(
+    supplier_name: str,
+    supplier_addr: str,
+    supplier_lat: float,
+    supplier_lon: float,
+    canonical_name: str,
+    canonical_addr: str,
+    canonical_lat: float,
+    canonical_lon: float,
+) -> tuple[float, dict[str, float | str]]:
+    """Return an explainable hybrid match score and feature breakdown."""
+    distance = haversine_meters(supplier_lat, supplier_lon, canonical_lat, canonical_lon)
+    if distance > 300.0:
+        return 0.0, {"geo_dist_m": round(distance, 1), "reason": "Spatial distance exceeded 300m"}
+
+    name_a = _normalized_name(supplier_name)
+    name_b = _normalized_name(canonical_name)
+    jaro_sim = JaroWinkler.normalized_similarity(name_a, name_b)
+    semantic_sim = _semantic_similarity(name_a, name_b)
+    if supplier_addr and canonical_addr:
+        addr_sim = fuzz.token_set_ratio(_normalized_name(supplier_addr), _normalized_name(canonical_addr)) / 100.0
     else:
-        geo_score = 1.0 - distance / MAX_GEO_DISTANCE_METERS
-        score = 0.78 * name_score + 0.22 * geo_score
+        addr_sim = 0.5
+    geo_sim = max(0.0, 1.0 - distance / 200.0)
+    score = round(0.35 * jaro_sim + 0.35 * semantic_sim + 0.15 * addr_sim + 0.15 * geo_sim, 4)
+    return score, {
+        "jaro_sim": round(jaro_sim, 4),
+        "cosine_sim": round(semantic_sim, 4),
+        "addr_sim": round(addr_sim, 4),
+        "geo_dist_m": round(distance, 1),
+        "geo_sim": round(geo_sim, 4),
+        "composite_score": score,
+    }
+
+
+def compare_hotels(left: dict, right: dict) -> dict[str, float | str]:
+    score, features = compute_hotel_match_score(
+        supplier_name=str(left.get("name", "")),
+        supplier_addr=str(left.get("address", left.get("street_address", ""))),
+        supplier_lat=float(left["latitude"]),
+        supplier_lon=float(left["longitude"]),
+        canonical_name=str(right.get("name", "")),
+        canonical_addr=str(right.get("address", right.get("street_address", ""))),
+        canonical_lat=float(right["latitude"]),
+        canonical_lon=float(right["longitude"]),
+    )
+    if left.get("destination") and right.get("destination") and str(left["destination"]).casefold() != str(right["destination"]).casefold():
+        score = 0.0
+        features["reason"] = "Destination mismatch"
     if score >= AUTO_MERGE_THRESHOLD:
         decision = "AUTO_MERGE"
     elif score >= HUMAN_REVIEW_THRESHOLD:
@@ -55,8 +109,9 @@ def compare_hotels(left: dict, right: dict) -> dict[str, float | str]:
     else:
         decision = "REJECT"
     return {
-        "name_similarity": round(name_score, 4),
-        "distance_meters": round(distance, 2),
-        "score": round(score, 4),
+        "name_similarity": float(features.get("jaro_sim", 0)),
+        "distance_meters": float(features.get("geo_dist_m", 0)),
+        "feature_breakdown": features,
+        "score": round(float(score), 4),
         "decision": decision,
     }

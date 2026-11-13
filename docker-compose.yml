@@ -30,6 +30,59 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build: .
+    container_name: tbo_api
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      USE_DATABASE: "true"
+      USE_REDIS: "true"
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgrespassword}@postgres:5432/${DB_NAME:-tbo_inventory}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      ENABLE_CELERY: "true"
+    ports:
+      - "${PORT:-8000}:8000"
+    command: ["sh", "-c", "python scripts/seed_demo_db.py && uvicorn services.main:app --host 0.0.0.0 --port 8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 4s
+      retries: 10
+
+  worker:
+    build: .
+    container_name: tbo_worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgrespassword}@postgres:5432/${DB_NAME:-tbo_inventory}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      ENABLE_CELERY: "true"
+    command: ["celery", "-A", "services.tasks:celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    container_name: tbo_web
+    ports:
+      - "5500:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   pgdata:
   redisdata:

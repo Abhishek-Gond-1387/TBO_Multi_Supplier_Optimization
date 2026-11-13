@@ -68,15 +68,79 @@ out center tags {limit};'''
     return result
 
 
+def fetch_wikidata_attractions(city_name: str = "Dubai", limit: int = 100) -> list[dict]:
+    """Resolve a city in Wikidata, then fetch coordinate-tagged nearby attractions."""
+    city = re.sub(r"[^\w .'-]", "", city_name).strip()
+    headers = {"User-Agent": "TBO-MultiSupplier-Platform/0.2 (open-data demo)"}
+    search = requests.get(
+        "https://www.wikidata.org/w/api.php",
+        params={"action": "wbsearchentities", "search": city, "language": "en", "format": "json", "limit": 1},
+        headers=headers,
+        timeout=20,
+    )
+    search.raise_for_status()
+    entities = search.json().get("search", [])
+    if not entities:
+        raise RuntimeError(f"Wikidata did not find a city entity for {city!r}")
+    city_id = entities[0]["id"]
+    if not re.fullmatch(r"Q\d+", city_id):
+        raise RuntimeError("Wikidata returned an invalid entity identifier")
+    query = f'''PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX schema: <http://schema.org/>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX bd: <http://www.bigdata.com/rdf#>
+SELECT ?item ?itemLabel ?itemDescription ?coordinate WHERE {{
+  ?item wdt:P131* wd:{city_id}; wdt:P625 ?coordinate.
+  OPTIONAL {{ ?item schema:description ?itemDescription FILTER(LANG(?itemDescription) = "en") }}
+  SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
+}} LIMIT {max(1, min(limit, 500))}'''
+    response = requests.get(
+        "https://query.wikidata.org/sparql",
+        params={"query": query, "format": "json"},
+        headers={**headers, "Accept": "application/sparql-results+json"},
+        timeout=45,
+    )
+    response.raise_for_status()
+    bindings = response.json().get("results", {}).get("bindings", [])
+    attractions = []
+    for binding in bindings:
+        point = re.fullmatch(r"Point\((-?[\d.]+) (-?[\d.]+)\)", binding["coordinate"]["value"])
+        if not point:
+            continue
+        attractions.append(
+            {
+                "source_id": binding["item"]["value"].rsplit("/", 1)[-1],
+                "name": binding.get("itemLabel", {}).get("value", "Unnamed attraction"),
+                "latitude": float(point.group(2)),
+                "longitude": float(point.group(1)),
+                "city": city,
+                "description": binding.get("itemDescription", {}).get("value", ""),
+                "star_rating": None,
+                "amenities": [],
+            }
+        )
+    return attractions
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--city", default="Dubai")
     parser.add_argument("--limit", type=int, default=100)
+    parser.add_argument("--source", choices=("osm", "wikidata", "both"), default="osm")
     parser.add_argument(
         "--output", type=Path, default=PROJECT_ROOT / "data" / "osm_inventory.json"
     )
     args = parser.parse_args()
-    inventory = fetch_osm_inventory(args.city, args.limit)
+    inventory = {"hotels": [], "attractions": []}
+    if args.source in {"osm", "both"}:
+        osm = fetch_osm_inventory(args.city, args.limit)
+        inventory["hotels"].extend(osm["hotels"])
+        inventory["attractions"].extend(osm["attractions"])
+    if args.source in {"wikidata", "both"}:
+        inventory["attractions"].extend(fetch_wikidata_attractions(args.city, args.limit))
+    # Keep the first record for each source id when both datasets overlap.
+    inventory["attractions"] = list({row["source_id"]: row for row in inventory["attractions"]}.values())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(inventory, indent=2, ensure_ascii=False), encoding="utf-8")
     print(

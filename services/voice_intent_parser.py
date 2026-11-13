@@ -1,52 +1,86 @@
-"""Rule-based travel query parser; runs locally without paid NLP services."""
+"""Local rules-based travel intent parser with no paid API or model download."""
 
 from __future__ import annotations
 
 import re
 
+DESTINATIONS = (
+    "abu dhabi", "new york", "ras al khaimah", "singapore", "dubai", "goa",
+    "london", "paris", "mumbai", "delhi", "bangkok", "rome", "istanbul",
+)
+LANDMARKS = (
+    "burj khalifa", "palm jumeirah", "dubai mall", "city center", "downtown",
+    "airport", "beach", "marina", "museum", "desert safari",
+)
 INCLUSION_TERMS = {
-    "breakfast": "BREAKFAST",
     "free breakfast": "BREAKFAST",
-    "pool": "POOL",
-    "swimming pool": "POOL",
+    "breakfast": "BREAKFAST",
+    "bed and breakfast": "BREAKFAST",
     "wifi": "WIFI",
     "wi-fi": "WIFI",
-    "cancellation": "FLEXIBLE_CANCELLATION",
-    "free cancellation": "FLEXIBLE_CANCELLATION",
+    "swimming pool": "POOL",
+    "pool": "POOL",
+    "free cancellation": "FREE_CANCELLATION",
+    "flexible cancellation": "FREE_CANCELLATION",
+    "cancellation": "FREE_CANCELLATION",
+    "transfer": "TRANSFERS",
+    "pickup": "TRANSFERS",
+    "pick up": "TRANSFERS",
+    "skip the line": "SKIP_THE_LINE",
+    "fast track": "SKIP_THE_LINE",
+    "private transfer": "PRIVATE_TRANSFER",
 }
 
 
-def parse_voice_query(transcript: str) -> dict[str, object]:
+def parse_voice_travel_query(transcript: str) -> dict[str, object]:
     text = transcript.strip()
     lowered = text.casefold()
+    sightseeing = bool(
+        re.search(r"\b(tour|ticket|experience|sightseeing|attraction|museum|safari|cruise)\b", lowered)
+        or any(place in lowered for place in ("burj khalifa", "dubai frame", "at the top"))
+    )
     result: dict[str, object] = {
-        "transcript": text,
-        "entity_type": "HOTEL" if re.search(r"\bhotel|resort|stay\b", lowered) else "ANY",
+        "raw_query": text,
         "destination": None,
+        "entity_type": "SIGHTSEEING" if sightseeing else "HOTEL",
         "star_rating": None,
         "max_price": None,
-        "landmark": None,
+        "currency": "USD",
         "inclusions": [],
+        "landmark": None,
+        "date_window": None,
     }
-    star_match = re.search(r"\b([1-5])\s*[- ]?star\b", lowered)
-    if star_match:
-        result["star_rating"] = float(star_match.group(1))
-    price_match = re.search(
-        r"\b(?:under|below|less than|max(?:imum)?|up to)\s*(?:\$|usd\s*)?([\d,]+(?:\.\d+)?)",
+    star = re.search(r"\b([1-5])\s*[- ]?star\b", lowered)
+    if star:
+        result["star_rating"] = float(star.group(1))
+    price = re.search(
+        r"\b(?:under|below|less than|max(?:imum)?|up to)\s*(?:\$\s*|usd\s*|aed\s*|inr\s*)?([\d,]+(?:\.\d+)?)",
         lowered,
-    ) or re.search(r"\$\s*([\d,]+(?:\.\d+)?)", lowered)
-    if price_match:
-        result["max_price"] = float(price_match.group(1).replace(",", ""))
-    destination_match = re.search(r"\bin\s+([a-z][a-z .'-]*?)(?=\s+(?:near|with|under|below|for|at)\b|[,;.!?]|$)", text, re.I)
-    if destination_match:
-        result["destination"] = destination_match.group(1).strip().title()
-    landmark_match = re.search(r"\bnear\s+(?:the\s+)?([a-z][a-z '-]*?)(?=\s+(?:with|under|below|for)\b|[,;.!?]|$)", text, re.I)
-    if landmark_match:
-        result["landmark"] = landmark_match.group(1).strip().title()
-    inclusions = {
-        label
-        for phrase, label in INCLUSION_TERMS.items()
-        if re.search(rf"\b{re.escape(phrase)}\b", lowered)
-    }
-    result["inclusions"] = sorted(inclusions)
+    ) or re.search(r"(?:\$|\b(?:usd|aed|inr)\s*)([\d,]+(?:\.\d+)?)", lowered)
+    if price:
+        result["max_price"] = float(price.group(1).replace(",", ""))
+    currency = re.search(r"\b(usd|aed|inr|eur|gbp)\b|\$|€|£", lowered)
+    if currency:
+        symbol = currency.group(0)
+        result["currency"] = {"$": "USD", "€": "EUR", "£": "GBP"}.get(symbol, symbol.upper())
+    for destination in DESTINATIONS:
+        if re.search(rf"\b{re.escape(destination)}\b", lowered):
+            result["destination"] = destination.title()
+            break
+    for landmark in LANDMARKS:
+        if re.search(rf"\b{re.escape(landmark)}\b", lowered):
+            result["landmark"] = landmark.title()
+            break
+    result["inclusions"] = sorted(
+        {label for phrase, label in INCLUSION_TERMS.items() if re.search(rf"\b{re.escape(phrase)}\b", lowered)}
+    )
+    if re.search(r"\bnext weekend\b", lowered):
+        result["date_window"] = "NEXT_WEEKEND"
+    elif re.search(r"\bthis weekend\b", lowered):
+        result["date_window"] = "THIS_WEEKEND"
     return result
+
+
+def parse_voice_query(transcript: str) -> dict[str, object]:
+    """Compatibility alias used by the first demo API."""
+    return parse_voice_travel_query(transcript)

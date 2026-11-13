@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,10 @@ class SupplierOffer(BaseModel):
     available: bool = True
     cancellation_flexible: bool = False
     reliability_score: float = Field(default=0.75, ge=0, le=1)
+    meal_plan: str = "RO"
+    payment_terms: str = "PAY_NOW"
+    cancellation_policy: dict[str, Any] = Field(default_factory=dict)
+    tax_and_fees: float = Field(default=0, ge=0)
 
 
 class InventoryItem(BaseModel):
@@ -26,6 +30,7 @@ class InventoryItem(BaseModel):
     star_rating: float | None = Field(default=None, ge=0, le=5)
     description: str = ""
     amenities: list[str] = Field(default_factory=list)
+    images: list[str] = Field(default_factory=list)
     offers: list[SupplierOffer] = Field(default_factory=list)
     conversion_prior: float = Field(default=0.5, ge=0, le=1)
     source_id: str | None = None

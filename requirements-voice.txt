@@ -1,0 +1,2 @@
+# Optional server-side transcription. Browser Web Speech remains the zero-install demo path.
+faster-whisper>=1.0.0,<2.0.0
