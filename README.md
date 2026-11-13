@@ -1,4 +1,4 @@
-# TBO Multi-Supplier Inventory Engine
+# TBO_Multi_Supplier_Optimization
 
 A runnable local MVP for comparing hotel inventory from multiple suppliers. It includes a FastAPI service, sample Dubai inventory, viewport map, voice query parsing, deterministic duplicate matching, room and sightseeing normalization, and a PostgreSQL/PostGIS/pgvector plus Redis development stack.
 
