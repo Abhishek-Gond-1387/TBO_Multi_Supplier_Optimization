@@ -6,6 +6,8 @@ This release is a Delhi-only pilot for the multi-supplier inventory objective. I
 
 OpenStreetMap does not provide customer review scores, bookable room rates, current availability, cancellation terms, or supplier reliability. Its occasional `stars` tag is a mapped property classification, not a live customer rating. Live supplier comparison and booking conversion ranking require authorized supplier feeds, which this pilot does not connect to. Until the Delhi open-data refresh succeeds, bundled Delhi rows may appear as an explicitly labelled illustrative fallback.
 
+Each map result offers free click-through searches for current Google Maps reviews and external hotel or place pricing pages. Those pages are not API-integrated values and are not aggregated or guaranteed to refer to an exact bookable offer in this app.
+
 ## Run the demo without Docker
 
 Use Python 3.10 or later. On Windows, open the repository folder and run `run_demo.bat` (or double-click it). The launcher creates `.venv` if needed, installs `requirements.txt` when core packages are missing, creates a local `.env` from the example if needed, starts the API and frontend, checks both are responding, opens the Delhi map, and prints a short open-data walkthrough. The API refreshes the Delhi snapshot in the background when no recent snapshot exists. Keep the launcher window open while presenting; press **Ctrl+C** in it to stop the services it started. Startup logs are saved under `.demo-logs/` and are ignored by Git.

@@ -43,6 +43,9 @@
     .price-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; }
     .price { font-size:18px; font-weight:800; letter-spacing:-.02em; }
     .badge { padding:4px 7px; border-radius:999px; color:#09636a; background:#e4f5f3; font-size:9px; font-weight:800; letter-spacing:.04em; }
+    .source-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:9px; font-size:11px; font-weight:700; }
+    .source-links a { color:var(--accent-dark); text-decoration:none; }
+    .source-links a:hover { text-decoration:underline; }
     .route-button { height:auto; margin-top:9px; padding:6px 9px; color:var(--accent-dark); font-size:11px; }
     .route-note { margin-left:7px; color:var(--muted); font-size:11px; }
     .empty,.error { padding:18px 0; color:var(--muted); }
@@ -106,7 +109,7 @@
       <p class="eyebrow" id="section-label">Delhi · Hotel stays</p>
       <h1>Explore Delhi</h1>
       <div class="data-status-row"><span class="data-state" id="data-state" aria-live="polite">Checking Delhi open data…</span><button id="refresh-data" type="button">↻ Refresh</button></div>
-      <p class="subhead" id="data-note">Open place listings are separate from customer review scores, live room rates, and availability.</p>
+      <p class="subhead" id="data-note">Open place records do not include customer ratings or bookable prices. Use each listing's links to check current provider pages.</p>
       <div class="summary"><span id="result-count" aria-live="polite">Loading stays…</span><label><input id="search-on-move" type="checkbox" checked> Filter to map view</label></div>
       <div id="results"></div>
     </aside>
@@ -165,6 +168,27 @@
       return String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
     }
     const money = offer => offer ? new Intl.NumberFormat(undefined, { style:'currency', currency:offer.currency, maximumFractionDigits:0 }).format(offer.price) : 'No live quote';
+    function externalLookups(item) {
+      const query = `${item.name}, ${item.destination}, India`;
+      const encoded = encodeURIComponent(query);
+      const category = String(item.source_category || '').toLowerCase();
+      const priceIntent = /restaurant|cafe|fast food|food court|pub|bar/.test(category)
+        ? 'menu prices'
+        : /shopping|mall|department store|supermarket/.test(category)
+          ? 'prices'
+          : 'tickets entry price';
+      const dateParam = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      const checkin = new Date();
+      checkin.setDate(checkin.getDate()+1);
+      const checkout = new Date(checkin);
+      checkout.setDate(checkout.getDate()+1);
+      return {
+        reviews:`https://www.google.com/maps/search/?api=1&query=${encoded}`,
+        rates:item.entity_type === 'HOTEL'
+          ? `https://www.booking.com/searchresults.html?ss=${encoded}&checkin=${dateParam(checkin)}&checkout=${dateParam(checkout)}&group_adults=2&no_rooms=1&group_children=0`
+          : `https://www.google.com/search?q=${encodeURIComponent(`${item.name} ${item.destination} India ${priceIntent}`)}`
+      };
+    }
     function selectedScope() {
       return { country:'IN', city:'Delhi', countryCode:'IN', currency:'' };
     }
@@ -202,7 +226,9 @@
         const starsText = item.entity_type === 'HOTEL' ? (item.star_rating ? `${item.star_rating} OSM-listed stars` : 'Hotel place') : (item.source_category || 'Experience & place');
         const offerSummary = isOpenData ? 'OpenStreetMap place record' : `${item.offers.length} illustrative supplier offers`;
         const badge = isOpenData ? 'OPEN DATA' : (badges[0] || 'DEMO');
-        card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${offerSummary}</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badge)}</span></div>${route}`;
+        const lookups = externalLookups(item);
+        const sourceLinks = `<div class="source-links"><a href="${escapeHtml(lookups.reviews)}" target="_blank" rel="noopener noreferrer">Check current reviews ↗</a><a href="${escapeHtml(lookups.rates)}" target="_blank" rel="noopener noreferrer">Search current rates ↗</a></div>`;
+        card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${offerSummary}</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badge)}</span></div>${sourceLinks}${route}`;
         results.append(card);
       });
     }
@@ -210,6 +236,7 @@
       const item = result.item;
       const offer = result.selected_supplier || item.offers.filter(candidate => candidate.available).sort((a,b) => a.price-b.price)[0];
       const isOpenData = String(item.source_id || '').startsWith('osm/');
+      const lookups = externalLookups(item);
       return {
         type:'Feature',
         geometry:{ type:'Point', coordinates:[item.longitude,item.latitude] },
@@ -222,6 +249,8 @@
           price_label:offer ? money(offer) : (item.entity_type === 'HOTEL' ? (isOpenData ? 'Quote needed' : 'View rates') : 'Experience'),
           price_text:offer ? `${offer.currency} ${Number(offer.price).toLocaleString()}` : (isOpenData ? 'Supplier quote unavailable in open data' : 'Illustrative price only'),
           supplier:offer?.supplier_name || '',
+          reviews_url:lookups.reviews,
+          rates_url:lookups.rates,
           badges:(result.badges || []).slice(0,2).join(' · ')
         }
       };
@@ -298,7 +327,7 @@
           if (!feature) return;
           const props = feature.properties;
           const type = props.entity_type === 'HOTEL' ? `${props.stars || 'Unrated'} star hotel` : 'Experience';
-          const popup = `<div class="popup-title">${escapeHtml(props.name)}</div><div class="popup-meta">${escapeHtml(props.destination)} · ${type}${props.badges ? ` · ${escapeHtml(props.badges)}` : ''}</div><div class="popup-price">${escapeHtml(props.price_text)}</div>${props.supplier ? `<div class="popup-meta">via ${escapeHtml(props.supplier)}</div>` : ''}`;
+          const popup = `<div class="popup-title">${escapeHtml(props.name)}</div><div class="popup-meta">${escapeHtml(props.destination)} · ${type}${props.badges ? ` · ${escapeHtml(props.badges)}` : ''}</div><div class="popup-price">${escapeHtml(props.price_text)}</div>${props.supplier ? `<div class="popup-meta">via ${escapeHtml(props.supplier)}</div>` : ''}<div class="source-links"><a href="${escapeHtml(props.reviews_url)}" target="_blank" rel="noopener noreferrer">Reviews ↗</a><a href="${escapeHtml(props.rates_url)}" target="_blank" rel="noopener noreferrer">Rates ↗</a></div>`;
           new maplibregl.Popup({ closeButton:true, maxWidth:'290px', offset:12 })
             .setLngLat(feature.geometry.coordinates)
             .setHTML(popup)
@@ -443,7 +472,7 @@
       } else if (status.has_live_data) {
         const when = refreshedAt ? new Date(refreshedAt).toLocaleString() : 'recently';
         dataState.textContent = `OpenStreetMap · updated ${when}${status.stale ? ' · stale' : ''}`;
-        dataNote.textContent = `${status.hotel_count} hotel places + ${status.attraction_count} experiences & other places. OSM stars are classifications, not user ratings; no live rates or availability are supplied.`;
+        dataNote.textContent = `${status.hotel_count} hotel places + ${status.attraction_count} experiences & other places. OSM stars are classifications, not user ratings; use listing links for current external reviews and prices.`;
       } else if (status.state === 'error') {
         dataState.textContent = status.has_live_data ? 'Refresh failed · showing cached OSM places' : 'Live place feed unavailable';
         dataNote.textContent = status.has_live_data
