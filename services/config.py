@@ -55,10 +55,11 @@ HUMAN_REVIEW_THRESHOLD = env_float("DEDUP_HUMAN_REVIEW_THRESHOLD", 0.65)
 MAX_GEO_DISTANCE_METERS = env_float("DEDUP_MAX_GEO_DISTANCE_METERS", 250.0)
 MAP_TILE_SERVER_URL = os.getenv(
     "MAP_TILE_SERVER_URL",
-    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
 )
 MAP_ATTRIBUTION = os.getenv(
-    "MAP_ATTRIBUTION", "© OpenStreetMap contributors © CARTO"
+    "MAP_ATTRIBUTION",
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
 )
 MAP_DEFAULT_LATITUDE = env_float("MAP_DEFAULT_LATITUDE", 25.1972)
 MAP_DEFAULT_LONGITUDE = env_float("MAP_DEFAULT_LONGITUDE", 55.2744)

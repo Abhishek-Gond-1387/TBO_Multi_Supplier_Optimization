@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 def fetch_osm_inventory(city_name: str = "Dubai", limit: int = 100) -> dict[str, list[dict]]:
@@ -26,7 +29,7 @@ area["name"="{city}"]["boundary"="administrative"]->.searchArea;
 );
 out center tags {limit};'''
     response = requests.post(
-        "https://overpass-api.de/api/interpreter",
+        os.getenv("OVERPASS_API_URL", "https://overpass-api.de/api/interpreter"),
         data={"data": query},
         headers={"User-Agent": "TBO-MultiSupplier-Platform/0.1 (local demo)"},
         timeout=60,
@@ -73,7 +76,7 @@ def fetch_wikidata_attractions(city_name: str = "Dubai", limit: int = 100) -> li
     city = re.sub(r"[^\w .'-]", "", city_name).strip()
     headers = {"User-Agent": "TBO-MultiSupplier-Platform/0.2 (open-data demo)"}
     search = requests.get(
-        "https://www.wikidata.org/w/api.php",
+        os.getenv("WIKIDATA_API_URL", "https://www.wikidata.org/w/api.php"),
         params={"action": "wbsearchentities", "search": city, "language": "en", "format": "json", "limit": 1},
         headers=headers,
         timeout=20,
@@ -96,7 +99,7 @@ SELECT ?item ?itemLabel ?itemDescription ?coordinate WHERE {{
   SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
 }} LIMIT {max(1, min(limit, 500))}'''
     response = requests.get(
-        "https://query.wikidata.org/sparql",
+        os.getenv("WIKIDATA_SPARQL_URL", "https://query.wikidata.org/sparql"),
         params={"query": query, "format": "json"},
         headers={**headers, "Accept": "application/sparql-results+json"},
         timeout=45,

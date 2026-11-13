@@ -59,9 +59,19 @@
   <script>
     const API = 'http://127.0.0.1:8000/api/v1';
     const map = L.map('map').setView([25.1972, 55.2744], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-    }).addTo(map);
+    async function addBaseMap() {
+      const fallback = {
+        tile_url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+      };
+      let settings = fallback;
+      try {
+        const response = await fetch(`${API}/config/map`);
+        if (response.ok) settings = { ...fallback, ...await response.json() };
+      } catch (_) { /* Use the free OpenStreetMap demo default if the API is temporarily unavailable. */ }
+      L.tileLayer(settings.tile_url, { maxZoom: 19, attribution: settings.attribution }).addTo(map);
+    }
+    addBaseMap();
     const markers = L.markerClusterGroup({ chunkedLoading:true, maxClusterRadius:52 }).addTo(map);
     const results = document.getElementById('results');
     const count = document.getElementById('result-count');
@@ -127,7 +137,7 @@
       const nearest = attractions.reduce((best, next) => distanceKm(hotel, next) < distanceKm(hotel, best) ? next : best);
       const note = document.getElementById(`route-${itemId}`); note.textContent = `Routing to ${nearest.name}…`;
       const params = new URLSearchParams({from_lat:hotel.latitude, from_lon:hotel.longitude, to_lat:nearest.latitude, to_lon:nearest.longitude, profile:'walking'});
-      try { const route = await fetch(`${API}/routes/summary?${params}`).then(r => r.json()); note.textContent = `${nearest.name}: ${(route.distance_meters/1000).toFixed(1)} km · ${Math.round(route.duration_seconds/60)} min${route.source === 'STRAIGHT_LINE_ESTIMATE' ? ' estimate' : ''}`; }
+      try { const route = await fetch(`${API}/routes/summary?${params}`).then(r => r.json()); const source = route.source === 'OSRM' ? ' · OSRM / OpenStreetMap' : ' · estimate'; note.textContent = `${nearest.name}: ${(route.distance_meters/1000).toFixed(1)} km · ${Math.round(route.duration_seconds/60)} min${source}`; }
       catch (_) { note.textContent = 'Route unavailable'; }
     });
     function distanceKm(a,b) { const toRad = n => n*Math.PI/180; const dLat=toRad(b.latitude-a.latitude), dLon=toRad(b.longitude-a.longitude); const x=Math.sin(dLat/2)**2+Math.cos(toRad(a.latitude))*Math.cos(toRad(b.latitude))*Math.sin(dLon/2)**2; return 6371*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }

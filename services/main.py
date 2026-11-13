@@ -31,6 +31,11 @@ from services.config import (
     CORS_ORIGINS,
     DEBUG,
     ENABLE_CELERY,
+    MAP_ATTRIBUTION,
+    MAP_DEFAULT_LATITUDE,
+    MAP_DEFAULT_LONGITUDE,
+    MAP_DEFAULT_ZOOM,
+    MAP_TILE_SERVER_URL,
     USE_DATABASE,
 )
 from services.dynamic_ranking_engine import rank_items
@@ -56,6 +61,8 @@ MATCH_DECISIONS = Counter("tbo_match_decisions_total", "Hotel match decisions", 
 TELEMETRY: dict[str, int] = {"IMPRESSION": 0, "DETAIL_VIEW": 0, "BOOKING_INTENT": 0, "BOOKED": 0}
 REVIEW_QUEUE: list[dict[str, Any]] = []
 AUDIT_LOG: list[dict[str, Any]] = []
+_OSRM_REQUEST_LOCK = asyncio.Lock()
+_OSRM_LAST_REQUEST = 0.0
 
 
 @asynccontextmanager
@@ -254,6 +261,18 @@ async def api_health() -> dict[str, Any]:
         "environment": APP_ENV,
         "database": database_state,
         "cache": cache_status(),
+    }
+
+
+@app.get(f"{API_V1_PREFIX}/config/map")
+def map_config() -> dict[str, Any]:
+    """Expose public, non-secret map settings so the tile provider can be switched by config."""
+    return {
+        "tile_url": MAP_TILE_SERVER_URL,
+        "attribution": MAP_ATTRIBUTION,
+        "default_latitude": MAP_DEFAULT_LATITUDE,
+        "default_longitude": MAP_DEFAULT_LONGITUDE,
+        "default_zoom": MAP_DEFAULT_ZOOM,
     }
 
 
@@ -524,11 +543,19 @@ async def route_summary(
     to_lon: float = Query(ge=-180, le=180),
     profile: Literal["driving", "walking", "cycling"] = "driving",
 ) -> dict[str, Any]:
+    global _OSRM_LAST_REQUEST
     base = os.getenv("OSRM_BASE_URL", "https://router.project-osrm.org").rstrip("/")
     url = f"{base}/route/v1/{profile}/{from_lon},{from_lat};{to_lon},{to_lat}"
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            response = await client.get(url, params={"overview": "false", "steps": "false"})
+        async with _OSRM_REQUEST_LOCK:
+            wait = 1.0 - (time.monotonic() - _OSRM_LAST_REQUEST)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            try:
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    response = await client.get(url, params={"overview": "false", "steps": "false"})
+            finally:
+                _OSRM_LAST_REQUEST = time.monotonic()
         response.raise_for_status()
         route = response.json().get("routes", [])[0]
         return {"source": "OSRM", "profile": profile, "distance_meters": round(route["distance"], 1), "duration_seconds": round(route["duration"], 1)}

@@ -12,6 +12,13 @@ def test_health_reports_sample_mode_without_database():
     assert response.json()["database"]["configured"] is False
 
 
+def test_public_map_configuration_defaults_to_no_key_osm_tiles():
+    response = client.get("/api/v1/config/map")
+    assert response.status_code == 200
+    assert response.json()["tile_url"] == "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    assert "OpenStreetMap contributors" in response.json()["attribution"]
+
+
 def test_search_returns_ranked_supplier_offers():
     response = client.get(
         "/api/v1/inventory/search",
