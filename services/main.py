@@ -35,8 +35,8 @@ from services.config import (
     MAP_ATTRIBUTION,
     MAP_DEFAULT_LATITUDE,
     MAP_DEFAULT_LONGITUDE,
+    MAP_STYLE_URL,
     MAP_DEFAULT_ZOOM,
-    MAP_TILE_SERVER_URL,
     USE_DATABASE,
 )
 from services.dynamic_ranking_engine import rank_items
@@ -65,6 +65,8 @@ REVIEW_QUEUE: list[dict[str, Any]] = []
 AUDIT_LOG: list[dict[str, Any]] = []
 _OSRM_REQUEST_LOCK = asyncio.Lock()
 _OSRM_LAST_REQUEST = 0.0
+_INVENTORY_CACHE_SIGNATURE: tuple[tuple[str, int, int], ...] | None = None
+_INVENTORY_CACHE: list[InventoryItem] | None = None
 
 
 @asynccontextmanager
@@ -103,10 +105,25 @@ async def instrument_requests(request: Request, call_next):
     return response
 
 
+def _local_inventory_signature() -> tuple[tuple[str, int, int], ...]:
+    signature = []
+    for path in (INVENTORY_PATH, OPEN_DATA_INVENTORY_PATH):
+        try:
+            stat = path.stat()
+            signature.append((str(path.resolve()), stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            signature.append((str(path.resolve()), -1, -1))
+    return tuple(signature)
+
+
 async def load_inventory() -> list[InventoryItem]:
+    global _INVENTORY_CACHE_SIGNATURE, _INVENTORY_CACHE
     if USE_DATABASE:
         rows = await database.load_inventory()
     else:
+        signature = _local_inventory_signature()
+        if _INVENTORY_CACHE is not None and signature == _INVENTORY_CACHE_SIGNATURE:
+            return list(_INVENTORY_CACHE)
         with INVENTORY_PATH.open(encoding="utf-8") as inventory_file:
             rows = json.load(inventory_file)
         if OPEN_DATA_INVENTORY_PATH.exists():
@@ -132,7 +149,11 @@ async def load_inventory() -> list[InventoryItem]:
                         "offers": record.get("offers", []),
                         "conversion_prior": 0.3,
                     })
-    return [InventoryItem.model_validate(row) for row in rows]
+    items = [InventoryItem.model_validate(row) for row in rows]
+    if not USE_DATABASE:
+        _INVENTORY_CACHE_SIGNATURE = signature
+        _INVENTORY_CACHE = items
+    return list(items)
 
 
 class VoiceRequest(BaseModel):
@@ -300,9 +321,9 @@ async def api_health() -> dict[str, Any]:
 
 @app.get(f"{API_V1_PREFIX}/config/map")
 def map_config() -> dict[str, Any]:
-    """Expose public, non-secret map settings so the tile provider can be switched by config."""
+    """Expose public map style and India-first view settings."""
     return {
-        "tile_url": MAP_TILE_SERVER_URL,
+        "style_url": MAP_STYLE_URL,
         "attribution": MAP_ATTRIBUTION,
         "default_latitude": MAP_DEFAULT_LATITUDE,
         "default_longitude": MAP_DEFAULT_LONGITUDE,

@@ -15,10 +15,10 @@ def test_health_reports_sample_mode_without_database():
     assert response.json()["database"]["configured"] is False
 
 
-def test_public_map_configuration_defaults_to_no_key_osm_tiles():
+def test_public_map_configuration_defaults_to_free_vector_map_style():
     response = client.get("/api/v1/config/map")
     assert response.status_code == 200
-    assert response.json()["tile_url"] == "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    assert response.json()["style_url"] == "https://tiles.openfreemap.org/styles/liberty"
     assert "OpenStreetMap contributors" in response.json()["attribution"]
     assert response.json()["default_latitude"] == 22.9734
     assert response.json()["default_zoom"] == 4

@@ -53,9 +53,9 @@ CORS_ORIGINS = [
 AUTO_MERGE_THRESHOLD = env_float("DEDUP_AUTO_MERGE_THRESHOLD", 0.88)
 HUMAN_REVIEW_THRESHOLD = env_float("DEDUP_HUMAN_REVIEW_THRESHOLD", 0.65)
 MAX_GEO_DISTANCE_METERS = env_float("DEDUP_MAX_GEO_DISTANCE_METERS", 250.0)
-MAP_TILE_SERVER_URL = os.getenv(
-    "MAP_TILE_SERVER_URL",
-    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+MAP_STYLE_URL = os.getenv(
+    "MAP_STYLE_URL",
+    "https://tiles.openfreemap.org/styles/liberty",
 )
 MAP_ATTRIBUTION = os.getenv(
     "MAP_ATTRIBUTION",

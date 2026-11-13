@@ -3,99 +3,160 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TBO | Multi-Supplier Discovery</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <title>TBO | India Discovery Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^6.18.0/dist/maplibre-gl.css">
   <style>
-    :root { color-scheme: light; --ink:#172b3a; --muted:#6c7b86; --line:#e4eaed; --accent:#087f8c; }
+    :root { color-scheme: light; --ink:#1b2936; --muted:#687581; --line:#e4e9ee; --accent:#087f8c; --accent-dark:#075e68; --canvas:#edf1f4; }
     * { box-sizing:border-box; }
-    body { margin:0; font:14px/1.45 Inter,Segoe UI,Arial,sans-serif; color:var(--ink); background:#f4f7f8; }
-    header { min-height:72px; padding:14px 22px; display:flex; align-items:center; gap:16px; background:#fff; border-bottom:1px solid var(--line); }
-    .brand { font-weight:800; letter-spacing:.03em; white-space:nowrap; }.brand span { color:var(--accent); }
-    .search { display:flex; align-items:center; gap:8px; width:min(800px,100%); margin:auto; }
-    input,select,button { border:1px solid #d8e0e4; border-radius:9px; padding:10px 12px; background:#fff; color:var(--ink); font:inherit; }
-    input { flex:1; min-width:120px; } button { cursor:pointer; font-weight:650; } button.primary { background:var(--accent); color:white; border-color:var(--accent); }
-    button:hover { filter:brightness(.96); } .layout { height:calc(100vh - 72px); display:grid; grid-template-columns:minmax(310px,380px) 1fr; }
-    .top-link { color:var(--accent); text-decoration:none; font-weight:700; white-space:nowrap; }
-    aside { overflow:auto; padding:20px; background:#fff; border-right:1px solid var(--line); }
-    .eyebrow { margin:0 0 4px; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
-    h1 { margin:0 0 18px; font-size:22px; } .summary { display:flex; justify-content:space-between; align-items:center; margin:0 0 12px; color:var(--muted); }
-    .card { padding:15px 0; border-top:1px solid var(--line); } .card h2 { margin:0 0 5px; font-size:15px; }
-    .meta { color:var(--muted); font-size:12px; }.price-row { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
-    .price { font-size:19px; font-weight:750; } .badge { padding:4px 7px; border-radius:5px; color:#09636a; background:#e4f5f3; font-size:10px; font-weight:700; }
-    .route-button { margin-top:10px; color:var(--accent); padding:7px 9px; font-size:12px; }.route-note { margin-left:8px; color:var(--muted); font-size:11px; }
-    .map-tools { position:absolute; top:86px; right:18px; z-index:500; padding:9px 12px; background:white; border-radius:9px; box-shadow:0 2px 10px #18394a24; }
-    #map { width:100%; height:100%; } .pin { min-width:48px; padding:5px 7px; text-align:center; color:#12303b; background:#fff; border:1px solid #b8d0d4; border-radius:14px; box-shadow:0 2px 8px #16354430; font-weight:750; }
-    .empty { color:var(--muted); padding:22px 0; }.error { color:#a53030; padding:12px 0; font-size:13px; }
-    #search-on-move { width:auto; min-width:0; margin:0 4px 0 0; flex:none; }
-    @media(max-width:720px) { header { height:auto; flex-wrap:wrap; padding:12px; } .brand { width:100%; } .search { flex-wrap:wrap; } .layout { height:calc(100vh - 126px); grid-template-columns:1fr; grid-template-rows:42% 58%; } aside { order:2; padding:14px; border:0; } #map { order:1; } }
+    body { margin:0; color:var(--ink); background:var(--canvas); font:14px/1.45 Inter,"Segoe UI",Arial,sans-serif; }
+    header { position:relative; z-index:5; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px 18px; min-height:112px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--line); box-shadow:0 2px 10px #1526360d; }
+    .brand { display:flex; align-items:center; gap:9px; font-size:15px; font-weight:800; letter-spacing:.035em; white-space:nowrap; }
+    .brand-mark { display:grid; width:34px; height:34px; place-items:center; border-radius:11px; color:#fff; background:linear-gradient(145deg,#0795a0,#075e68); box-shadow:0 4px 9px #087f8c35; }
+    .brand span:last-child { color:var(--accent); }
+    .top-link { justify-self:end; display:inline-flex; align-items:center; gap:7px; color:var(--accent-dark); text-decoration:none; font-weight:700; white-space:nowrap; }
+    .search { grid-column:1/-1; display:grid; grid-template-columns:132px 145px minmax(170px,1.3fr) 124px 122px 112px 120px 95px 44px; gap:8px; width:100%; margin:0; }
+    input,select,button { min-width:0; height:42px; padding:0 11px; border:1px solid #dce3e8; border-radius:10px; outline:none; background:#fff; color:var(--ink); font:inherit; }
+    input:focus,select:focus,button:focus-visible { border-color:#42aab0; box-shadow:0 0 0 3px #0c87901c; }
+    input::placeholder { color:#89949d; }
+    button { cursor:pointer; font-weight:700; transition:transform .12s ease,filter .12s ease,box-shadow .12s ease; }
+    button:hover { filter:brightness(.97); transform:translateY(-1px); }
+    button.primary { color:#fff; border-color:var(--accent); background:linear-gradient(140deg,#0d8d95,var(--accent-dark)); box-shadow:0 3px 9px #087f8c27; }
+    button.primary:disabled { cursor:wait; opacity:.72; transform:none; }
+    #voice { padding:0; font-size:18px; }
+    .layout { display:grid; grid-template-columns:minmax(330px,390px) minmax(0,1fr); height:calc(100vh - 112px); min-height:520px; }
+    aside { z-index:2; overflow:auto; padding:20px 20px 24px; background:#fff; border-right:1px solid var(--line); }
+    .eyebrow { display:flex; align-items:center; gap:8px; margin:0 0 4px; color:var(--accent-dark); font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+    .eyebrow::before { width:7px; height:7px; border-radius:50%; background:#1a9ca0; content:""; }
+    h1 { margin:0 0 6px; font-size:22px; line-height:1.2; letter-spacing:-.025em; }
+    .subhead { margin:0 0 17px; color:var(--muted); font-size:12px; }
+    .summary { position:sticky; top:-20px; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 -20px 8px; padding:10px 20px; color:var(--muted); background:#ffffffef; border-top:1px solid var(--line); border-bottom:1px solid var(--line); backdrop-filter:blur(8px); }
+    #result-count { color:var(--ink); font-weight:750; }
+    .summary label { display:flex; align-items:center; gap:6px; font-size:11px; white-space:nowrap; }
+    #search-on-move { width:15px; height:15px; margin:0; accent-color:var(--accent); }
+    .card { padding:14px 0; border-bottom:1px solid var(--line); }
+    .card h2 { margin:0 0 5px; font-size:15px; line-height:1.35; }
+    .meta { color:var(--muted); font-size:12px; }
+    .price-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; }
+    .price { font-size:18px; font-weight:800; letter-spacing:-.02em; }
+    .badge { padding:4px 7px; border-radius:999px; color:#09636a; background:#e4f5f3; font-size:9px; font-weight:800; letter-spacing:.04em; }
+    .route-button { height:auto; margin-top:9px; padding:6px 9px; color:var(--accent-dark); font-size:11px; }
+    .route-note { margin-left:7px; color:var(--muted); font-size:11px; }
+    .empty,.error { padding:18px 0; color:var(--muted); }
+    .error { color:#a53030; }
+    #map-wrap { position:relative; min-width:0; overflow:hidden; background:#e8edf0; }
+    #map { width:100%; height:100%; }
+    .map-loading { position:absolute; top:16px; left:16px; z-index:2; display:flex; align-items:center; gap:9px; max-width:min(360px,calc(100% - 32px)); padding:9px 12px; border:1px solid #ffffffd9; border-radius:12px; color:#334653; background:#fffffff0; box-shadow:0 4px 16px #1d324018; font-size:12px; pointer-events:none; }
+    .map-loading[hidden] { display:none; }
+    .spinner { width:15px; height:15px; flex:none; border:2px solid #d5e5e5; border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .maplibregl-ctrl-group { overflow:hidden; border:1px solid #e0e6eb!important; border-radius:11px!important; box-shadow:0 3px 12px #1526361c!important; }
+    .maplibregl-ctrl-group button { width:38px; height:38px; border-radius:0; }
+    .maplibregl-ctrl-attrib { border-radius:8px 0 0 0; background:#ffffffd9!important; font-size:10px; }
+    .maplibregl-ctrl-scale { border-color:#556673!important; color:#344652; background:#ffffffd9!important; }
+    .maplibregl-popup-content { padding:12px 14px; border-radius:12px; box-shadow:0 6px 24px #18334429; font:13px/1.45 Inter,"Segoe UI",Arial,sans-serif; }
+    .maplibregl-popup-close-button { width:26px; height:26px; border-radius:50%; color:#52616c; font-size:18px; }
+    .popup-title { margin:0 24px 4px 0; color:#182c3b; font-size:14px; font-weight:800; }
+    .popup-meta { color:#657581; font-size:11px; }
+    .popup-price { margin-top:7px; color:#08727b; font-size:15px; font-weight:800; }
+    @media(max-width:1160px) {
+      header { grid-template-columns:auto 1fr; }
+      .top-link { grid-column:2; grid-row:1; }
+      .search { grid-template-columns:repeat(4,minmax(0,1fr)); }
+      .search #query { grid-column:span 2; }
+      .layout { height:calc(100vh - 164px); }
+    }
+    @media(max-width:720px) {
+      header { display:grid; grid-template-columns:1fr auto; gap:10px; padding:10px 12px; }
+      .brand { grid-column:1; }
+      .top-link { grid-column:2; grid-row:1; }
+      .search { grid-column:1/-1; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+      .search #query { grid-column:span 2; }
+      .search button.primary { grid-column:span 1; }
+      #voice { width:100%; }
+      .layout { height:calc(100vh - 245px); min-height:480px; grid-template-columns:1fr; grid-template-rows:minmax(250px,48%) minmax(0,1fr); }
+      #map-wrap { grid-row:1; }
+      aside { grid-row:2; padding:14px; border-right:0; }
+      .summary { top:-14px; margin:0 -14px 6px; padding:9px 14px; }
+      .map-loading { top:10px; left:10px; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">TBO <span>DISCOVERY</span></div>
+    <div class="brand"><span class="brand-mark">T</span><span>TBO</span><span>DISCOVERY</span></div>
+    <a class="top-link" href="/admin.html">Match review <span aria-hidden="true">↗</span></a>
     <form class="search" id="search-form">
       <select id="country" aria-label="Country"><option value="IN">India</option><option value="AE">Dubai / UAE</option><option value="ALL">All destinations</option></select>
       <select id="destination" aria-label="City or destination"><option value="ALL">All in India</option></select>
-      <input id="query" aria-label="Search inventory" placeholder="Hotel, area, or amenity">
+      <input id="query" aria-label="Search inventory" placeholder="Hotel, area, or amenity" autocomplete="off">
       <select id="category" aria-label="Inventory type"><option value="HOTEL">Hotels</option><option value="ATTRACTION">Experiences</option><option value="ANY">All inventory</option></select>
       <select id="stars" aria-label="Minimum star rating"><option value="">Any rating</option><option value="3">3+ stars</option><option value="4">4+ stars</option><option value="5">5 stars</option></select>
       <select id="currency" aria-label="Price currency"><option value="INR">INR ₹</option><option value="USD">USD $</option><option value="ANY">Any currency</option></select>
       <input id="max-price" type="number" min="1" placeholder="Max price" aria-label="Maximum price">
-      <button class="primary" type="submit">Search</button>
-      <button type="button" id="voice" title="Search by voice">🎙</button>
+      <button class="primary" id="search-button" type="submit">Search</button>
+      <button type="button" id="voice" title="Search by voice" aria-label="Search by voice">🎙</button>
     </form>
-    <a class="top-link" href="/admin.html">Match review</a>
   </header>
   <main class="layout">
     <aside>
       <p class="eyebrow" id="section-label">India · Hotel stays</p>
       <h1>Explore India first</h1>
-      <p class="meta">Sample inventory and illustrative rates — not live hotel quotes.</p>
-      <div class="summary"><span id="result-count">Loading stays…</span><label><input id="search-on-move" type="checkbox" checked> Search as map moves</label></div>
+      <p class="subhead">Open map data · Demo supplier rates are illustrative, not live quotes.</p>
+      <div class="summary"><span id="result-count" aria-live="polite">Loading stays…</span><label><input id="search-on-move" type="checkbox" checked> Filter to map view</label></div>
       <div id="results"></div>
     </aside>
-    <div id="map" aria-label="Hotel map"></div>
+    <section id="map-wrap" aria-label="Discovery map">
+      <div id="map" aria-label="Hotel map"></div>
+      <div class="map-loading" id="map-status"><span class="spinner"></span><span id="map-status-text">Loading free vector map…</span></div>
+    </section>
   </main>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <script>
+  <script type="module">
+    import * as maplibregl from 'https://unpkg.com/maplibre-gl@^6.18.0/dist/maplibre-gl.mjs';
+
     const API = 'http://127.0.0.1:8000/api/v1';
-    const map = L.map('map').setView([22.9734, 78.6569], 4);
-    async function addBaseMap() {
-      const fallback = {
-        tile_url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-      };
-      let settings = fallback;
-      try {
-        const response = await fetch(`${API}/config/map`);
-        if (response.ok) settings = { ...fallback, ...await response.json() };
-      } catch (_) { /* Use the free OpenStreetMap demo default if the API is temporarily unavailable. */ }
-      L.tileLayer(settings.tile_url, { maxZoom: 19, attribution: settings.attribution }).addTo(map);
-    }
-    addBaseMap();
-    const markers = L.markerClusterGroup({ chunkedLoading:true, maxClusterRadius:52 }).addTo(map);
+    const DEFAULT_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: DEFAULT_STYLE,
+      center: [78.6569, 22.9734],
+      zoom: 4,
+      minZoom: 2,
+      maxZoom: 19,
+      maxPitch: 0,
+      dragRotate: false,
+      pitchWithRotate: false,
+      attributionControl: false,
+      fadeDuration: 120,
+      renderWorldCopies: true
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass:false, showZoom:true }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ maxWidth:110, unit:'metric' }), 'bottom-left');
+    map.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-right');
+
     const results = document.getElementById('results');
     const count = document.getElementById('result-count');
+    const mapStatus = document.getElementById('map-status');
+    const mapStatusText = document.getElementById('map-status-text');
     const countrySelect = document.getElementById('country');
     const destinationSelect = document.getElementById('destination');
     const currencySelect = document.getElementById('currency');
     const priceInput = document.getElementById('max-price');
+    const searchButton = document.getElementById('search-button');
+    const searchOnMove = document.getElementById('search-on-move');
     let destinations = [];
     let countries = [];
-    let visibleSearchIds = null;
-    let attractions = [];
-    const money = (offer) => offer ? new Intl.NumberFormat(undefined, { style:'currency', currency:offer.currency, maximumFractionDigits:0 }).format(offer.price) : 'Price on request';
+    let lastSearchResults = [];
+    let searchController = null;
+    let searchSequence = 0;
+    let mapReady = false;
+    let mapInteractionsInstalled = false;
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+    }
+    const money = offer => offer ? new Intl.NumberFormat(undefined, { style:'currency', currency:offer.currency, maximumFractionDigits:0 }).format(offer.price) : 'Price on request';
     function selectedScope() {
-      return {
-        country: countrySelect.value,
-        city: destinationSelect.value,
-        countryCode: countrySelect.value === 'ALL' ? '' : countrySelect.value,
-        currency: currencySelect.value === 'ANY' ? '' : currencySelect.value
-      };
+      return { country:countrySelect.value, city:destinationSelect.value, countryCode:countrySelect.value === 'ALL' ? '' : countrySelect.value, currency:currencySelect.value === 'ANY' ? '' : currencySelect.value };
     }
     function appendScope(params, includeCurrency = true) {
       const scope = selectedScope();
@@ -115,92 +176,228 @@
     function focusSelectedArea() {
       const scope = selectedScope();
       const city = destinations.find(row => row.destination === scope.city && (scope.country === 'ALL' || row.country_code === scope.country));
-      if (city) map.setView([city.latitude, city.longitude], 12);
+      if (city) map.flyTo({ center:[city.longitude, city.latitude], zoom:12, duration:850, essential:true });
       else {
         const country = countries.find(row => row.code === scope.country);
-        if (country) map.setView([country.latitude, country.longitude], scope.country === 'IN' ? 4 : 6);
-        else map.setView([22.9734, 78.6569], 3);
+        if (country) map.flyTo({ center:[country.longitude, country.latitude], zoom:scope.country === 'IN' ? 4 : 6, duration:850, essential:true });
+        else map.flyTo({ center:[78.6569,22.9734], zoom:3, duration:850, essential:true });
       }
     }
-
+    function currentResults() {
+      if (!searchOnMove.checked || !mapReady) return lastSearchResults;
+      const bounds = map.getBounds();
+      return lastSearchResults.filter(({item}) => bounds.contains([item.longitude, item.latitude]));
+    }
     function renderCards(rows) {
       results.replaceChildren();
-      if (!rows.length) { results.innerHTML = '<div class="empty">No stays match these filters. Try widening your search.</div>'; return; }
+      if (!rows.length) {
+        results.innerHTML = '<div class="empty">No stays match this map view. Zoom out or widen your search.</div>';
+        return;
+      }
       rows.forEach(({item, badges, selected_supplier}) => {
-        const offer = selected_supplier || item.offers.filter(o => o.available).sort((a,b) => a.price-b.price)[0];
-        const card = document.createElement('article'); card.className = 'card';
-        const route = item.entity_type === 'HOTEL' ? `<button class="route-button" type="button" data-route-id="${escapeHtml(item.id)}">Route to nearest attraction</button><span class="route-note" id="route-${escapeHtml(item.id)}"></span>` : '';
-        const starsText = item.star_rating ? `${item.star_rating} stars` : 'Sightseeing';
+        const offer = selected_supplier || item.offers.filter(candidate => candidate.available).sort((a,b) => a.price-b.price)[0];
+        const card = document.createElement('article');
+        card.className = 'card';
+        const route = item.entity_type === 'HOTEL' ? `<button class="route-button" type="button" data-route-id="${escapeHtml(item.id)}">Route to nearest experience</button><span class="route-note" id="route-${escapeHtml(item.id)}"></span>` : '';
+        const starsText = item.star_rating ? `${item.star_rating} stars` : 'Experience';
         card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${item.offers.length} supplier offers</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badges[0] || 'COMPARE')}</span></div>${route}`;
         results.append(card);
       });
     }
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    async function loadSearch() {
+    function toFeature(result) {
+      const item = result.item;
+      const offer = result.selected_supplier || item.offers.filter(candidate => candidate.available).sort((a,b) => a.price-b.price)[0];
+      return {
+        type:'Feature',
+        geometry:{ type:'Point', coordinates:[item.longitude,item.latitude] },
+        properties:{
+          id:item.id,
+          name:item.name,
+          destination:item.destination,
+          entity_type:item.entity_type,
+          stars:item.star_rating || '',
+          price_label:offer ? money(offer) : (item.entity_type === 'HOTEL' ? 'View rates' : 'Experience'),
+          price_text:offer ? `${offer.currency} ${Number(offer.price).toLocaleString()}` : 'Price on request',
+          supplier:offer?.supplier_name || '',
+          badges:(result.badges || []).slice(0,2).join(' · ')
+        }
+      };
+    }
+    function refreshResults() {
+      if (!lastSearchResults.length) return;
+      const rows = currentResults();
+      count.textContent = searchOnMove.checked ? `${rows.length} in this view · ${lastSearchResults.length} total` : `${lastSearchResults.length} matches`;
+      renderCards(rows);
+      const source = mapReady && map.getSource('inventory');
+      if (source) source.setData({ type:'FeatureCollection', features:rows.map(toFeature) });
+    }
+    function installInventoryLayers() {
+      if (map.getSource('inventory')) return;
+      map.addSource('inventory', {
+        type:'geojson',
+        data:{ type:'FeatureCollection', features:[] },
+        cluster:true,
+        clusterMaxZoom:12,
+        clusterRadius:56
+      });
+      map.addLayer({
+        id:'inventory-clusters', type:'circle', source:'inventory', filter:['has','point_count'],
+        paint:{
+          'circle-color':['step',['get','point_count'],'#14858c',10,'#126b79',30,'#174f6a'],
+          'circle-radius':['step',['get','point_count'],19,10,23,30,28],
+          'circle-stroke-color':'#ffffff', 'circle-stroke-width':2,
+          'circle-opacity':0.96
+        }
+      });
+      map.addLayer({
+        id:'inventory-cluster-count', type:'symbol', source:'inventory', filter:['has','point_count'],
+        layout:{ 'text-field':['get','point_count_abbreviated'], 'text-size':12, 'text-font':['Open Sans Semibold','Arial Unicode MS Regular'] },
+        paint:{ 'text-color':'#ffffff' }
+      });
+      map.addLayer({
+        id:'inventory-points', type:'circle', source:'inventory', filter:['!',['has','point_count']],
+        paint:{
+          'circle-color':['match',['get','entity_type'],'HOTEL','#087f8c','#e69a37'],
+          'circle-radius':['interpolate',['linear'],['zoom'],5,6,10,8,16,10],
+          'circle-stroke-color':'#ffffff', 'circle-stroke-width':2,
+          'circle-opacity':0.98
+        }
+      });
+      map.addLayer({
+        id:'inventory-labels', type:'symbol', source:'inventory', filter:['!',['has','point_count']], minzoom:9,
+        layout:{
+          'text-field':['get','price_label'],
+          'text-font':['Open Sans Semibold','Arial Unicode MS Regular'],
+          'text-size':11,
+          'text-offset':[0,1.45],
+          'text-anchor':'top',
+          'text-optional':true
+        },
+        paint:{ 'text-color':'#163642', 'text-halo-color':'#ffffff', 'text-halo-width':2 }
+      });
+      if (!mapInteractionsInstalled) {
+        mapInteractionsInstalled = true;
+        map.on('click','inventory-clusters', event => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          map.getSource('inventory').getClusterExpansionZoom(Number(feature.properties.cluster_id))
+            .then(zoom => map.easeTo({ center:feature.geometry.coordinates, zoom, duration:450 }))
+            .catch(() => {});
+        });
+        map.on('click','inventory-points', event => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          const props = feature.properties;
+          const type = props.entity_type === 'HOTEL' ? `${props.stars || 'Unrated'} star hotel` : 'Experience';
+          const popup = `<div class="popup-title">${escapeHtml(props.name)}</div><div class="popup-meta">${escapeHtml(props.destination)} · ${type}${props.badges ? ` · ${escapeHtml(props.badges)}` : ''}</div><div class="popup-price">${escapeHtml(props.price_text)}</div>${props.supplier ? `<div class="popup-meta">via ${escapeHtml(props.supplier)}</div>` : ''}`;
+          new maplibregl.Popup({ closeButton:true, maxWidth:'290px', offset:12 })
+            .setLngLat(feature.geometry.coordinates)
+            .setHTML(popup)
+            .addTo(map);
+        });
+        for (const layer of ['inventory-clusters','inventory-points']) {
+          map.on('mouseenter',layer,() => { map.getCanvas().style.cursor='pointer'; });
+          map.on('mouseleave',layer,() => { map.getCanvas().style.cursor=''; });
+        }
+      }
+    }
+    map.on('style.load', () => {
+      installInventoryLayers();
+      mapReady = true;
+      mapStatus.hidden = true;
+      refreshResults();
+    });
+    map.on('moveend', refreshResults);
+    map.on('zoomend', () => {
+      document.getElementById('map').setAttribute('aria-label',`Hotel map, zoom level ${Math.round(map.getZoom())}`);
+    });
+    map.on('error', event => {
+      if (!mapReady && event?.error) {
+        mapStatusText.textContent = 'Map style could not load. Check internet access and refresh the page.';
+        mapStatus.querySelector('.spinner').hidden = true;
+      }
+    });
+
+    async function loadSearch({transcript = null} = {}) {
+      const sequence = ++searchSequence;
+      searchController?.abort();
+      searchController = new AbortController();
+      searchButton.disabled = true;
+      searchButton.textContent = 'Searching…';
       count.textContent = 'Searching…';
       const category = document.getElementById('category').value;
       const params = appendScope(new URLSearchParams({ q:document.getElementById('query').value.trim() }));
-      if (category !== 'ANY') params.set('entity_type', category);
-      const stars = document.getElementById('stars').value, price = document.getElementById('max-price').value;
-      if (stars && category === 'HOTEL') params.set('min_stars', stars);
-      if (price && currencySelect.value !== 'ANY') params.set('max_price', price);
+      if (category !== 'ANY') params.set('entity_type',category);
+      const stars = document.getElementById('stars').value;
+      const price = priceInput.value;
+      if (stars && category === 'HOTEL') params.set('min_stars',stars);
+      if (price && currencySelect.value !== 'ANY') params.set('max_price',price);
       const scope = selectedScope();
       const place = scope.city !== 'ALL' ? scope.city : (scope.country === 'ALL' ? 'All destinations' : countrySelect.selectedOptions[0].text);
       document.getElementById('section-label').textContent = `${place} · ${category === 'HOTEL' ? 'Hotel stays' : category === 'ATTRACTION' ? 'Experiences' : 'All inventory'}`;
       try {
-        const response = await fetch(`${API}/inventory/search?${params}`);
-        if (!response.ok) throw new Error(`API returned ${response.status}`);
-        const data = await response.json(); count.textContent = `${data.count} matches`; renderCards(data.results);
-        visibleSearchIds = new Set(data.results.map(row => row.item.id));
-        await loadViewport();
-      } catch (error) { count.textContent = 'API unavailable'; results.innerHTML = `<div class="error">Could not load results. Start the API at 127.0.0.1:8000.<br>${escapeHtml(error.message)}</div>`; }
+        const response = await fetch(`${API}/inventory/search?${params}`,{signal:searchController.signal});
+        if (!response.ok) throw new Error(`Search API returned ${response.status}`);
+        const data = await response.json();
+        if (sequence !== searchSequence) return;
+        lastSearchResults = data.results || [];
+        refreshResults();
+        if (!searchOnMove.checked) count.textContent = `${data.count} matches`;
+      } catch (error) {
+        if (error.name === 'AbortError' || sequence !== searchSequence) return;
+        count.textContent = 'Search unavailable';
+        results.innerHTML = `<div class="error">Could not load search results. Check that the local API is running at 127.0.0.1:8000.<br>${escapeHtml(error.message)}</div>`;
+      } finally {
+        if (sequence === searchSequence) {
+          searchButton.disabled = false;
+          searchButton.textContent = 'Search';
+        }
+      }
     }
-    async function loadViewport() {
-      const b = map.getBounds(); const params = appendScope(new URLSearchParams({ west:b.getWest(), south:b.getSouth(), east:b.getEast(), north:b.getNorth() }));
-      const category = document.getElementById('category').value; if (category !== 'ANY') params.set('entity_type', category);
-      try {
-        const response = await fetch(`${API}/inventory?${params}`); if (!response.ok) return;
-        let {items} = await response.json();
-        if (visibleSearchIds) items = items.filter(item => visibleSearchIds.has(item.id));
-        markers.clearLayers();
-        items.forEach(item => {
-          const offer = item.offers.filter(o => o.available).sort((a,b) => a.price-b.price)[0];
-          const label = item.entity_type === 'HOTEL' ? (offer ? money(offer) : 'View') : 'Experience';
-          const icon = L.divIcon({className:'', html:`<div class="pin">${escapeHtml(label)}</div>`, iconSize:[72,32], iconAnchor:[36,16]});
-          const detail = item.entity_type === 'HOTEL' ? `${item.star_rating || '—'} stars · Best available: ${escapeHtml(label)}` : 'Sightseeing experience';
-          L.marker([item.latitude,item.longitude], {icon}).bindPopup(`<strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.destination)} · ${detail}`).addTo(markers);
-        });
-      } catch (_) { /* Search panel reports API errors. */ }
-    }
-    document.getElementById('search-form').addEventListener('submit', event => { event.preventDefault(); loadSearch(); });
-    map.on('moveend', () => { if (document.getElementById('search-on-move').checked) loadViewport(); });
-    document.getElementById('results').addEventListener('click', async event => {
-      const button = event.target.closest('[data-route-id]'); if (!button) return;
-      const itemId = button.dataset.routeId;
-      const attractionParams = appendScope(new URLSearchParams({entity_type:'ATTRACTION'}), false);
-      const rows = await fetch(`${API}/inventory?${attractionParams}`).then(r => r.json()).catch(() => ({items:[]}));
-      attractions = rows.items || [];
-      const hotelParams = appendScope(new URLSearchParams({entity_type:'HOTEL'}), false);
-      const hotels = await fetch(`${API}/inventory?${hotelParams}`).then(r => r.json()).catch(() => ({items:[]}));
-      const hotel = (hotels.items || []).find(row => row.id === itemId); if (!hotel || !attractions.length) return;
-      const nearest = attractions.reduce((best, next) => distanceKm(hotel, next) < distanceKm(hotel, best) ? next : best);
-      const note = document.getElementById(`route-${itemId}`); note.textContent = `Routing to ${nearest.name}…`;
-      const params = new URLSearchParams({from_lat:hotel.latitude, from_lon:hotel.longitude, to_lat:nearest.latitude, to_lon:nearest.longitude, profile:'walking'});
-      try { const route = await fetch(`${API}/routes/summary?${params}`).then(r => r.json()); const source = route.source === 'OSRM' ? ' · OSRM / OpenStreetMap' : ' · estimate'; note.textContent = `${nearest.name}: ${(route.distance_meters/1000).toFixed(1)} km · ${Math.round(route.duration_seconds/60)} min${source}`; }
-      catch (_) { note.textContent = 'Route unavailable'; }
+    document.getElementById('search-form').addEventListener('submit', event => {
+      event.preventDefault();
+      loadSearch();
     });
-    function distanceKm(a,b) { const toRad = n => n*Math.PI/180; const dLat=toRad(b.latitude-a.latitude), dLon=toRad(b.longitude-a.longitude); const x=Math.sin(dLat/2)**2+Math.cos(toRad(a.latitude))*Math.cos(toRad(b.latitude))*Math.sin(dLon/2)**2; return 6371*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+    document.getElementById('results').addEventListener('click', async event => {
+      const button = event.target.closest('[data-route-id]');
+      if (!button) return;
+      const item = lastSearchResults.find(row => row.item.id === button.dataset.routeId)?.item;
+      if (!item) return;
+      const note = document.getElementById(`route-${button.dataset.routeId}`);
+      note.textContent = 'Finding nearest experience…';
+      const attractionParams = appendScope(new URLSearchParams({entity_type:'ATTRACTION'}),false);
+      try {
+        const response = await fetch(`${API}/inventory?${attractionParams}`);
+        const data = await response.json();
+        const attractions = data.items || [];
+        if (!attractions.length) { note.textContent='No experience in this destination'; return; }
+        const distanceKm = (a,b) => {
+          const rad=n=>n*Math.PI/180, dLat=rad(b.latitude-a.latitude), dLon=rad(b.longitude-a.longitude);
+          const x=Math.sin(dLat/2)**2+Math.cos(rad(a.latitude))*Math.cos(rad(b.latitude))*Math.sin(dLon/2)**2;
+          return 6371*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+        };
+        const nearest = attractions.reduce((best,next)=>distanceKm(item,next)<distanceKm(item,best)?next:best);
+        const params = new URLSearchParams({from_lat:item.latitude,from_lon:item.longitude,to_lat:nearest.latitude,to_lon:nearest.longitude,profile:'walking'});
+        const route = await fetch(`${API}/routes/summary?${params}`).then(result=>result.json());
+        const source = route.source === 'OSRM' ? ' · OpenStreetMap route' : ' · estimate';
+        note.textContent = `${nearest.name}: ${(route.distance_meters/1000).toFixed(1)} km · ${Math.round(route.duration_seconds/60)} min${source}`;
+      } catch (_) { note.textContent='Route unavailable'; }
+    });
     document.getElementById('voice').addEventListener('click', () => {
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Recognition) { alert('Voice search is not available in this browser.'); return; }
-      const recognition = new Recognition(); recognition.lang = 'en-US'; recognition.interimResults = false;
+      const recognition = new Recognition();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = false;
       recognition.onresult = async event => {
         const transcript = event.results[0][0].transcript;
         document.getElementById('query').value = transcript;
+        searchController?.abort();
         try {
-          const response = await fetch(`${API}/voice/query`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({transcript}) });
-          const data = await response.json(); count.textContent = `${data.count} voice matches`; renderCards(data.results);
-          const filters = data.parsed_filters;
+          const response = await fetch(`${API}/voice/query`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript})});
+          const data = await response.json();
+          lastSearchResults = data.results || [];
+          const filters = data.parsed_filters || {};
           countrySelect.value = filters.country_code || 'IN';
           updateDestinations(filters.destination || 'ALL');
           currencySelect.value = filters.currency || (countrySelect.value === 'IN' ? 'INR' : 'USD');
@@ -208,41 +405,44 @@
           priceInput.disabled = currencySelect.value === 'ANY';
           document.getElementById('category').value = filters.entity_type === 'SIGHTSEEING' ? 'ATTRACTION' : 'HOTEL';
           focusSelectedArea();
-          visibleSearchIds = new Set(data.results.map(row => row.item.id)); await loadViewport();
+          refreshResults();
+          count.textContent = `${data.count} voice matches`;
           if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(data.voice_reply));
-        } catch (_) { loadSearch(); }
+        } catch (_) { loadSearch({transcript}); }
       };
       recognition.start();
     });
-    document.getElementById('search-on-move').addEventListener('change', event => { if (event.target.checked) loadViewport(); });
-    countrySelect.addEventListener('change', () => {
+    searchOnMove.addEventListener('change',refreshResults);
+    countrySelect.addEventListener('change',() => {
       updateDestinations();
       currencySelect.value = countrySelect.value === 'IN' ? 'INR' : countrySelect.value === 'AE' ? 'USD' : 'ANY';
       priceInput.disabled = currencySelect.value === 'ANY';
       focusSelectedArea();
       loadSearch();
     });
-    destinationSelect.addEventListener('change', () => { focusSelectedArea(); loadSearch(); });
-    currencySelect.addEventListener('change', () => {
-      priceInput.disabled = currencySelect.value === 'ANY';
-      loadSearch();
-    });
-    priceInput.addEventListener('input', () => { priceInput.disabled = currencySelect.value === 'ANY'; });
-    document.getElementById('category').addEventListener('change', () => loadSearch());
+    destinationSelect.addEventListener('change',() => { focusSelectedArea(); loadSearch(); });
+    currencySelect.addEventListener('change',() => { priceInput.disabled=currencySelect.value==='ANY'; loadSearch(); });
+    document.getElementById('category').addEventListener('change',() => loadSearch());
+
     async function initializeDemo() {
       try {
-        const response = await fetch(`${API}/destinations`);
-        if (response.ok) {
-          const data = await response.json();
+        const [destinationResponse,configResponse] = await Promise.all([
+          fetch(`${API}/destinations`),
+          fetch(`${API}/config/map`)
+        ]);
+        if (destinationResponse.ok) {
+          const data = await destinationResponse.json();
           destinations = data.destinations || [];
           countries = data.countries || [];
           updateDestinations();
         }
-        const config = await fetch(`${API}/config/map`).then(response => response.ok ? response.json() : null);
-        if (config) map.setView([config.default_latitude, config.default_longitude], config.default_zoom);
+        if (configResponse.ok) {
+          const config = await configResponse.json();
+          if (config.style_url && config.style_url !== DEFAULT_STYLE) map.setStyle(config.style_url);
+          map.jumpTo({ center:[config.default_longitude,config.default_latitude], zoom:config.default_zoom });
+        }
       } catch (_) { updateDestinations(); }
       loadSearch();
-      loadViewport();
     }
     initializeDemo();
   </script>
