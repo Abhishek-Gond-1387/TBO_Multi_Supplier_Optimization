@@ -1,4 +1,4 @@
-"""Start and supervise the local India-first demo on Windows or other desktops."""
+"""Start and supervise the local Delhi discovery demo on Windows or other desktops."""
 
 from __future__ import annotations
 
@@ -182,11 +182,12 @@ def main() -> int:
             LOG_DIR / "frontend.log",
         )
 
-        print("\nIndia-first map demo is ready:")
+        print("\nDelhi map demo is ready:")
         print(f"  Map:      {MAP_URL}")
         print(f"  API docs: http://{HOST}:{API_PORT}/docs")
-        print("  Demo data: illustrative only; prices are not live hotel quotes.")
-        print("\nOpening the map and running the terminal walkthrough...")
+        print("  Places: free OpenStreetMap data when available; refresh timestamp appears on the map.")
+        print("  Rates: live supplier prices and availability are not available in this pilot.")
+        print("\nOpening the map and running the Delhi walkthrough...")
         webbrowser.open_new_tab(MAP_URL)
         demo_result = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "demo.py")],

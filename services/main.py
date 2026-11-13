@@ -8,8 +8,11 @@ import hashlib
 import json
 import logging
 import os
+import subprocess
+import sys
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
@@ -33,6 +36,8 @@ from services.config import (
     DEBUG,
     ENABLE_CELERY,
     MAP_ATTRIBUTION,
+    DEMO_CITY,
+    MAP_DEFAULT_DESTINATION,
     MAP_DEFAULT_LATITUDE,
     MAP_DEFAULT_LONGITUDE,
     MAP_STYLE_URL,
@@ -56,6 +61,7 @@ logger = logging.getLogger("tbo.api")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = PROJECT_ROOT / "data" / "sample_inventory.json"
 OPEN_DATA_INVENTORY_PATH = PROJECT_ROOT / "data" / "osm_inventory.json"
+OPEN_DATA_STATUS_PATH = PROJECT_ROOT / "data" / "osm_inventory.status.json"
 
 REQUESTS = Counter("tbo_http_requests_total", "HTTP requests served", ("method", "route", "status"))
 LATENCY = Histogram("tbo_http_request_seconds", "HTTP request latency", ("method", "route"))
@@ -67,6 +73,109 @@ _OSRM_REQUEST_LOCK = asyncio.Lock()
 _OSRM_LAST_REQUEST = 0.0
 _INVENTORY_CACHE_SIGNATURE: tuple[tuple[str, int, int], ...] | None = None
 _INVENTORY_CACHE: list[InventoryItem] | None = None
+_OPEN_DATA_REFRESH_PROCESS: subprocess.Popen[bytes] | None = None
+
+
+def _read_open_data_status_file() -> dict[str, Any]:
+    try:
+        with OPEN_DATA_STATUS_PATH.open(encoding="utf-8") as status_file:
+            value = json.load(status_file)
+        return value if isinstance(value, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _parse_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def open_data_status() -> dict[str, Any]:
+    status = _read_open_data_status_file()
+    metadata = status.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    last_updated = metadata.get("refreshed_at")
+    has_live_data = (
+        metadata.get("source") == "OpenStreetMap/Overpass"
+        and str(metadata.get("city", "")).casefold() == DEMO_CITY.casefold()
+        and str(metadata.get("country_code", "")).upper() == "IN"
+    )
+    state = str(status.get("state", "not_loaded"))
+    if _OPEN_DATA_REFRESH_PROCESS is not None and _OPEN_DATA_REFRESH_PROCESS.poll() is None:
+        state = "refreshing"
+    elif state == "refreshing":
+        started_at = _parse_timestamp(status.get("started_at"))
+        if started_at is None or (datetime.now(timezone.utc) - started_at).total_seconds() > 1800:
+            state = "error"
+    elif has_live_data and state not in {"error", "refreshing"}:
+        state = "ready"
+    updated_at = _parse_timestamp(last_updated)
+    age_seconds = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds())) if updated_at else None
+    return {
+        "state": state,
+        "city": DEMO_CITY,
+        "source": metadata.get("source", "OpenStreetMap via Overpass"),
+        "license": metadata.get("license", "ODbL"),
+        "has_live_data": has_live_data,
+        "refreshed_at": last_updated,
+        "age_seconds": age_seconds,
+        "stale": age_seconds is None or age_seconds > 24 * 60 * 60,
+        "hotel_count": int(metadata.get("hotel_count", 0) or 0),
+        "attraction_count": int(metadata.get("attraction_count", 0) or 0),
+        "error": status.get("error"),
+    }
+
+
+def _start_open_data_refresh(*, force: bool = False) -> bool:
+    global _OPEN_DATA_REFRESH_PROCESS
+    if _OPEN_DATA_REFRESH_PROCESS is not None and _OPEN_DATA_REFRESH_PROCESS.poll() is None:
+        return False
+    status = _read_open_data_status_file()
+    now = datetime.now(timezone.utc)
+    metadata = status.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    started_at = _parse_timestamp(status.get("started_at"))
+    if status.get("state") == "refreshing" and started_at and (now - started_at).total_seconds() < 1800:
+        return False
+    if started_at and (now - started_at).total_seconds() < 3600:
+        return False
+    refreshed_at = _parse_timestamp(metadata.get("refreshed_at"))
+    if not force and refreshed_at and (now - refreshed_at).total_seconds() < 6 * 3600:
+        return False
+
+    log_dir = PROJECT_ROOT / ".demo-logs"
+    log_dir.mkdir(exist_ok=True)
+    log_file = (log_dir / "open-data-refresh.log").open("ab")
+    command = [
+        sys.executable,
+        str(PROJECT_ROOT / "scripts" / "seed_datasets.py"),
+        "--city",
+        DEMO_CITY,
+        "--country-code",
+        "IN",
+        "--source",
+        "osm",
+        "--limit",
+        "300",
+    ]
+    try:
+        _OPEN_DATA_REFRESH_PROCESS = subprocess.Popen(
+            command,
+            cwd=PROJECT_ROOT,
+            stdin=subprocess.DEVNULL,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    finally:
+        log_file.close()
+    return True
 
 
 @asynccontextmanager
@@ -74,7 +183,15 @@ async def lifespan(_: FastAPI):
     if USE_DATABASE:
         await database.open_pool()
         logger.info("Connected to PostgreSQL inventory store")
+    else:
+        _start_open_data_refresh()
     yield
+    if _OPEN_DATA_REFRESH_PROCESS is not None and _OPEN_DATA_REFRESH_PROCESS.poll() is None:
+        _OPEN_DATA_REFRESH_PROCESS.terminate()
+        try:
+            _OPEN_DATA_REFRESH_PROCESS.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _OPEN_DATA_REFRESH_PROCESS.kill()
     if USE_DATABASE:
         await database.close_pool()
 
@@ -129,26 +246,38 @@ async def load_inventory() -> list[InventoryItem]:
         if OPEN_DATA_INVENTORY_PATH.exists():
             with OPEN_DATA_INVENTORY_PATH.open(encoding="utf-8") as open_data_file:
                 open_data = json.load(open_data_file)
-            for bucket, entity_type in (("hotels", "HOTEL"), ("attractions", "ATTRACTION")):
-                for record in open_data.get(bucket, []):
-                    source_id = str(record.get("source_id") or record.get("id") or "")
-                    if not source_id or record.get("latitude") is None or record.get("longitude") is None:
-                        continue
-                    rows.append({
-                        "id": "open-" + hashlib.sha256(source_id.encode()).hexdigest()[:16],
-                        "source_id": source_id,
-                        "name": record.get("name", "Unnamed open-data place"),
-                        "entity_type": entity_type,
-                        "destination": record.get("city") or record.get("destination") or "Unknown",
-                        "country_code": record.get("country_code", "IN"),
-                        "latitude": record["latitude"],
-                        "longitude": record["longitude"],
-                        "star_rating": record.get("star_rating"),
-                        "description": record.get("description", ""),
-                        "amenities": record.get("amenities", []),
-                        "offers": record.get("offers", []),
-                        "conversion_prior": 0.3,
-                    })
+            metadata = open_data.get("metadata", {})
+            if not isinstance(metadata, dict):
+                metadata = {}
+            live_delhi_rows = sum(len(open_data.get(bucket, [])) for bucket in ("hotels", "attractions"))
+            is_delhi_osm_snapshot = (
+                metadata.get("source") == "OpenStreetMap/Overpass"
+                and str(metadata.get("city", "")).casefold() == DEMO_CITY.casefold()
+                and str(metadata.get("country_code", "")).upper() == "IN"
+            )
+            if live_delhi_rows and is_delhi_osm_snapshot:
+                rows = [row for row in rows if str(row.get("destination", "")).casefold() != DEMO_CITY.casefold()]
+            if is_delhi_osm_snapshot or not metadata:
+                for bucket, entity_type in (("hotels", "HOTEL"), ("attractions", "ATTRACTION")):
+                    for record in open_data.get(bucket, []):
+                        source_id = str(record.get("source_id") or record.get("id") or "")
+                        if not source_id or record.get("latitude") is None or record.get("longitude") is None:
+                            continue
+                        rows.append({
+                            "id": "open-" + hashlib.sha256(source_id.encode()).hexdigest()[:16],
+                            "source_id": source_id,
+                            "name": record.get("name", "Unnamed open-data place"),
+                            "entity_type": entity_type,
+                            "destination": record.get("city") or record.get("destination") or "Unknown",
+                            "country_code": record.get("country_code", "IN"),
+                            "latitude": record["latitude"],
+                            "longitude": record["longitude"],
+                            "star_rating": record.get("star_rating"),
+                            "description": record.get("description", ""),
+                            "amenities": record.get("amenities", []),
+                            "offers": record.get("offers", []),
+                            "conversion_prior": 0.3,
+                        })
     items = [InventoryItem.model_validate(row) for row in rows]
     if not USE_DATABASE:
         _INVENTORY_CACHE_SIGNATURE = signature
@@ -325,10 +454,30 @@ def map_config() -> dict[str, Any]:
     return {
         "style_url": MAP_STYLE_URL,
         "attribution": MAP_ATTRIBUTION,
+        "default_destination": MAP_DEFAULT_DESTINATION,
         "default_latitude": MAP_DEFAULT_LATITUDE,
         "default_longitude": MAP_DEFAULT_LONGITUDE,
         "default_zoom": MAP_DEFAULT_ZOOM,
     }
+
+
+@app.get(f"{API_V1_PREFIX}/data/status")
+def open_data_status_endpoint() -> dict[str, Any]:
+    return open_data_status()
+
+
+@app.post(f"{API_V1_PREFIX}/data/refresh", status_code=202)
+def refresh_open_data_endpoint() -> dict[str, Any]:
+    if _start_open_data_refresh(force=True):
+        return open_data_status()
+    status = open_data_status()
+    if status["state"] == "refreshing":
+        return status
+    raise HTTPException(
+        status_code=429,
+        detail="Delhi open-data refresh is limited to one request per hour to respect the free public Overpass service.",
+        headers={"Retry-After": "3600"},
+    )
 
 
 @app.get(f"{API_V1_PREFIX}/destinations")
@@ -401,7 +550,18 @@ async def search_inventory(
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
     cache_descriptor = json.dumps(
-        {"q": q, "destination": destination, "country_code": country_code, "currency": currency, "entity_type": entity_type, "max_price": max_price, "min_stars": min_stars, "landmark": landmark, "inclusions": inclusions},
+        {
+            "q": q,
+            "destination": destination,
+            "country_code": country_code,
+            "currency": currency,
+            "entity_type": entity_type,
+            "max_price": max_price,
+            "min_stars": min_stars,
+            "landmark": landmark,
+            "inclusions": inclusions,
+            "inventory_signature": None if USE_DATABASE else _local_inventory_signature(),
+        },
         sort_keys=True,
     )
     cached = get_or_set(
@@ -446,7 +606,9 @@ async def inventory_viewport(
         ]
         items = [item for item in items if item.entity_type != "HOTEL" or item.offers]
     cache_key = _stable_cache_key(
-        "geo:viewport", (west, south, east, north, entity_type, destination, country_code, currency)
+        "geo:viewport",
+        (west, south, east, north, entity_type, destination, country_code, currency,
+         None if USE_DATABASE else _local_inventory_signature()),
     )
     return get_or_set(
         cache_key,

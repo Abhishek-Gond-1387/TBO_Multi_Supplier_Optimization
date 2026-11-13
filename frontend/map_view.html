@@ -33,6 +33,10 @@
     #result-count { color:var(--ink); font-weight:750; }
     .summary label { display:flex; align-items:center; gap:6px; font-size:11px; white-space:nowrap; }
     #search-on-move { width:15px; height:15px; margin:0; accent-color:var(--accent); }
+    .data-status-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:10px 0 5px; }
+    .data-state { color:var(--accent-dark); font-size:11px; font-weight:750; }
+    #refresh-data { flex:none; height:31px; padding:0 9px; border-color:#dbe7e9; color:var(--accent-dark); font-size:11px; }
+    #refresh-data:disabled { cursor:wait; opacity:.65; }
     .card { padding:14px 0; border-bottom:1px solid var(--line); }
     .card h2 { margin:0 0 5px; font-size:15px; line-height:1.35; }
     .meta { color:var(--muted); font-size:12px; }
@@ -83,25 +87,26 @@
 </head>
 <body>
   <header>
-    <div class="brand"><span class="brand-mark">T</span><span>TBO</span><span>DISCOVERY</span></div>
+    <div class="brand"><span class="brand-mark">T</span><span>TBO</span><span>DELHI PILOT</span></div>
     <a class="top-link" href="/admin.html">Match review <span aria-hidden="true">↗</span></a>
     <form class="search" id="search-form">
-      <select id="country" aria-label="Country"><option value="IN">India</option><option value="AE">Dubai / UAE</option><option value="ALL">All destinations</option></select>
-      <select id="destination" aria-label="City or destination"><option value="ALL">All in India</option></select>
+      <select id="country" aria-label="Country" disabled><option value="IN">India · Delhi pilot</option></select>
+      <select id="destination" aria-label="City or destination" disabled><option value="Delhi">Delhi</option></select>
       <input id="query" aria-label="Search inventory" placeholder="Hotel, area, or amenity" autocomplete="off">
       <select id="category" aria-label="Inventory type"><option value="HOTEL">Hotels</option><option value="ATTRACTION">Experiences</option><option value="ANY">All inventory</option></select>
       <select id="stars" aria-label="Minimum star rating"><option value="">Any rating</option><option value="3">3+ stars</option><option value="4">4+ stars</option><option value="5">5 stars</option></select>
-      <select id="currency" aria-label="Price currency"><option value="INR">INR ₹</option><option value="USD">USD $</option><option value="ANY">Any currency</option></select>
-      <input id="max-price" type="number" min="1" placeholder="Max price" aria-label="Maximum price">
+      <select id="currency" aria-label="Price currency" disabled><option value="ANY">Live rates unavailable</option></select>
+      <input id="max-price" type="number" min="1" placeholder="No live rates" aria-label="Maximum price" disabled>
       <button class="primary" id="search-button" type="submit">Search</button>
       <button type="button" id="voice" title="Search by voice" aria-label="Search by voice">🎙</button>
     </form>
   </header>
   <main class="layout">
     <aside>
-      <p class="eyebrow" id="section-label">India · Hotel stays</p>
-      <h1>Explore India first</h1>
-      <p class="subhead">Open map data · Demo supplier rates are illustrative, not live quotes.</p>
+      <p class="eyebrow" id="section-label">Delhi · Hotel stays</p>
+      <h1>Explore Delhi</h1>
+      <div class="data-status-row"><span class="data-state" id="data-state" aria-live="polite">Checking Delhi open data…</span><button id="refresh-data" type="button">↻ Refresh</button></div>
+      <p class="subhead" id="data-note">Open place listings are separate from live room rates and supplier availability.</p>
       <div class="summary"><span id="result-count" aria-live="polite">Loading stays…</span><label><input id="search-on-move" type="checkbox" checked> Filter to map view</label></div>
       <div id="results"></div>
     </aside>
@@ -115,11 +120,13 @@
 
     const API = 'http://127.0.0.1:8000/api/v1';
     const DEFAULT_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+    let mapDefaultCenter = [77.2090,28.6139];
+    let mapDefaultZoom = 11;
     const map = new maplibregl.Map({
       container: 'map',
       style: DEFAULT_STYLE,
-      center: [78.6569, 22.9734],
-      zoom: 4,
+      center: mapDefaultCenter,
+      zoom: mapDefaultZoom,
       minZoom: 2,
       maxZoom: 19,
       maxPitch: 0,
@@ -143,20 +150,23 @@
     const priceInput = document.getElementById('max-price');
     const searchButton = document.getElementById('search-button');
     const searchOnMove = document.getElementById('search-on-move');
-    let destinations = [];
-    let countries = [];
+    const dataState = document.getElementById('data-state');
+    const dataNote = document.getElementById('data-note');
+    const refreshDataButton = document.getElementById('refresh-data');
     let lastSearchResults = [];
     let searchController = null;
     let searchSequence = 0;
     let mapReady = false;
     let mapInteractionsInstalled = false;
+    let lastDataRefresh = null;
+    let receivedInitialDataStatus = false;
 
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
     }
-    const money = offer => offer ? new Intl.NumberFormat(undefined, { style:'currency', currency:offer.currency, maximumFractionDigits:0 }).format(offer.price) : 'Price on request';
+    const money = offer => offer ? new Intl.NumberFormat(undefined, { style:'currency', currency:offer.currency, maximumFractionDigits:0 }).format(offer.price) : 'No live quote';
     function selectedScope() {
-      return { country:countrySelect.value, city:destinationSelect.value, countryCode:countrySelect.value === 'ALL' ? '' : countrySelect.value, currency:currencySelect.value === 'ANY' ? '' : currencySelect.value };
+      return { country:'IN', city:'Delhi', countryCode:'IN', currency:'' };
     }
     function appendScope(params, includeCurrency = true) {
       const scope = selectedScope();
@@ -165,23 +175,12 @@
       if (includeCurrency && scope.currency) params.set('currency', scope.currency);
       return params;
     }
-    function updateDestinations(selected = 'ALL') {
-      const scope = selectedScope();
-      const rows = scope.country === 'ALL' ? destinations : destinations.filter(row => row.country_code === scope.country);
-      const allLabel = scope.country === 'ALL' ? 'All destinations' : `All in ${countrySelect.selectedOptions[0]?.text || 'India'}`;
-      destinationSelect.replaceChildren(new Option(allLabel, 'ALL'));
-      rows.forEach(row => destinationSelect.add(new Option(`${row.destination} (${row.count})`, row.destination)));
-      destinationSelect.value = rows.some(row => row.destination === selected) ? selected : 'ALL';
+    function updateDestinations() {
+      destinationSelect.replaceChildren(new Option('Delhi, India', 'Delhi'));
+      destinationSelect.value = 'Delhi';
     }
     function focusSelectedArea() {
-      const scope = selectedScope();
-      const city = destinations.find(row => row.destination === scope.city && (scope.country === 'ALL' || row.country_code === scope.country));
-      if (city) map.flyTo({ center:[city.longitude, city.latitude], zoom:12, duration:850, essential:true });
-      else {
-        const country = countries.find(row => row.code === scope.country);
-        if (country) map.flyTo({ center:[country.longitude, country.latitude], zoom:scope.country === 'IN' ? 4 : 6, duration:850, essential:true });
-        else map.flyTo({ center:[78.6569,22.9734], zoom:3, duration:850, essential:true });
-      }
+      map.flyTo({ center:mapDefaultCenter, zoom:mapDefaultZoom, duration:750, essential:true });
     }
     function currentResults() {
       if (!searchOnMove.checked || !mapReady) return lastSearchResults;
@@ -191,22 +190,26 @@
     function renderCards(rows) {
       results.replaceChildren();
       if (!rows.length) {
-        results.innerHTML = '<div class="empty">No stays match this map view. Zoom out or widen your search.</div>';
+        results.innerHTML = '<div class="empty">No Delhi places match this map view. Zoom out or change the search.</div>';
         return;
       }
       rows.forEach(({item, badges, selected_supplier}) => {
         const offer = selected_supplier || item.offers.filter(candidate => candidate.available).sort((a,b) => a.price-b.price)[0];
+        const isOpenData = String(item.source_id || '').startsWith('osm/');
         const card = document.createElement('article');
         card.className = 'card';
         const route = item.entity_type === 'HOTEL' ? `<button class="route-button" type="button" data-route-id="${escapeHtml(item.id)}">Route to nearest experience</button><span class="route-note" id="route-${escapeHtml(item.id)}"></span>` : '';
-        const starsText = item.star_rating ? `${item.star_rating} stars` : 'Experience';
-        card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${item.offers.length} supplier offers</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badges[0] || 'COMPARE')}</span></div>${route}`;
+        const starsText = item.entity_type === 'HOTEL' ? (item.star_rating ? `${item.star_rating} stars` : 'Hotel place') : 'Experience place';
+        const offerSummary = isOpenData ? 'OpenStreetMap place record' : `${item.offers.length} illustrative supplier offers`;
+        const badge = isOpenData ? 'OPEN DATA' : (badges[0] || 'DEMO');
+        card.innerHTML = `<h2>${escapeHtml(item.name)}</h2><div class="meta">${starsText} · ${escapeHtml(item.destination)} · ${offerSummary}</div><div class="price-row"><span class="price">${money(offer)}</span><span class="badge">${escapeHtml(badge)}</span></div>${route}`;
         results.append(card);
       });
     }
     function toFeature(result) {
       const item = result.item;
       const offer = result.selected_supplier || item.offers.filter(candidate => candidate.available).sort((a,b) => a.price-b.price)[0];
+      const isOpenData = String(item.source_id || '').startsWith('osm/');
       return {
         type:'Feature',
         geometry:{ type:'Point', coordinates:[item.longitude,item.latitude] },
@@ -216,15 +219,21 @@
           destination:item.destination,
           entity_type:item.entity_type,
           stars:item.star_rating || '',
-          price_label:offer ? money(offer) : (item.entity_type === 'HOTEL' ? 'View rates' : 'Experience'),
-          price_text:offer ? `${offer.currency} ${Number(offer.price).toLocaleString()}` : 'Price on request',
+          price_label:offer ? money(offer) : (item.entity_type === 'HOTEL' ? (isOpenData ? 'Quote needed' : 'View rates') : 'Experience'),
+          price_text:offer ? `${offer.currency} ${Number(offer.price).toLocaleString()}` : (isOpenData ? 'Supplier quote unavailable in open data' : 'Illustrative price only'),
           supplier:offer?.supplier_name || '',
           badges:(result.badges || []).slice(0,2).join(' · ')
         }
       };
     }
     function refreshResults() {
-      if (!lastSearchResults.length) return;
+      if (!lastSearchResults.length) {
+        count.textContent = '0 Delhi matches';
+        results.innerHTML = '<div class="empty">No Delhi places match this search. Try another name or area.</div>';
+        const source = mapReady && map.getSource('inventory');
+        if (source) source.setData({ type:'FeatureCollection', features:[] });
+        return;
+      }
       const rows = currentResults();
       count.textContent = searchOnMove.checked ? `${rows.length} in this view · ${lastSearchResults.length} total` : `${lastSearchResults.length} matches`;
       renderCards(rows);
@@ -333,7 +342,7 @@
       if (stars && category === 'HOTEL') params.set('min_stars',stars);
       if (price && currencySelect.value !== 'ANY') params.set('max_price',price);
       const scope = selectedScope();
-      const place = scope.city !== 'ALL' ? scope.city : (scope.country === 'ALL' ? 'All destinations' : countrySelect.selectedOptions[0].text);
+      const place = scope.city;
       document.getElementById('section-label').textContent = `${place} · ${category === 'HOTEL' ? 'Hotel stays' : category === 'ATTRACTION' ? 'Experiences' : 'All inventory'}`;
       try {
         const response = await fetch(`${API}/inventory/search?${params}`,{signal:searchController.signal});
@@ -396,55 +405,107 @@
         try {
           const response = await fetch(`${API}/voice/query`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript})});
           const data = await response.json();
-          lastSearchResults = data.results || [];
           const filters = data.parsed_filters || {};
-          countrySelect.value = filters.country_code || 'IN';
-          updateDestinations(filters.destination || 'ALL');
-          currencySelect.value = filters.currency || (countrySelect.value === 'IN' ? 'INR' : 'USD');
-          priceInput.value = filters.max_price || '';
-          priceInput.disabled = currencySelect.value === 'ANY';
+          const requestedCity = String(filters.destination || 'Delhi').trim().toLowerCase();
+          if (requestedCity !== 'delhi') {
+            lastSearchResults = [];
+            count.textContent = 'This release covers Delhi only';
+            results.innerHTML = '<div class="empty">The current live-data pilot is limited to Delhi. Other destinations will be added later.</div>';
+            if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance('This demo is currently focused on Delhi.'));
+            return;
+          }
+          lastSearchResults = (data.results || []).filter(row => String(row.item.destination).toLowerCase() === 'delhi');
+          countrySelect.value = 'IN';
+          updateDestinations();
+          currencySelect.value = 'ANY';
+          priceInput.value = '';
+          priceInput.disabled = true;
           document.getElementById('category').value = filters.entity_type === 'SIGHTSEEING' ? 'ATTRACTION' : 'HOTEL';
           focusSelectedArea();
           refreshResults();
-          count.textContent = `${data.count} voice matches`;
+          count.textContent = `${lastSearchResults.length} Delhi voice matches`;
           if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance(data.voice_reply));
         } catch (_) { loadSearch({transcript}); }
       };
       recognition.start();
     });
     searchOnMove.addEventListener('change',refreshResults);
-    countrySelect.addEventListener('change',() => {
-      updateDestinations();
-      currencySelect.value = countrySelect.value === 'IN' ? 'INR' : countrySelect.value === 'AE' ? 'USD' : 'ANY';
-      priceInput.disabled = currencySelect.value === 'ANY';
-      focusSelectedArea();
-      loadSearch();
-    });
-    destinationSelect.addEventListener('change',() => { focusSelectedArea(); loadSearch(); });
-    currencySelect.addEventListener('change',() => { priceInput.disabled=currencySelect.value==='ANY'; loadSearch(); });
     document.getElementById('category').addEventListener('change',() => loadSearch());
+
+    function setDataStatus(status, reloadOnChange = false) {
+      const refreshedAt = status.refreshed_at || null;
+      const changed = receivedInitialDataStatus && refreshedAt && refreshedAt !== lastDataRefresh;
+      if (status.state === 'refreshing') {
+        dataState.textContent = status.has_live_data ? 'Refreshing Delhi open data…' : 'Fetching Delhi place data…';
+        dataNote.textContent = status.has_live_data
+          ? 'Cached OpenStreetMap places remain searchable during refresh. Supplier rates and availability are not in this free feed.'
+          : 'Search stays responsive while OpenStreetMap loads. Live rates and room availability are not in this free feed.';
+      } else if (status.has_live_data) {
+        const when = refreshedAt ? new Date(refreshedAt).toLocaleString() : 'recently';
+        dataState.textContent = `OpenStreetMap · updated ${when}${status.stale ? ' · stale' : ''}`;
+        dataNote.textContent = `${status.hotel_count} hotel places and ${status.attraction_count} experience places. This open data has no bookable rates, availability, or cancellation terms.`;
+      } else if (status.state === 'error') {
+        dataState.textContent = 'Live place feed unavailable';
+        dataNote.textContent = 'Showing the local Delhi sample fallback. Its rates are illustrative, not supplier quotes.';
+      } else {
+        dataState.textContent = 'Delhi live place feed not loaded';
+        dataNote.textContent = 'Refresh to fetch open Delhi listings. Until then, the local sample data is illustrative.';
+      }
+      refreshDataButton.disabled = status.state === 'refreshing';
+      if (refreshedAt) lastDataRefresh = refreshedAt;
+      receivedInitialDataStatus = true;
+      if (changed && reloadOnChange) loadSearch();
+    }
+    async function pollDataStatus(reloadOnChange = false) {
+      try {
+        const response = await fetch(`${API}/data/status`);
+        if (response.ok) setDataStatus(await response.json(),reloadOnChange);
+      } catch (_) {
+        dataState.textContent = 'Live-data status unavailable';
+      }
+    }
+    refreshDataButton.addEventListener('click',async () => {
+      refreshDataButton.disabled = true;
+      dataState.textContent = 'Starting open-data refresh…';
+      try {
+        const response = await fetch(`${API}/data/refresh`,{method:'POST'});
+        if (response.status === 429) {
+          const error = await response.json();
+          dataState.textContent = error.detail || 'Refresh is limited to once per hour.';
+        } else if (response.ok) {
+          setDataStatus(await response.json());
+        } else {
+          throw new Error(`Refresh request returned ${response.status}`);
+        }
+      } catch (error) {
+        dataState.textContent = `Refresh unavailable: ${error.message}`;
+        refreshDataButton.disabled = false;
+      }
+    });
 
     async function initializeDemo() {
       try {
-        const [destinationResponse,configResponse] = await Promise.all([
-          fetch(`${API}/destinations`),
-          fetch(`${API}/config/map`)
+        const [configResponse,statusResponse] = await Promise.all([
+          fetch(`${API}/config/map`),
+          fetch(`${API}/data/status`)
         ]);
-        if (destinationResponse.ok) {
-          const data = await destinationResponse.json();
-          destinations = data.destinations || [];
-          countries = data.countries || [];
-          updateDestinations();
-        }
         if (configResponse.ok) {
           const config = await configResponse.json();
           if (config.style_url && config.style_url !== DEFAULT_STYLE) map.setStyle(config.style_url);
-          map.jumpTo({ center:[config.default_longitude,config.default_latitude], zoom:config.default_zoom });
+          mapDefaultCenter = [config.default_longitude,config.default_latitude];
+          mapDefaultZoom = config.default_zoom;
+          map.jumpTo({ center:mapDefaultCenter, zoom:mapDefaultZoom });
         }
-      } catch (_) { updateDestinations(); }
+        updateDestinations();
+        if (statusResponse.ok) setDataStatus(await statusResponse.json());
+      } catch (_) {
+        updateDestinations();
+        dataState.textContent = 'Delhi live-data status unavailable';
+      }
       loadSearch();
     }
     initializeDemo();
+    window.setInterval(() => pollDataStatus(true),10000);
   </script>
 </body>
 </html>

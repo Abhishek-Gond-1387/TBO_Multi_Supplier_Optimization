@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -24,8 +25,9 @@ def fetch_osm_inventory(city_name: str = "Delhi", limit: int = 100, country_code
     query = f'''[out:json][timeout:45];
 area["name"="{city}"]["boundary"="administrative"]->.searchArea;
 (
-  nwr["tourism"~"hotel|attraction"](area.searchArea);
-  nwr["historic"~"monument|museum|castle"](area.searchArea);
+  nwr["tourism"~"^(hotel|guest_house|hostel|motel|resort|apartment|bed_and_breakfast|attraction|museum|viewpoint|zoo|gallery|theme_park|aquarium)$"](area.searchArea);
+  nwr["historic"~"^(monument|memorial|archaeological_site|fort|castle)$"](area.searchArea);
+  nwr["amenity"~"^(arts_centre|cinema|theatre)$"](area.searchArea);
 );
 out center tags {limit};'''
     response = requests.post(
@@ -39,7 +41,7 @@ out center tags {limit};'''
     result: dict[str, list[dict]] = {"hotels": [], "attractions": []}
     for element in elements:
         tags = element.get("tags", {})
-        name = tags.get("name")
+        name = tags.get("name") or tags.get("name:en") or tags.get("name:hi")
         if not name:
             continue
         center = element.get("center", {})
@@ -47,7 +49,9 @@ out center tags {limit};'''
         longitude = element.get("lon", center.get("lon"))
         if latitude is None or longitude is None:
             continue
-        bucket = "hotels" if tags.get("tourism") == "hotel" else "attractions"
+        tourism_type = tags.get("tourism", "")
+        hospitality_types = {"hotel", "guest_house", "hostel", "motel", "resort", "apartment", "bed_and_breakfast"}
+        bucket = "hotels" if tourism_type in hospitality_types else "attractions"
         try:
             stars = float(tags["stars"]) if tags.get("stars") else None
         except ValueError:
@@ -55,6 +59,7 @@ out center tags {limit};'''
         result[bucket].append(
             {
                 "source_id": f"osm/{element.get('type', 'object')}/{element['id']}",
+                "source": "OpenStreetMap",
                 "name": name,
                 "latitude": latitude,
                 "longitude": longitude,
@@ -62,9 +67,17 @@ out center tags {limit};'''
                 "country_code": country_code.upper(),
                 "street": tags.get("addr:street", ""),
                 "star_rating": stars,
+                "last_edited_at": element.get("timestamp"),
+                "description": " · ".join(
+                    value for value in (
+                        tags.get("description"),
+                        tags.get("opening_hours"),
+                        tags.get("access"),
+                    ) if value
+                ),
                 "amenities": sorted(
                     key
-                    for key in ("internet_access", "swimming_pool", "air_conditioning")
+                    for key in ("internet_access", "swimming_pool", "air_conditioning", "wheelchair")
                     if tags.get(key) not in (None, "no")
                 ),
             }
@@ -138,21 +151,49 @@ def main() -> None:
         "--output", type=Path, default=PROJECT_ROOT / "data" / "osm_inventory.json"
     )
     args = parser.parse_args()
-    inventory = {"hotels": [], "attractions": []}
-    if args.source in {"osm", "both"}:
-        osm = fetch_osm_inventory(args.city, args.limit, args.country_code)
-        inventory["hotels"].extend(osm["hotels"])
-        inventory["attractions"].extend(osm["attractions"])
-    if args.source in {"wikidata", "both"}:
-        inventory["attractions"].extend(fetch_wikidata_attractions(args.city, args.limit, args.country_code))
-    # Keep the first record for each source id when both datasets overlap.
-    inventory["attractions"] = list({row["source_id"]: row for row in inventory["attractions"]}.values())
+    status_path = args.output.with_name(f"{args.output.stem}.status.json")
+    started_at = datetime.now(timezone.utc).isoformat()
+
+    def write_status(payload: dict) -> None:
+        temporary_status = status_path.with_suffix(status_path.suffix + ".tmp")
+        temporary_status.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        temporary_status.replace(status_path)
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(inventory, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(
-        f"Saved {len(inventory['hotels'])} hotels and "
-        f"{len(inventory['attractions'])} attractions to {args.output}"
-    )
+    write_status({"state": "refreshing", "started_at": started_at, "city": args.city, "country_code": args.country_code})
+    try:
+        inventory = {"hotels": [], "attractions": []}
+        if args.source in {"osm", "both"}:
+            osm = fetch_osm_inventory(args.city, args.limit, args.country_code)
+            inventory["hotels"].extend(osm["hotels"])
+            inventory["attractions"].extend(osm["attractions"])
+        if args.source in {"wikidata", "both"}:
+            inventory["attractions"].extend(fetch_wikidata_attractions(args.city, args.limit, args.country_code))
+        # Keep the first record for each source id when both datasets overlap.
+        inventory["attractions"] = list({row["source_id"]: row for row in inventory["attractions"]}.values())
+        refreshed_at = datetime.now(timezone.utc).isoformat()
+        metadata = {
+            "source": "OpenStreetMap/Overpass" if args.source == "osm" else args.source,
+            "city": args.city,
+            "country_code": args.country_code.upper(),
+            "license": "ODbL",
+            "refreshed_at": refreshed_at,
+            "hotel_count": len(inventory["hotels"]),
+            "attraction_count": len(inventory["attractions"]),
+        }
+        inventory["metadata"] = metadata
+        temporary_output = args.output.with_name(f".{args.output.name}.tmp")
+        temporary_output.write_text(json.dumps(inventory, indent=2, ensure_ascii=False), encoding="utf-8")
+        temporary_output.replace(args.output)
+        write_status({"state": "ready", "started_at": started_at, "metadata": metadata})
+        print(
+            f"Updated {metadata['hotel_count']} hotel places and "
+            f"{metadata['attraction_count']} experiences for {args.city} from OpenStreetMap at {refreshed_at}."
+        )
+        print("OSM place data has no live room prices or availability.")
+    except Exception as exc:
+        write_status({"state": "error", "started_at": started_at, "error": str(exc)[:500]})
+        raise
 
 
 if __name__ == "__main__":

@@ -2,13 +2,13 @@
 
 [![Python checks](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml/badge.svg)](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml)
 
-This repository is a runnable, India-first local discovery and operations demo based on the attached platform specification. It starts on India with Delhi, Mumbai, Goa, Jaipur, Agra, Bengaluru, Hyderabad and Kochi demo inventory; users can then switch to Dubai/UAE or all destinations. It covers supplier-feed validation, hotel matching, room normalization, sightseeing differences, supplier-rate selection, map search, voice queries, match review, metrics, optional PostgreSQL/PostGIS/pgvector, Redis caching, and a Celery worker.
+This release is a Delhi-only pilot for the multi-supplier inventory objective. It searches free OpenStreetMap place records for Delhi hotels and experiences, ranks them for discovery, and provides hotel matching, room normalization, sightseeing inclusion comparison, voice search, match review, metrics, optional PostgreSQL/PostGIS/pgvector, Redis caching, and Celery components.
 
-All bundled hotel rates and supplier names are illustrative demo data, not live quotes. This repository does not connect to hotel suppliers or make bookings.
+OpenStreetMap does not provide bookable room rates, current availability, cancellation terms, or supplier reliability. Live supplier comparison and booking conversion ranking require authorized supplier feeds, which this pilot does not connect to. Until the Delhi open-data refresh succeeds, bundled Delhi rows may appear as an explicitly labelled illustrative fallback.
 
 ## Run the demo without Docker
 
-Use Python 3.10 or later. On Windows, open the repository folder and run `run_demo.bat` (or double-click it). The launcher creates `.venv` if needed, installs `requirements.txt` when core packages are missing, creates a local `.env` from the example if needed, starts the API and frontend, checks both are responding, opens the map, and prints a short India-to-Dubai walkthrough. Keep the launcher window open while presenting; press **Ctrl+C** in it to stop the services it started. Startup logs are saved under `.demo-logs/` and are ignored by Git.
+Use Python 3.10 or later. On Windows, open the repository folder and run `run_demo.bat` (or double-click it). The launcher creates `.venv` if needed, installs `requirements.txt` when core packages are missing, creates a local `.env` from the example if needed, starts the API and frontend, checks both are responding, opens the Delhi map, and prints a short open-data walkthrough. The API refreshes the Delhi snapshot in the background when no recent snapshot exists. Keep the launcher window open while presenting; press **Ctrl+C** in it to stop the services it started. Startup logs are saved under `.demo-logs/` and are ignored by Git.
 
 You can also launch it from PowerShell:
 
@@ -35,11 +35,11 @@ The regular Python quickstart intentionally uses the bundled JSON catalog. To co
 
 ## Demo flow
 
-1. Start with India, select a city such as Delhi, Mumbai, Jaipur or Goa, then filter hotels by text, star rating, currency, and budget.
-2. Switch to Dubai/UAE or All destinations when ready. Hotel pins are clustered and show the lowest available rate in the selected currency.
-3. Use the microphone button for browser speech search. The API returns a parsed query and a spoken reply.
-4. On the operations page, choose **Create demo match**, inspect the name/address/distance features, then confirm or keep the two listings separate.
-5. Try room normalization and sightseeing inclusion comparison in the API docs, or run `scripts/demo.py` for a terminal walkthrough.
+1. The map opens at Delhi and reads the cached OpenStreetMap snapshot; use **Refresh** to request a new snapshot. Refreshes are limited to one per hour to respect the public endpoint.
+2. Search hotel and experience place records by name, area, or amenity. Map search filters the already-loaded results locally as you zoom or pan.
+3. The data timestamp and record counts appear above the results. Open place records have no live booking price or availability.
+4. Use the microphone button for browser speech search. The current map pilot is limited to Delhi.
+5. Try room normalization and sightseeing inclusion comparison in the API docs. These logic examples are not live supplier offers.
 
 ## API surface
 
@@ -56,7 +56,7 @@ The regular Python quickstart intentionally uses the bundled JSON catalog. To co
 
 ## Public sample data and optional models
 
-No paid supplier, geocoding, routing, map tile, model-hosting, or dataset API is configured. India and Dubai hotel rates are synthetic demo rows; optional place imports use OpenStreetMap via Overpass (ODbL) and Wikidata (CC0), not a paid feed. See [OSM data licensing](https://www.openstreetmap.org/copyright) and [Wikidata licensing](https://www.wikidata.org/wiki/Wikidata:Licensing). Run `python scripts/seed_datasets.py --city Delhi --country-code IN --source both --limit 100` to fetch open place data when wanted. The app automatically includes `data/osm_inventory.json` after you create it. For Dubai, pass `--city Dubai --country-code AE`. The dataset script reads `OVERPASS_API_URL`, `WIKIDATA_API_URL`, and `WIKIDATA_SPARQL_URL` from `.env` so public endpoints can be changed without editing code.
+The Delhi place snapshot comes from the public OpenStreetMap Overpass API and is stored locally at `data/osm_inventory.json` (ignored by Git). OSM is openly licensed under ODbL; attribution is shown on the map. This public data is community-maintained and can be incomplete or stale. The API caches the snapshot and automatically refreshes it no more often than every six hours; the UI refresh action is limited to once per hour. Follow the [Overpass public service guidance](https://dev.overpass-api.de/overpass-doc/en/preface/commons.html). The free source provides place names, coordinates, and some mapped tags, not live travel inventory. No paid supplier, geocoding, routing, map tile, hosted model, or dataset API is configured.
 
 The map uses [MapLibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) with the [OpenFreeMap Liberty vector style](https://openfreemap.org/quick_start/), which requires no API key and gives smooth, continuous zoom with map labels and clustered inventory pins. OpenFreeMap uses OpenStreetMap-derived data; attribution is shown on the map. Its public service is free and provided as-is, without an availability SLA. The public Nominatim helper is limited to one request per second per app process and is for user-initiated, moderate demo use; it must not be used for autocomplete or bulk geocoding. The public OSRM demo server is throttled to one request per second per app process, is best-effort, and is intended for reasonable non-commercial use. For higher traffic or commercial deployment, run your own open-data style, geocoding, and routing services; self-hosting can still have infrastructure costs. See the [Nominatim policy](https://operations.osmfoundation.org/policies/nominatim/) and [OSRM demo server policy](https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server).
 

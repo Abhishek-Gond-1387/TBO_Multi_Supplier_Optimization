@@ -20,8 +20,10 @@ def test_public_map_configuration_defaults_to_free_vector_map_style():
     assert response.status_code == 200
     assert response.json()["style_url"] == "https://tiles.openfreemap.org/styles/liberty"
     assert "OpenStreetMap contributors" in response.json()["attribution"]
-    assert response.json()["default_latitude"] == 22.9734
-    assert response.json()["default_zoom"] == 4
+    assert response.json()["default_destination"] == "Delhi"
+    assert response.json()["default_latitude"] == 28.6139
+    assert response.json()["default_longitude"] == 77.2090
+    assert response.json()["default_zoom"] == 11
 
 
 def test_destinations_start_with_india_then_include_dubai():
