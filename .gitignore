@@ -8,3 +8,4 @@ __pycache__/
 models_cache/
 data/osm_inventory.json
 *.log
+.demo-logs/

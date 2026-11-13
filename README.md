@@ -8,30 +8,18 @@ All bundled hotel rates and supplier names are illustrative demo data, not live 
 
 ## Run the demo without Docker
 
-Use Python 3.10 or later. In PowerShell, from the project directory:
+Use Python 3.10 or later. On Windows, open the repository folder and run `run_demo.bat` (or double-click it). The launcher creates `.venv` if needed, installs `requirements.txt` when core packages are missing, creates a local `.env` from the example if needed, starts the API and frontend, checks both are responding, opens the map, and prints a short India-to-Dubai walkthrough. Keep the launcher window open while presenting; press **Ctrl+C** in it to stop the services it started. Startup logs are saved under `.demo-logs/` and are ignored by Git.
+
+You can also launch it from PowerShell:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-python -m uvicorn services.main:app --reload --host 127.0.0.1 --port 8000
+Set-Location "$HOME\OneDrive\Desktop\TBO_Multi_Supplier_Optimization"
+.\run_demo.bat
 ```
 
-In a second PowerShell window, from the same project directory:
+Open the [discovery map](http://127.0.0.1:5500/map_view.html), [match review dashboard](http://127.0.0.1:5500/admin.html), or [API docs](http://127.0.0.1:8000/docs). The quickstart forces the self-contained JSON sample mode and does not need Docker, PostgreSQL, or Redis. If either port is already used by another app, the launcher reports which port and where to inspect the logs.
 
-```powershell
-python -m http.server 5500 --directory frontend
-```
-
-Open the [discovery map](http://127.0.0.1:5500/map_view.html) or the [match review dashboard](http://127.0.0.1:5500/admin.html). API docs are at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). The sample JSON mode needs no database or Redis.
-
-To run the repeatable API demo in another window:
-
-```powershell
-python scripts/demo.py
-```
+For manual startup, use one terminal for `python -m uvicorn services.main:app --host 127.0.0.1 --port 8000` and a second for `python -m http.server 5500 --bind 127.0.0.1 --directory frontend`, both from the repository directory. Run `python scripts/demo.py` for the terminal walkthrough after the API has started.
 
 ## Full local stack with Docker Desktop
 
