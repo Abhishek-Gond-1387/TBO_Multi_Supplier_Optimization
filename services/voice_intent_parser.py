@@ -4,24 +4,14 @@ from __future__ import annotations
 
 import re
 
-from services.pan_india_100_cities import PAN_INDIA_100_CITIES, CITY_SYNONYMS
-
-BASE_DESTINATIONS = (
-    "abu dhabi", "new york", "ras al khaimah", "singapore", "dubai", "goa",
-    "london", "paris", "mumbai", "delhi", "bangalore", "bengaluru", "jaipur",
-    "agra", "hyderabad", "kochi", "chennai", "kolkata", "pune", "varanasi",
-    "bangkok", "rome", "istanbul",
-)
-DESTINATIONS = tuple(sorted(set(
-    list(BASE_DESTINATIONS) +
-    [c.lower() for c in PAN_INDIA_100_CITIES.keys()] +
-    [s.lower() for s in CITY_SYNONYMS.keys()]
-), key=lambda x: -len(x)))
+# This demo is deliberately limited to the bundled Delhi open-data snapshot.
+# Keep aliases local so voice queries cannot imply coverage for other cities.
+DESTINATIONS = ("new delhi", "delhi")
+DESTINATION_ALIASES = {"new delhi": "Delhi", "delhi": "Delhi"}
 LANDMARKS = (
-    "burj khalifa", "palm jumeirah", "dubai mall", "city center", "downtown",
-    "airport", "beach", "marina", "museum", "desert safari", "india gate",
-    "qutub minar", "gateway of india", "marine drive", "baga beach", "hawa mahal",
-    "amber fort", "taj mahal", "lalbagh", "charminar", "fishing nets",
+    "india gate", "qutub minar", "red fort", "humayun's tomb", "humayuns tomb",
+    "lotus temple", "akshardham", "jama masjid", "connaught place", "lodhi garden",
+    "national museum", "rashtrapati bhavan", "purana qila", "delhi airport",
 )
 INCLUSION_TERMS = {
     "free breakfast": "BREAKFAST",
@@ -48,11 +38,7 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
     lowered = text.casefold()
     sightseeing = bool(
         re.search(r"\b(tour|ticket|experience|sightseeing|attraction|museum|safari|cruise)\b", lowered)
-        or any(place in lowered for place in (
-            "burj khalifa", "dubai frame", "at the top", "india gate", "qutub minar",
-            "gateway of india", "marine drive", "baga beach", "hawa mahal", "amber fort",
-            "taj mahal", "lalbagh", "charminar",
-        ))
+        or any(place in lowered for place in LANDMARKS)
     )
     result: dict[str, object] = {
         "raw_query": text,
@@ -91,11 +77,7 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
         result["country_code"] = "IN"
     for destination in DESTINATIONS:
         if re.search(rf"\b{re.escape(destination)}\b", lowered):
-            result["destination"] = CITY_SYNONYMS.get(destination.lower(), destination.title())
-            if destination in {"dubai", "abu dhabi", "ras al khaimah"}:
-                result["country_code"] = "AE"
-                if not currency:
-                    result["currency"] = "USD"
+            result["destination"] = DESTINATION_ALIASES[destination]
             break
     for landmark in LANDMARKS:
         if re.search(rf"\b{re.escape(landmark)}\b", lowered):

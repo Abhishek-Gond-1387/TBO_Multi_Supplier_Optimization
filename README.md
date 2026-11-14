@@ -1,105 +1,72 @@
-# TBO Multi-Supplier Inventory Optimization & Google Discovery Platform
+# TBO Multi-Supplier Inventory Quality Pilot · Delhi
 
-[![Python checks](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml/badge.svg)](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml)
+A runnable prototype for the Hotels and Sightseeing parts of TBO's multi-supplier inventory problem. The current demonstration is deliberately limited to a bundled, source-attributed OpenStreetMap snapshot for Delhi. It is not a live supplier-rate or customer-review product.
 
-A high-performance real-time multi-supplier optimization platform integrating **Hotels** and **Sightseeing / Experiences** across major destinations (Delhi & NCR, Mumbai, Goa, Jaipur, Agra, and Dubai) with a Google Maps-grade spatial exploration interface, live autocomplete suggestions, voice search, room taxonomy normalization, tour inclusion diffing, and dynamic supplier ranking.
+## What works in this pilot
 
----
+- Delhi map and fast local search for the bundled OpenStreetMap records. The map uses free OpenFreeMap tiles and MapLibre GL; place data is from OpenStreetMap under ODbL.
+- Hotel duplicate-candidate audit over the actual hotel rows in the snapshot. The spatial grid narrows candidate pairs; name, address (when supplied), and Haversine distance explain each score. The run is **analysis only**: it creates suggestions and a human-review queue, but does not merge or edit source records.
+- Room-description normalization and sightseeing inclusion comparison (transfer, meal, access, duration, and cancellation text). These are algorithms exercised with operator input; they are not supplier data.
+- Optional content enrichment by a source-linked Wikidata ID. Wikimedia Commons images are returned only when the file page exposes a reusable license; quality checks measure the actual image bytes. No stock-photo fallback is used.
+- Local API documentation at `/docs`.
 
-## 🌟 Key Features & Problem Solutions
+## Data limits (read before presenting the demo)
 
-### 1. Sightseeing & Experiences Optimization
-- **Cross-Supplier Matching:** Accurately deduplicate and match tours and experiences across suppliers (Viator, GetYourGuide, Headout, Klook, TBO Experiences).
-- **Nuanced Inclusion Differentiation:** Distinguishes meaningful product variations:
-  - **Transfers:** `None` vs `Shared AC Coach` vs `Private Luxury Chauffeur`
-  - **Meals:** `None` vs `Breakfast` vs `Buffet Lunch` vs `Gourmet 3-Course Dinner`
-  - **Access Types:** `Standard General Admission` vs `Skip-The-Line Fast Track` vs `VIP Lounge Access / Level 148`
-  - **Durations:** 1h to Full Day (8h)
-  - **Cancellation Terms:** `Free 24h` vs `Free 48h` vs `Non-refundable`
-- **Inclusion Diff Engine:** Explains why higher-priced options provide value without confusing customers.
+The bundled snapshot currently contains **159 hotel records and 90 visitor-place records** sourced from OpenStreetMap. These are map/source records, not partner supplier listings. The snapshot may be refreshed from the free public Overpass API, but results and availability depend on that service.
 
-### 2. Hotel Inventory Optimization
-- **Deduplication & Consolidation:** Hybrid Jaro-Winkler, spatial Haversine distance (<250m), address token overlap, and perceptual image hashing (pHash) consolidate duplicate listings.
-- **Equivalent Room Type Normalization:** Maps raw fragmented supplier codes (e.g., `DLX KNG CT-VW BB BALC`, `EXEC STE 1KNG CLB LVL`) into a standardized taxonomy (Class: Deluxe/Suite, Bed: King/Queen, View: City/Ocean/Garden, Meal: Bed & Breakfast, Balcony).
-- **Multi-Supplier Rates Matrix:** Side-by-side comparison across TBO Preferred, Hotelbeds, Agoda, Expedia, and WebBeds factoring in base rates, taxes, payment terms (`PAY_NOW` vs `PAY_AT_HOTEL`), cancellation deadlines, and supplier reliability scores.
-- **Content & Image Intelligence:** Quality scoring based on Laplacian blur variance and HD resolution thresholds.
+OpenStreetMap and Wikidata do not provide live hotel room prices, inventory availability, supplier cancellation/payment terms, hotel guest-review ratings, or booking reliability. The pilot displays those as unavailable and excludes them from ranking. To compare bookable options, TBO or supplier feeds with valid credentials, search dates, occupancy, and room/product terms are still required. Do not present the current sample as live rates, guest ratings, or completed canonical merges.
 
-### 3. Pan-India 1,000,000+ Live Multi-Supplier Discovery Platform
-- **1,240,000+ Reachable Live Inventory across 110 Indian Cities:**
-  - 🏨 **520,000+ Hotels & Stays:** Luxury 5-Star Heritage, Boutique Business, Comfort Midscale & Budget.
-  - 🎡 **334,000+ Sightseeing & Experiences:** Fast-Track Monument Entry, Guided Heritage Trails & Safaris.
-  - 🚕 **210,000+ Transit Hubs & Corridors:** High-Speed Vande Bharat Rail, Metro Junctions & Airport Shuttles.
-  - 🍽️ **173,000+ Iconic Dining Spots:** Heritage Royal Dining, Street Food Trails & Coastal Kitchens.
-- **Real-Time Rate Parity Matrix:** Instant live rates across TBO Preferred, Agoda, Hotelbeds, Booking.com, Viator, and MakeMyTrip.
-- **Personal AI Travel Concierge:** Dynamic day-by-day itinerary planner with 3-tier pricing (Budget, Mid-Level, Luxury), authentic regional dining spots, and audio voice readout.
-- **Spacious Airbnb / OYO Layout:** 560px wide left sidebar, large 220px photography header, guest favorite tags, strike-through pricing, and 1-click supplier rate comparisons.
-- **Anti-Collision Price Pills:** Google Maps-style price pills with icons positioned with 60px screen-space collision avoidance.
-- **Voice Assistance:** Web Speech API integration in both search bar and conversational AI agent drawer.
+## Run on Windows
 
----
+From the repository folder, run:
 
-## 🚀 How to Run the Project (चलने का तरीका)
-
-### Option 1: One-Click Run (Windows)
-
-Double-click or run from PowerShell:
 ```powershell
-Set-Location "$HOME\OneDrive\Desktop\TBO_Multi_Supplier_Optimization"
 .\run_demo.bat
 ```
-This automatically verifies dependencies, starts the FastAPI server + Web frontend, and opens the browser.
 
----
+On first run this creates `.venv`, installs the lightweight local-demo dependencies, starts the API and frontend, opens the map, and prints a short API walkthrough. Keep that terminal open. Press **Ctrl+C** there to stop the services.
 
-### Option 2: Manual Terminal Commands
+Open these pages:
 
-#### Terminal 1: Start the Backend API & Web App
+- Map: <http://127.0.0.1:5500/map_view.html>
+- Match review and normalization tools: <http://127.0.0.1:5500/admin.html>
+- API docs: <http://127.0.0.1:8000/docs>
+
+The backend works with the bundled snapshot without Docker or a database. An internet connection is needed for the map tiles and optional Overpass refresh.
+
+### Run the services manually
+
+Terminal 1 (API):
+
 ```powershell
 cd "$HOME\OneDrive\Desktop\TBO_Multi_Supplier_Optimization"
 .\.venv\Scripts\python.exe -m uvicorn services.main:app --host 127.0.0.1 --port 8000
 ```
 
-#### Terminal 2: Start the Frontend Server (Optional)
+Terminal 2 (frontend):
+
 ```powershell
 cd "$HOME\OneDrive\Desktop\TBO_Multi_Supplier_Optimization"
 .\.venv\Scripts\python.exe -m http.server 5500 --bind 127.0.0.1 --directory frontend
 ```
 
-#### Open in Your Browser:
-- **Google Discovery Map:** [http://127.0.0.1:8000/map_view.html](http://127.0.0.1:8000/map_view.html) (or [http://127.0.0.1:5500/map_view.html](http://127.0.0.1:5500/map_view.html))
-- **Operations & Match Review Hub:** [http://127.0.0.1:8000/admin.html](http://127.0.0.1:8000/admin.html)
-- **Interactive Swagger API Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+## Main API routes
 
----
+- `GET /api/v1/data/status` — source and refresh status for the Delhi snapshot.
+- `POST /api/v1/data/refresh` — request a rate-limited Overpass refresh.
+- `GET /api/v1/inventory/search` — local search by text, destination, entity type, source category, and available fields.
+- `GET /api/v1/inventory/{item_id}/supplier-comparison` — returns supplied offers if present; the OSM snapshot has none.
+- `POST /api/v1/admin/dedup/batch-run` — scan current hotel source records and generate candidate suggestions. No records are merged.
+- `GET /api/v1/review-queue` and `PUT /api/v1/review-queue/{id}` — inspect and decide candidate suggestions. The queue is in process memory and resets when the API restarts. A review decision does not write a canonical listing.
+- `POST /api/v1/rooms/normalize` and `POST /api/v1/sightseeing/compare` — normalize operator-supplied descriptions.
+- `POST /api/v1/enrichment/hotel/{item_id}` — normalize source fields and optionally query linked Wikidata/Commons records.
 
-## 🔍 Verify 1,000,000+ Live Inventory (PowerShell)
+## Optional integrations
 
-Run the comprehensive audit to inspect the 1,000,000+ SQLite database, query latencies, and multi-supplier quotes:
-```powershell
-.\.venv\Scripts\python.exe scripts/verify_1m_inventory.py
-```
+`requirements-optional.txt` contains packages for PostgreSQL/Redis/Celery and image quality assessment. The local demo does not require those services. Database persistence, production supplier adapters, real availability/rates, a canonical merge write-path, and customer review feeds are not connected in this prototype.
 
-Run the interactive live walkthrough demo:
-```powershell
-.\.venv\Scripts\python.exe scripts/demo.py
-```
+## Run checks locally
 
----
-
-## 🧪 Automated Testing
-
-Run the full pytest suite:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
-```
-All **24 automated unit and API integration tests** pass 100%.
-
----
-
-## 📤 Push Changes to GitHub
-
-```powershell
-git add .
-git commit -m "feat: 1,000,000+ live multi-supplier inventory, verification suite, and airbnb spacious discovery"
-git push origin main
 ```

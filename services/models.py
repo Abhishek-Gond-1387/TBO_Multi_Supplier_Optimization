@@ -29,13 +29,19 @@ class InventoryItem(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     star_rating: float | None = Field(default=None, ge=0, le=5)
+    property_classification: float | None = Field(default=None, ge=0, le=5)
+    customer_rating: float | None = Field(default=None, ge=0, le=5)
+    review_count: int | None = Field(default=None, ge=0)
     description: str = ""
     source_category: str | None = None
     amenities: list[str] = Field(default_factory=list)
     images: list[str] = Field(default_factory=list)
     offers: list[SupplierOffer] = Field(default_factory=list)
-    conversion_prior: float = Field(default=0.5, ge=0, le=1)
+    conversion_prior: float = Field(default=0.0, ge=0, le=1)
     source_id: str | None = None
+    source: str = "unknown"
+    source_updated_at: str | None = None
+    source_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def best_offer(self) -> SupplierOffer | None:

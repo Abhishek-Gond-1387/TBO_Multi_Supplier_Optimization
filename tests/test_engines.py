@@ -126,20 +126,19 @@ def test_sliding_window_rate_limiter():
     assert limiter.allow("supplier", 2, now=2.1)
 
 
-@pytest.mark.asyncio
-async def test_circuit_breaker_opens_and_recovers():
+def test_circuit_breaker_opens_and_recovers():
     breaker = CircuitBreaker(failure_threshold=1, recovery_seconds=0.01)
 
-    async def fail():
+    def fail():
         raise RuntimeError("supplier down")
 
-    async def succeed():
+    def succeed():
         return "ok"
 
     with pytest.raises(RuntimeError):
-        await breaker.call(fail)
+        breaker.call_sync(fail)
     with pytest.raises(CircuitOpenError):
-        await breaker.call(succeed)
+        breaker.call_sync(succeed)
     breaker.opened_at -= 1
-    assert await breaker.call(succeed) == "ok"
+    assert breaker.call_sync(succeed) == "ok"
     assert breaker.state == "CLOSED"

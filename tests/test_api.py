@@ -8,7 +8,7 @@ from services.main import REVIEW_QUEUE, app
 client = TestClient(app)
 
 
-def test_health_reports_sample_mode_without_database():
+def test_health_reports_local_api_without_database():
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
@@ -26,78 +26,81 @@ def test_public_map_configuration_defaults_to_free_vector_map_style():
     assert response.json()["default_zoom"] == 11
 
 
-def test_destinations_start_with_india_then_include_dubai():
+def test_delhi_pilot_only_lists_the_bundled_city():
     response = client.get("/api/v1/destinations")
     assert response.status_code == 200
     payload = response.json()
     assert payload["countries"][0]["code"] == "IN"
-    assert {"Delhi", "Mumbai", "Goa", "Jaipur"}.issubset(
-        {row["destination"] for row in payload["destinations"] if row["country_code"] == "IN"}
-    )
-    assert any(row["destination"] == "Dubai" and row["country_code"] == "AE" for row in payload["destinations"])
+    assert {row["destination"] for row in payload["destinations"]} == {"Delhi"}
+    assert payload["destinations"][0]["count"] > 0
 
 
-@pytest.mark.asyncio
-async def test_free_open_dataset_is_loaded_into_local_inventory(tmp_path, monkeypatch):
-    dataset = tmp_path / "osm_inventory.json"
-    dataset.write_text(json.dumps({
-        "hotels": [{
-            "source_id": "osm/node/987", "name": "Open Delhi Guesthouse", "city": "Delhi",
-            "country_code": "IN", "latitude": 28.63, "longitude": 77.21, "amenities": ["wifi"],
-        }],
-        "attractions": [],
-    }), encoding="utf-8")
-    monkeypatch.setattr(main, "OPEN_DATA_INVENTORY_PATH", dataset)
-    rows = await main.load_inventory()
-    open_row = next(row for row in rows if row.source_id == "osm/node/987")
-    assert open_row.entity_type == "HOTEL"
-    assert open_row.destination == "Delhi"
-    assert open_row.country_code == "IN"
-    assert open_row.offers == []
+def test_free_open_dataset_is_loaded_into_local_inventory(tmp_path, monkeypatch):
+    import asyncio
+
+    async def _run():
+        dataset = tmp_path / "osm_inventory.json"
+        dataset.write_text(json.dumps({
+            "hotels": [{
+                "source_id": "osm/node/987", "name": "Open Delhi Guesthouse", "city": "Delhi",
+                "country_code": "IN", "latitude": 28.63, "longitude": 77.21, "amenities": ["wifi"],
+            }],
+            "attractions": [],
+        }), encoding="utf-8")
+        monkeypatch.setattr(main, "OPEN_DATA_INVENTORY_PATH", dataset)
+        rows = await main.load_inventory()
+        open_row = next(row for row in rows if row.source_id == "osm/node/987")
+        assert open_row.entity_type == "HOTEL"
+        assert open_row.destination == "Delhi"
+        assert open_row.country_code == "IN"
+        assert open_row.offers == []
+
+    asyncio.run(_run())
 
 
-def test_india_search_filters_to_inr_supplier_offers():
+def test_delhi_search_uses_source_records_without_inventing_supplier_offers():
     response = client.get(
         "/api/v1/inventory/search",
-        params={"country_code": "in", "currency": "INR", "entity_type": "HOTEL"},
+        params={"country_code": "in", "entity_type": "HOTEL"},
     )
     assert response.status_code == 200
     payload = response.json()
     assert payload["count"] >= 1
+    assert payload["source"].startswith("OpenStreetMap snapshot")
     assert all(row["item"]["country_code"] == "IN" for row in payload["results"])
-    assert all(row["selected_supplier"]["currency"] == "INR" for row in payload["results"])
+    assert all(row["selected_supplier"] is None and row["item"]["offers"] == [] for row in payload["results"])
 
 
-def test_country_filter_can_switch_from_india_to_dubai():
+def test_country_filter_returns_no_fake_dubai_records():
     response = client.get(
         "/api/v1/inventory/search",
-        params={"country_code": "AE", "destination": "Dubai", "currency": "USD", "entity_type": "HOTEL"},
+        params={"country_code": "AE", "destination": "Dubai", "entity_type": "HOTEL"},
     )
     assert response.status_code == 200
-    assert response.json()["count"] >= 1
-    assert all(row["item"]["country_code"] == "AE" for row in response.json()["results"])
+    assert response.json()["count"] == 0
+    assert response.json()["results"] == []
 
 
-def test_search_returns_ranked_supplier_offers():
+def test_search_returns_grounded_ranking_without_supplier_feed():
     response = client.get(
         "/api/v1/inventory/search",
-        params={"destination": "Dubai", "entity_type": "HOTEL", "max_price": 150},
+        params={"destination": "Delhi", "entity_type": "HOTEL"},
     )
     assert response.status_code == 200
     payload = response.json()
     assert payload["count"] >= 1
-    assert payload["results"][0]["selected_supplier"]
-    assert payload["results"][0]["rank_factors"]["supplier_reliability"] >= 0
+    assert payload["results"][0]["selected_supplier"] is None
+    assert payload["results"][0]["ranking_method"] == "TEXT_RELEVANCE_AND_SOURCE_COMPLETENESS"
 
 
 def test_voice_endpoint_returns_parsed_filters_and_results():
     response = client.post(
         "/api/v1/voice/query",
-        json={"transcript": "Find 3-star hotels in Dubai with breakfast under 150 dollars"},
+        json={"transcript": "Find hotels in Delhi"},
     )
     assert response.status_code == 200
     payload = response.json()
-    assert payload["parsed_filters"]["destination"] == "Dubai"
+    assert payload["parsed_filters"]["destination"] == "Delhi"
     assert payload["count"] >= 1
     assert payload["voice_reply"].startswith("I found")
 
@@ -111,14 +114,14 @@ def test_voice_endpoint_searches_india_and_rupee_budget():
     payload = response.json()
     assert payload["parsed_filters"]["country_code"] == "IN"
     assert payload["parsed_filters"]["currency"] == "INR"
-    assert payload["count"] >= 1
-    assert all(row["item"]["country_code"] == "IN" for row in payload["results"])
+    assert payload["count"] == 0
+    assert payload["results"] == []
 
 
 def test_map_viewport_uses_bounding_box_and_returns_price_pins():
     response = client.post(
         "/api/v1/map/viewport-inventory",
-        json={"min_lat": 25.10, "max_lat": 25.30, "min_lon": 55.05, "max_lon": 55.40},
+        json={"min_lat": 28.50, "max_lat": 28.75, "min_lon": 77.00, "max_lon": 77.35},
     )
     assert response.status_code == 200
     payload = response.json()
@@ -148,8 +151,8 @@ def test_ingestion_validation_endpoint():
     response = client.post(
         "/api/v1/ingest/hotels/validate",
         json={
-            "supplier_code": "DEMO", "supplier_hotel_id": "demo-1", "name": "<b>Demo Hotel</b>",
-            "city": "Dubai", "country_code": "ae", "latitude": 25.2, "longitude": 55.3,
+            "supplier_code": "TEST", "supplier_hotel_id": "source-1", "name": "<b>Delhi Hotel</b>",
+            "city": "Delhi", "country_code": "in", "latitude": 28.63, "longitude": 77.21,
             "star_rating": 4, "amenities": ["wifi", "pool"],
         },
     )
@@ -169,8 +172,8 @@ def test_manual_review_flow_is_actionable():
     )
     assert response.status_code == 200
     result = response.json()
-    assert result["decision"] in {"AUTO_MERGE", "HUMAN_REVIEW", "REJECT"}
-    if result["decision"] == "HUMAN_REVIEW":
+    assert result["decision"] in {"AUTO_MERGE_CANDIDATE", "HUMAN_REVIEW", "REJECT"}
+    if result["decision"] in {"AUTO_MERGE_CANDIDATE", "HUMAN_REVIEW"}:
         review_id = result["review_id"]
         queued = client.get("/api/v1/admin/matches/review-queue").json()
         assert queued["count"] == 1
@@ -179,31 +182,16 @@ def test_manual_review_flow_is_actionable():
         assert resolved.json()["status"] == "APPROVED"
 
 
-def test_pan_india_stats_and_corridors_endpoints():
-    stats = client.get("/api/v1/pan-india/stats")
-    assert stats.status_code == 200
-    assert stats.json()["total_reachable_inventory"] >= 1000000
+def test_open_data_status_does_not_claim_supplier_rates_or_customer_reviews():
+    response = client.get("/api/v1/data/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["has_open_data_snapshot"] is True
+    assert payload["has_live_rates"] is False
+    assert payload["has_customer_reviews"] is False
 
-    corridors = client.get("/api/v1/pan-india/corridors")
-    assert corridors.status_code == 200
-    assert corridors.json()["count"] >= 5
 
-
-def test_ai_trip_planner_endpoints():
-    chat_q = client.post("/api/v1/ai/chat", json={"message": "hello"})
-    assert chat_q.status_code == 200
-    assert chat_q.json()["type"] == "question"
-
-    plan = client.post(
-        "/api/v1/ai/chat",
-        json={"message": "Plan a 3 days trip to Delhi on mid budget"},
-    )
-    assert plan.status_code == 200
-    data = plan.json()
-    assert data["type"] == "itinerary"
-    assert data["itinerary"]["days"] == 3
-    assert "cost_comparison" in data["itinerary"]
-    assert "budget" in data["itinerary"]["cost_comparison"]
-    assert "luxury" in data["itinerary"]["cost_comparison"]
-    assert len(data["itinerary"]["itinerary"]) == 3
+def test_out_of_scope_trip_planner_is_not_published():
+    assert client.post("/api/v1/ai/chat", json={"message": "hello"}).status_code == 404
+    assert client.post("/api/v1/ai/plan-trip", json={"destination": "Delhi"}).status_code == 404
 

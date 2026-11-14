@@ -27,9 +27,7 @@ area["name"="{city}"]["boundary"="administrative"]->.searchArea;
 (
   nwr["tourism"~"^(hotel|guest_house|hostel|motel|resort|apartment|bed_and_breakfast|attraction|museum|viewpoint|zoo|gallery|theme_park|aquarium|artwork)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
   nwr["historic"~"^(monument|memorial|archaeological_site|fort|castle|ruins|heritage)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
-  nwr["amenity"~"^(restaurant|cafe|fast_food|food_court|pub|bar|marketplace|place_of_worship|arts_centre|cinema|theatre|library|community_centre|spa|public_bath)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
-  nwr["leisure"~"^(park|garden|sports_centre|stadium|water_park|nature_reserve|marina|golf_course|playground)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
-  nwr["shop"~"^(mall|department_store|supermarket|gift|books|clothes|marketplace)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
+  nwr["leisure"~"^(park|garden|stadium|water_park|nature_reserve|marina|golf_course)$"][~"^(name|name:en|name:hi)$"~"."](area.searchArea);
 );
 out center tags {limit};'''
     response = requests.post(
@@ -54,7 +52,7 @@ out center tags {limit};'''
         tourism_type = tags.get("tourism", "")
         hospitality_types = {"hotel", "guest_house", "hostel", "motel", "resort", "apartment", "bed_and_breakfast"}
         bucket = "hotels" if tourism_type in hospitality_types else "attractions"
-        category_key = next((key for key in ("tourism", "historic", "amenity", "leisure", "shop") if tags.get(key)), "place")
+        category_key = next((key for key in ("tourism", "historic", "leisure") if tags.get(key)), "place")
         category_value = tags.get(category_key, "place").replace("_", " ").title()
         category_group = {
             "tourism": "Accommodation" if bucket == "hotels" else "Tourism",
@@ -78,9 +76,15 @@ out center tags {limit};'''
                 "city": city,
                 "country_code": country_code.upper(),
                 "street": tags.get("addr:street", ""),
-                "star_rating": stars,
+                "star_rating": None,
+                "property_classification": stars,
+                "property_classification_source": "OpenStreetMap stars tag" if stars is not None else None,
                 "source_category": f"{category_group} · {category_value}",
                 "last_edited_at": element.get("timestamp"),
+                "wikidata_id": tags.get("wikidata"),
+                "wikipedia_page": tags.get("wikipedia"),
+                "wikimedia_commons_file": tags.get("wikimedia_commons"),
+                "image_url_source_tag": tags.get("image"),
                 "description": " · ".join(
                     value for value in (
                         tags.get("description"),
