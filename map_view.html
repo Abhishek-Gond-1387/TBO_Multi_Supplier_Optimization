@@ -453,6 +453,8 @@
     }
     .entity-tag.hotel { background: linear-gradient(135deg, #1a73e8, #0d47a1); }
     .entity-tag.attraction { background: linear-gradient(135deg, #e37400, #b06000); }
+    .entity-tag.transport { background: linear-gradient(135deg, #059669, #047857); }
+    .entity-tag.dining { background: linear-gradient(135deg, #e11d48, #be123c); }
 
     .photo-bottom-pills {
       position: absolute;
@@ -738,6 +740,340 @@
       background: var(--amber);
       border-color: var(--amber);
     }
+    .google-price-marker.transport { border-left: 3px solid #059669; }
+    .google-price-marker.transport:hover, .google-price-marker.transport.active {
+      background: #059669;
+      border-color: #059669;
+    }
+    .google-price-marker.dining { border-left: 3px solid #e11d48; }
+    .google-price-marker.dining:hover, .google-price-marker.dining.active {
+      background: #e11d48;
+      border-color: #e11d48;
+    }
+
+    /* Google Maps Zoom Controls on Bottom-Right (PHYSICALLY SEPARATED FROM TOP-RIGHT MAP TYPE!) */
+    .map-zoom-controls {
+      position: absolute;
+      bottom: 28px;
+      right: 16px;
+      z-index: 20;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .map-zoom-controls .map-control-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: #fff;
+      color: #3c4043;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+      font-weight: 700;
+      border-bottom: 1px solid #f1f3f4;
+      transition: background 0.12s;
+    }
+    .map-zoom-controls .map-control-btn:last-child {
+      border-bottom: none;
+      font-size: 16px;
+    }
+    .map-zoom-controls .map-control-btn:hover {
+      background: #f1f3f4;
+      color: var(--primary);
+    }
+
+    /* Floating Personal AI Travel Agent Pill */
+    .floating-ai-agent-pill {
+      position: absolute;
+      bottom: 24px;
+      left: 580px;
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #1a73e8, #7c3aed);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.4);
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4), 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
+    }
+    .floating-ai-agent-pill:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 22px rgba(124, 58, 237, 0.55);
+    }
+    .ai-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: ai-pulse 1.8s infinite;
+    }
+    @keyframes ai-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    /* AI Travel Agent Header Pill */
+    .ai-header-pill {
+      background: linear-gradient(135deg, #1a73e8, #7c3aed) !important;
+      color: #fff !important;
+      border: none !important;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35) !important;
+    }
+    .ai-header-pill:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    /* AI Travel Agent Drawer Modal */
+    .ai-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(32,33,36,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+    .ai-drawer-overlay.active { display: flex; }
+    .ai-drawer-window {
+      width: 620px;
+      max-width: 95vw;
+      height: 92vh;
+      background: #fff;
+      border-top-left-radius: 24px;
+      border-bottom-left-radius: 24px;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slide-in-right {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    .ai-drawer-header {
+      padding: 16px 22px;
+      background: linear-gradient(135deg, #0d47a1, #1a73e8, #7c3aed);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .ai-drawer-title-wrap { display: flex; align-items: center; gap: 12px; }
+    .ai-drawer-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(6px);
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .ai-drawer-name { font-size: 17px; font-weight: 800; }
+    .ai-drawer-sub { font-size: 12px; opacity: 0.88; margin-top: 1px; }
+    .ai-close-btn {
+      background: rgba(255,255,255,0.18);
+      border: none;
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      transition: background 0.15s;
+    }
+    .ai-close-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Quick Suggestion Chips inside Drawer */
+    .ai-drawer-chips {
+      display: flex;
+      gap: 8px;
+      padding: 10px 18px;
+      overflow-x: auto;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .ai-drawer-chips::-webkit-scrollbar { display: none; }
+    .ai-chip-btn {
+      flex-shrink: 0;
+      padding: 6px 13px;
+      border-radius: 16px;
+      border: 1px solid #d2d6dc;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .ai-chip-btn:hover {
+      background: #eef2ff;
+      border-color: #6366f1;
+      color: #4338ca;
+    }
+
+    /* Chat Messages Stream */
+    .ai-chat-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #f9fafb;
+    }
+    .ai-msg {
+      display: flex;
+      gap: 12px;
+      max-width: 95%;
+    }
+    .ai-msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .ai-msg.bot { align-self: flex-start; }
+    .ai-msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: #4338ca;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .ai-msg.user .ai-msg-avatar { background: #1a73e8; color: #fff; }
+    .ai-msg-bubble {
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .ai-msg.user .ai-msg-bubble {
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .ai-msg.bot .ai-msg-bubble {
+      background: #fff;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Pricing Tier Cards inside Itinerary */
+    .ai-pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin: 14px 0 10px;
+    }
+    .ai-tier-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .ai-tier-card.budget { border-top: 4px solid #10b981; }
+    .ai-tier-card.mid { border-top: 4px solid #3b82f6; background: #f8faff; }
+    .ai-tier-card.luxury { border-top: 4px solid #8b5cf6; }
+    .ai-tier-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; }
+    .ai-tier-price { font-size: 17px; font-weight: 800; color: #111827; margin: 4px 0; }
+    .ai-tier-desc { font-size: 11px; color: #4b5563; }
+
+    /* Day Itinerary Card inside Drawer */
+    .ai-day-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .ai-day-header {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ai-day-row {
+      font-size: 12.5px;
+      line-height: 1.45;
+      margin: 6px 0;
+      color: #374151;
+      display: flex;
+      gap: 8px;
+    }
+    .ai-day-icon { font-size: 15px; flex-shrink: 0; }
+
+    /* AI Input Bar */
+    .ai-input-bar {
+      padding: 14px 18px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .ai-input-bar input {
+      flex: 1;
+      height: 42px;
+      border: 1px solid #d1d5db;
+      border-radius: 22px;
+      padding: 0 18px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .ai-input-bar input:focus { border-color: var(--primary); }
+    .ai-send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #1a73e8, #7c3aed);
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: opacity 0.15s;
+    }
+    .ai-send-btn:hover { opacity: 0.9; }
 
     /* Modal Overlay */
     .detail-modal-overlay {
@@ -868,7 +1204,7 @@
         <div class="brand-badge">T</div>
         <div class="brand-text">
           <span class="brand-title">TBO MULTI-SUPPLIER</span>
-          <span class="brand-sub">10,000+ REAL &amp; LIVE INVENTORY</span>
+          <span class="brand-sub">PAN-INDIA 1,000,000+ REAL-TIME INVENTORY</span>
         </div>
       </a>
 
@@ -878,7 +1214,7 @@
           <span class="search-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </span>
-          <input id="query" type="text" placeholder="Search 10,000+ hotels, experiences, Connaught Place, South Delhi..." aria-label="Search places">
+          <input id="query" type="text" placeholder="Search 1,000,000+ hotels, sightseeing, transit hubs, Delhi, Goa, Mumbai..." aria-label="Search places">
           <button type="button" class="search-action-btn" id="clear-btn" title="Clear search" style="display:none;">✕</button>
           <button type="button" class="search-action-btn" id="voice-btn" title="Voice Search" aria-label="Voice Search">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
@@ -890,6 +1226,9 @@
       </div>
 
       <div class="top-actions">
+        <button type="button" class="top-pill-btn ai-header-pill" id="ai-agent-open-btn">
+          <span>✨ 🤖 AI Trip Planner</span>
+        </button>
         <button type="button" class="top-pill-btn primary" id="analytics-btn">📊 Live Metrics</button>
         <a href="/admin.html" class="top-pill-btn">Operations Hub ↗</a>
       </div>
@@ -897,17 +1236,28 @@
 
     <!-- Toggleable Filters Bar -->
     <div class="filters-bar">
-      <div class="filter-chip active" data-type="ANY" id="chip-all">✨ All Places (10,800+)</div>
-      <div class="filter-chip" data-type="HOTEL" id="chip-hotel">🏨 Hotels (7,200+)</div>
-      <div class="filter-chip" data-type="ATTRACTION" id="chip-tour">🎡 Sightseeing &amp; Tours (3,600+)</div>
+      <div class="filter-chip active" data-type="ANY" id="chip-all">✨ All (1,000,000+)</div>
+      <div class="filter-chip" data-type="HOTEL" id="chip-hotel">🏨 Hotels</div>
+      <div class="filter-chip" data-type="ATTRACTION" id="chip-tour">🎡 Sightseeing &amp; Tours</div>
+      <div class="filter-chip" data-type="TRANSPORT" id="chip-transport">🚕 Transit &amp; Metro</div>
+      <div class="filter-chip" data-type="DINING" id="chip-dining">🍽️ Food &amp; Dining</div>
       
       <!-- Destination Quick Switcher -->
       <select id="destination-select" class="filter-select" aria-label="Destination">
+        <option value="Pan-India">🇮🇳 Pan-India (1,000,000+ Places)</option>
         <option value="Delhi" selected>📍 Delhi &amp; NCR (6,500+)</option>
         <option value="Mumbai">📍 Mumbai (1,200+)</option>
         <option value="Goa">📍 Goa (1,000+)</option>
         <option value="Jaipur">📍 Jaipur (800+)</option>
         <option value="Agra">📍 Agra (500+)</option>
+        <option value="Bengaluru">📍 Bengaluru &amp; Mysuru</option>
+        <option value="Varanasi">📍 Varanasi</option>
+        <option value="Kochi">📍 Kochi &amp; Munnar</option>
+        <option value="Udaipur">📍 Udaipur</option>
+        <option value="Manali">📍 Manali &amp; Himachal</option>
+        <option value="Kolkata">📍 Kolkata</option>
+        <option value="Hyderabad">📍 Hyderabad</option>
+        <option value="Chennai">📍 Chennai</option>
         <option value="Dubai">📍 Dubai (600+)</option>
       </select>
 
@@ -968,18 +1318,66 @@
         <button type="button" id="clear-route-btn">✕ Clear</button>
       </div>
 
-      <!-- Floating Google Maps Layer & View Controls -->
+      <!-- Floating Google Maps Layer & View Controls (Top-Right) -->
       <div class="map-floating-controls">
         <div class="map-btn-group">
           <button class="map-control-btn active" id="btn-style-road" title="Google Roadmap Style">🗺️</button>
           <button class="map-control-btn" id="btn-style-satellite" title="Satellite Hybrid Style">🛰️</button>
         </div>
         <div class="map-btn-group">
-          <button class="map-control-btn" id="btn-recenter" title="Center on Connaught Place, New Delhi">📍</button>
+          <button class="map-control-btn" id="btn-recenter" title="Recenter City View">📍</button>
         </div>
       </div>
+
+      <!-- Dedicated Google Maps Zoom Controls on Bottom-Right (COMPLETELY SEPARATE FROM LAYER BUTTONS!) -->
+      <div class="map-zoom-controls">
+        <button class="map-control-btn" id="btn-zoom-in" title="Zoom in (＋)">＋</button>
+        <button class="map-control-btn" id="btn-zoom-out" title="Zoom out (－)">－</button>
+        <button class="map-control-btn" id="btn-reset-north" title="Reset North (🧭)">🧭</button>
+      </div>
+
+      <!-- Floating Personal AI Travel Agent Pill -->
+      <button class="floating-ai-agent-pill" id="floating-ai-agent-btn">
+        <span class="ai-pulse-dot"></span>
+        <span style="font-size: 18px;">🤖</span>
+        <span>AI Trip Planner</span>
+      </button>
     </section>
   </main>
+
+  <!-- Personal AI Travel Agent Concierge Drawer Modal -->
+  <div class="ai-drawer-overlay" id="ai-drawer-overlay">
+    <div class="ai-drawer-window">
+      <div class="ai-drawer-header">
+        <div class="ai-drawer-title-wrap">
+          <div class="ai-drawer-avatar">🤖</div>
+          <div>
+            <div class="ai-drawer-name">TBO AI Personal Travel Concierge</div>
+            <div class="ai-drawer-sub">Custom N-Day Itineraries · Budget, Mid &amp; Luxury · Food &amp; Transit</div>
+          </div>
+        </div>
+        <button class="ai-close-btn" id="ai-drawer-close" title="Close AI Assistant">&times;</button>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="ai-drawer-chips">
+        <button class="ai-chip-btn" data-prompt="Plan a 3-day Delhi heritage and food trip on mid budget">📍 3-Day Delhi (Mid-Range)</button>
+        <button class="ai-chip-btn" data-prompt="Plan a 4-day Goa beach vacation">🏖️ 4-Day Goa Beach</button>
+        <button class="ai-chip-btn" data-prompt="Plan a 2-day Jaipur royal palaces tour">👑 2-Day Jaipur Palaces</button>
+        <button class="ai-chip-btn" data-prompt="Plan a 1-day Taj Mahal Agra tour on budget">🕌 1-Day Agra Taj Mahal</button>
+        <button class="ai-chip-btn" data-prompt="Plan a 3-day Mumbai coastal and Bollywood trip">💼 3-Day Mumbai</button>
+      </div>
+
+      <!-- Chat Stream -->
+      <div class="ai-chat-stream" id="ai-chat-body"></div>
+
+      <!-- Input Bar -->
+      <div class="ai-input-bar">
+        <input type="text" id="ai-input" placeholder="Tell me: e.g. 'Plan 4 days in Goa for 2 on a 25,000 budget'..." />
+        <button type="button" class="ai-send-btn" id="ai-send-btn" title="Send message">➤</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Full Details & Multi-Supplier Comparison Modal -->
   <div class="detail-modal-overlay" id="detail-modal">
@@ -1019,11 +1417,20 @@
     };
 
     const CITY_COORDS = {
+      'Pan-India': [78.9629, 21.5937],
       'Delhi': [77.2167, 28.6315],
       'Mumbai': [72.8777, 19.0760],
       'Goa': [73.8180, 15.4989],
       'Jaipur': [75.7873, 26.9124],
       'Agra': [78.0081, 27.1767],
+      'Bengaluru': [77.5946, 12.9716],
+      'Varanasi': [82.9739, 25.3176],
+      'Kochi': [76.2673, 9.9312],
+      'Udaipur': [73.6827, 24.5854],
+      'Manali': [77.1892, 32.2396],
+      'Kolkata': [88.3639, 22.5726],
+      'Hyderabad': [78.4867, 17.3850],
+      'Chennai': [80.2707, 13.0827],
       'Dubai': [55.2781, 25.2106]
     };
 
@@ -1046,6 +1453,18 @@
         'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80'
+      ],
+      transport: [
+        'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1557223562-6c77ef16210f?auto=format&fit=crop&w=800&q=80'
+      ],
+      dining: [
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80'
       ]
     };
 
@@ -1071,7 +1490,9 @@
       attributionControl: false
     });
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: true }), 'top-right');
+    document.getElementById('btn-zoom-in').addEventListener('click', () => map.zoomIn({ duration: 250 }));
+    document.getElementById('btn-zoom-out').addEventListener('click', () => map.zoomOut({ duration: 250 }));
+    document.getElementById('btn-reset-north').addEventListener('click', () => map.resetNorthPitch({ duration: 400 }));
 
     function formatMoney(amountInINR) {
       if (amountInINR == null) return 'Quote needed';
@@ -1139,6 +1560,8 @@
             'match',
             ['get', 'entity_type'],
             'HOTEL', '#1a73e8',
+            'TRANSPORT', '#059669',
+            'DINING', '#e11d48',
             /* default / ATTRACTION */ '#e37400'
           ],
           'circle-stroke-width': 2,
@@ -1234,7 +1657,7 @@
       const targetEntityType = forceEntityType || (entityType !== 'ANY' ? entityType : null);
 
       filteredInventory = allInventory.filter(({ item, selected_supplier }) => {
-        if (city && item.destination.toLowerCase() !== city.toLowerCase()) return false;
+        if (city && city !== 'Pan-India' && city !== 'All' && item.destination.toLowerCase() !== city.toLowerCase()) return false;
         if (targetEntityType && item.entity_type !== targetEntityType) return false;
 
         if (searchTerms.length > 0) {
@@ -1296,7 +1719,11 @@
       const countEl = document.getElementById('results-count');
       const city = document.getElementById('destination-select').value;
 
-      countEl.textContent = `${filteredInventory.length.toLocaleString()} verified places in ${city}`;
+      if (city === 'Pan-India' || city === 'All') {
+        countEl.textContent = `${filteredInventory.length.toLocaleString()} verified places across Pan-India Network`;
+      } else {
+        countEl.textContent = `${filteredInventory.length.toLocaleString()} verified places in ${city}`;
+      }
       listEl.scrollTop = 0;
       listEl.innerHTML = '';
       renderedCount = 0;
@@ -1320,7 +1747,10 @@
       if (item.images && item.images.length && item.images[0].startsWith('http')) {
         return item.images[0];
       }
-      const list = item.entity_type === 'HOTEL' ? FALLBACK_PHOTOS.hotel : FALLBACK_PHOTOS.attraction;
+      let list = FALLBACK_PHOTOS.hotel;
+      if (item.entity_type === 'ATTRACTION') list = FALLBACK_PHOTOS.attraction;
+      else if (item.entity_type === 'TRANSPORT') list = FALLBACK_PHOTOS.transport || FALLBACK_PHOTOS.hotel;
+      else if (item.entity_type === 'DINING') list = FALLBACK_PHOTOS.dining || FALLBACK_PHOTOS.attraction;
       return list[index % list.length];
     }
 
@@ -1334,6 +1764,32 @@
         const photo = getCardPhoto(item, renderedCount + sliceIdx);
         const bestOffer = selected_supplier || (item.offers || [])[0];
         const isHotel = item.entity_type === 'HOTEL';
+        const isAttraction = item.entity_type === 'ATTRACTION';
+        const isTransport = item.entity_type === 'TRANSPORT';
+        const isDining = item.entity_type === 'DINING';
+
+        let tagClass = 'hotel';
+        let tagLabel = '🏨 HOTEL';
+        let categoryRowLabel = 'Hotel &amp; Suites';
+        let pricePeriod = '/ night';
+
+        if (isAttraction) {
+          tagClass = 'attraction';
+          tagLabel = '🎡 EXPERIENCE';
+          categoryRowLabel = 'Guided Tour &amp; Experience';
+          pricePeriod = '/ ticket';
+        } else if (isTransport) {
+          tagClass = 'transport';
+          tagLabel = '🚕 TRANSIT HUB';
+          categoryRowLabel = 'Intercity Express &amp; Transit Hub';
+          pricePeriod = '/ transfer';
+        } else if (isDining) {
+          tagClass = 'dining';
+          tagLabel = '🍽️ DINING SPOT';
+          categoryRowLabel = 'Heritage Restaurant &amp; Cuisine';
+          pricePeriod = '/ person';
+        }
+
         const stars = item.star_rating ? `${item.star_rating.toFixed(1)} ★` : '4.8 ★';
         const offerCount = (item.offers || []).length;
         const isHighlight = item.id === selectedItemId;
@@ -1348,7 +1804,7 @@
             <div class="card-photo-wrap">
               <img src="${photo}" class="card-photo" alt="${item.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'">
               <span class="badge-guest-favorite">★ Guest Favorite</span>
-              <span class="entity-tag ${isHotel ? 'hotel' : 'attraction'}">${isHotel ? '🏨 HOTEL' : '🎡 EXPERIENCE'}</span>
+              <span class="entity-tag ${tagClass}">${tagLabel}</span>
               <div class="photo-bottom-pills">
                 <span class="photo-glass-pill">HD Verified</span>
                 <span class="photo-glass-pill">Free Cancellation</span>
@@ -1358,7 +1814,7 @@
             <!-- Detailed Content Body (Airbnb/OYO Style) -->
             <div class="card-body">
               <div class="card-category-row">
-                ${isHotel ? 'Hotel &amp; Suites' : 'Guided Tour &amp; Experience'} · ${item.destination}
+                ${categoryRowLabel} · ${item.destination}
               </div>
 
               <div class="card-title-row">
@@ -1376,7 +1832,7 @@
 
               <!-- Amenities Pills -->
               <div class="card-amenities-row">
-                <span class="amenity-chip highlight">🍳 Free Breakfast</span>
+                <span class="amenity-chip highlight">${isDining ? '🍽️ Must-Try Special' : isTransport ? '⚡ Express Transit' : '🍳 Free Breakfast'}</span>
                 <span class="amenity-chip highlight">🆓 Free Cancellation</span>
                 ${(item.amenities || []).slice(0, 3).map(a => `<span class="amenity-chip">${a}</span>`).join('')}
               </div>
@@ -1387,7 +1843,7 @@
                   <span class="strike-price">${formatMoney(strikePrice)}</span>
                   <div class="main-price-row">
                     <span class="price-amount">${formatMoney(basePrice)}</span>
-                    <span class="price-period">/ night</span>
+                    <span class="price-period">${pricePeriod}</span>
                     <span class="savings-badge">${savingsPct}% OFF</span>
                   </div>
                   <span class="supplier-quote-label">Best Rate via <strong>${bestOffer ? bestOffer.supplier_name : 'TBO'}</strong></span>
@@ -1476,13 +1932,23 @@
       visibleItems.forEach(({ item, selected_supplier }) => {
         const bestOffer = selected_supplier || (item.offers || [])[0];
         const isHotel = item.entity_type === 'HOTEL';
-        const priceLabel = bestOffer ? formatMoney(bestOffer.price) : (isHotel ? 'Hotel' : 'Tour');
+        const isTransport = item.entity_type === 'TRANSPORT';
+        const isDining = item.entity_type === 'DINING';
+
+        let markerClass = 'attraction';
+        let icon = '🎡';
+        let fallbackLabel = 'Tour';
+        if (isHotel) { markerClass = 'hotel'; icon = '🏨'; fallbackLabel = 'Hotel'; }
+        else if (isTransport) { markerClass = 'transport'; icon = '🚕'; fallbackLabel = 'Transit'; }
+        else if (isDining) { markerClass = 'dining'; icon = '🍽️'; fallbackLabel = 'Dining'; }
+
+        const priceLabel = bestOffer ? formatMoney(bestOffer.price) : fallbackLabel;
         const isActive = item.id === selectedItemId;
 
         if (activeDomMarkers.has(item.id)) {
           const existing = activeDomMarkers.get(item.id);
           if (existing.priceText !== priceLabel) {
-            existing.el.innerHTML = `<span>${isHotel ? '🏨' : '🎡'}</span> <span>${priceLabel}</span>`;
+            existing.el.innerHTML = `<span>${icon}</span> <span>${priceLabel}</span>`;
             existing.priceText = priceLabel;
           }
           if (isActive) existing.el.classList.add('active');
@@ -1491,8 +1957,8 @@
         }
 
         const el = document.createElement('div');
-        el.className = `google-price-marker ${isHotel ? 'hotel' : 'attraction'} ${isActive ? 'active' : ''}`;
-        el.innerHTML = `<span>${isHotel ? '🏨' : '🎡'}</span> <span>${priceLabel}</span>`;
+        el.className = `google-price-marker ${markerClass} ${isActive ? 'active' : ''}`;
+        el.innerHTML = `<span>${icon}</span> <span>${priceLabel}</span>`;
         el.title = `${item.name} (${priceLabel})`;
 
         el.addEventListener('click', (e) => {
@@ -2082,6 +2548,335 @@
         document.getElementById('detail-modal').classList.remove('active');
       }
     });
+
+    // ==========================================
+    // PERSONAL AI TRAVEL AGENT & CONCIERGE LOGIC
+    // ==========================================
+    const aiDrawerOverlay = document.getElementById('ai-drawer-overlay');
+    const aiDrawerCloseBtn = document.getElementById('ai-drawer-close');
+    const aiChatBody = document.getElementById('ai-chat-body');
+    const aiInput = document.getElementById('ai-input');
+    const aiSendBtn = document.getElementById('ai-send-btn');
+    const floatingAiBtn = document.getElementById('floating-ai-agent-btn');
+    const headerAiBtn = document.getElementById('ai-agent-open-btn');
+
+    let aiItineraryMarkers = [];
+
+    function openAIDrawer(prefillQuery = '') {
+      aiDrawerOverlay.classList.add('active');
+      if (aiChatBody.children.length === 0) {
+        appendBotMessage({
+          reply: `**Namaste & Welcome!** 🙏 I am your **TBO Personal AI Travel Concierge**.\n\nTell me what trip you have in mind! For example:\n- *"Plan a 3-day Delhi heritage and food trip on mid budget"*\n- *"4 days in Goa for 2 on 25,000 budget"*\n- *"2 days in Jaipur royal palaces luxury"*\n\nI will calculate **Budget, Mid-Range, and Luxury** price tiers, recommend famous local dining spots, give transit advice, and plot your entire trip route live on the map!`
+        });
+      }
+      if (prefillQuery) {
+        aiInput.value = prefillQuery;
+        sendAIMessage();
+      } else {
+        setTimeout(() => aiInput.focus(), 200);
+      }
+    }
+
+    function closeAIDrawer() {
+      aiDrawerOverlay.classList.remove('active');
+    }
+
+    if (floatingAiBtn) floatingAiBtn.addEventListener('click', () => openAIDrawer());
+    if (headerAiBtn) headerAiBtn.addEventListener('click', () => openAIDrawer());
+    if (aiDrawerCloseBtn) aiDrawerCloseBtn.addEventListener('click', closeAIDrawer);
+    aiDrawerOverlay.addEventListener('click', (e) => {
+      if (e.target === aiDrawerOverlay) closeAIDrawer();
+    });
+
+    // Quick chip buttons
+    document.querySelectorAll('.ai-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prompt = btn.getAttribute('data-prompt');
+        if (prompt) {
+          aiInput.value = prompt;
+          sendAIMessage();
+        }
+      });
+    });
+
+    aiSendBtn.addEventListener('click', () => sendAIMessage());
+    aiInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendAIMessage();
+      }
+    });
+
+    function appendUserMessage(text) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-msg user';
+      msgDiv.innerHTML = `
+        <div class="ai-msg-avatar">👤</div>
+        <div class="ai-msg-bubble">${escapeHtml(text)}</div>
+      `;
+      aiChatBody.appendChild(msgDiv);
+      aiChatBody.scrollTop = aiChatBody.scrollHeight;
+    }
+
+    function formatMarkdownText(text) {
+      if (!text) return '';
+      let html = escapeHtml(text);
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/\n- /g, '<br>• ');
+      html = html.replace(/\n\d+\. /g, (m) => `<br><b>${m.trim()}</b> `);
+      html = html.replace(/\n\n/g, '<br><br>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    function appendBotMessage(data) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-msg bot';
+
+      let inner = `
+        <div class="ai-msg-avatar">🤖</div>
+        <div class="ai-msg-bubble">
+          <div>${formatMarkdownText(data.reply)}</div>
+      `;
+
+      if (data.itinerary) {
+        const plan = data.itinerary;
+        const comp = plan.cost_comparison || {};
+        const b = comp.budget || {};
+        const m = comp.mid || {};
+        const l = comp.luxury || {};
+
+        inner += `
+          <div style="margin-top:14px; font-weight:800; font-size:12.5px; color:#4b5563; text-transform:uppercase; letter-spacing:0.04em;">
+            💰 3-Tier Price Comparison (${plan.duration_days} Days in ${plan.destination})
+          </div>
+          <div class="ai-pricing-grid">
+            <div class="ai-tier-card budget">
+              <div class="ai-tier-title">Cheapest (Budget)</div>
+              <div class="ai-tier-price">₹${(b.total_cost || 0).toLocaleString()}</div>
+              <div class="ai-tier-desc">Stay: ₹${(b.hotel_per_night || 0).toLocaleString()}/nt<br>Metro &amp; Street Food</div>
+            </div>
+            <div class="ai-tier-card mid">
+              <div class="ai-tier-title" style="color:#2563eb;">⭐ Mid-Level (Best)</div>
+              <div class="ai-tier-price" style="color:#1d4ed8;">₹${(m.total_cost || 0).toLocaleString()}</div>
+              <div class="ai-tier-desc">Stay: ₹${(m.hotel_per_night || 0).toLocaleString()}/nt<br>AC Cabs &amp; Top Cafes</div>
+            </div>
+            <div class="ai-tier-card luxury">
+              <div class="ai-tier-title" style="color:#7c3aed;">👑 Luxury (VIP)</div>
+              <div class="ai-tier-price" style="color:#6d28d9;">₹${(l.total_cost || 0).toLocaleString()}</div>
+              <div class="ai-tier-desc">Stay: ₹${(l.hotel_per_night || 0).toLocaleString()}/nt<br>5-Star &amp; Chauffeur</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px; font-weight:800; font-size:12.5px; color:#4b5563; text-transform:uppercase; letter-spacing:0.04em;">
+            🗓️ Day-by-Day Detailed Plan
+          </div>
+        `;
+
+        (plan.days || []).forEach(day => {
+          inner += `
+            <div class="ai-day-card">
+              <div class="ai-day-header">
+                <span>📍 Day ${day.day_number}:</span> <span>${escapeHtml(day.theme)}</span>
+              </div>
+              <div class="ai-day-row">
+                <span class="ai-day-icon">🌅</span>
+                <div><strong>Morning:</strong> ${escapeHtml(day.morning)}</div>
+              </div>
+              <div class="ai-day-row">
+                <span class="ai-day-icon">☀️</span>
+                <div><strong>Afternoon:</strong> ${escapeHtml(day.afternoon)}</div>
+              </div>
+              <div class="ai-day-row">
+                <span class="ai-day-icon">🌆</span>
+                <div><strong>Evening:</strong> ${escapeHtml(day.evening)}</div>
+              </div>
+              <div class="ai-day-row" style="background:#fef2f2; border-radius:8px; padding:6px 10px; margin-top:8px;">
+                <span class="ai-day-icon">🍽️</span>
+                <div><strong>Where to Eat:</strong> ${(day.recommended_food || []).join(' · ')}</div>
+              </div>
+              <div class="ai-day-row" style="background:#ecfdf5; border-radius:8px; padding:6px 10px;">
+                <span class="ai-day-icon">🚕</span>
+                <div><strong>Transit:</strong> ${escapeHtml(day.transit_advice || '')}</div>
+              </div>
+            </div>
+          `;
+        });
+
+        inner += `
+          <div style="margin-top:16px; display:flex; gap:10px;">
+            <button type="button" class="card-action-btn primary" id="btn-plot-itinerary" style="padding:10px 18px; font-weight:700;">
+              🗺️ Plot ${plan.duration_days}-Day Route on Live Map
+            </button>
+            <button type="button" class="card-action-btn" onclick="openDetails('${plan.destination.toLowerCase() === 'delhi' ? 'tbo-del-001' : 'tbo-goa-001'}')">
+              🏨 View Hotel Rates
+            </button>
+          </div>
+        `;
+      }
+
+      inner += `</div>`;
+      msgDiv.innerHTML = inner;
+      aiChatBody.appendChild(msgDiv);
+      aiChatBody.scrollTop = aiChatBody.scrollHeight;
+
+      if (data.itinerary) {
+        const plotBtn = msgDiv.querySelector('#btn-plot-itinerary');
+        if (plotBtn) {
+          plotBtn.addEventListener('click', () => {
+            plotItineraryOnMap(data.itinerary);
+          });
+        }
+      }
+    }
+
+    async function sendAIMessage() {
+      const query = aiInput.value.trim();
+      if (!query) return;
+
+      appendUserMessage(query);
+      aiInput.value = '';
+
+      const loaderDiv = document.createElement('div');
+      loaderDiv.className = 'ai-msg bot';
+      loaderDiv.id = 'ai-loading-indicator';
+      loaderDiv.innerHTML = `
+        <div class="ai-msg-avatar">🤖</div>
+        <div class="ai-msg-bubble" style="color:#6b7280; font-style:italic;">
+          ⚡ Analyzing 1,000,000+ Pan-India places, live supplier quotes & transit corridors...
+        </div>
+      `;
+      aiChatBody.appendChild(loaderDiv);
+      aiChatBody.scrollTop = aiChatBody.scrollHeight;
+
+      try {
+        const res = await fetch(`${API}/ai/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query })
+        });
+        const data = await res.json();
+        const existingLoader = document.getElementById('ai-loading-indicator');
+        if (existingLoader) existingLoader.remove();
+        appendBotMessage(data);
+      } catch (err) {
+        const existingLoader = document.getElementById('ai-loading-indicator');
+        if (existingLoader) existingLoader.remove();
+        appendBotMessage({
+          reply: `⚠️ Sorry, I could not connect to the AI planning service (${err.message}). Please ensure the backend is running on 127.0.0.1:8000.`
+        });
+      }
+    }
+
+    // ==========================================
+    // PLOT ITINERARY ROUTE ON MAP
+    // ==========================================
+    function clearItineraryRoute() {
+      aiItineraryMarkers.forEach(m => m.remove());
+      aiItineraryMarkers = [];
+      if (map.getLayer('ai-route-line')) map.removeLayer('ai-route-line');
+      if (map.getSource('ai-route-source')) map.removeSource('ai-route-source');
+      document.getElementById('route-banner').classList.remove('active');
+    }
+
+    document.getElementById('clear-route-btn').addEventListener('click', clearItineraryRoute);
+
+    function plotItineraryOnMap(plan) {
+      clearItineraryRoute();
+      closeAIDrawer();
+
+      const allWaypoints = [];
+      (plan.days || []).forEach(day => {
+        (day.waypoints || []).forEach(wp => {
+          if (wp.coords && wp.coords.length === 2) {
+            allWaypoints.push({
+              name: wp.name,
+              coords: wp.coords,
+              day: day.day_number,
+              type: wp.type
+            });
+          }
+        });
+      });
+
+      if (!allWaypoints.length) return;
+
+      const lineCoordinates = allWaypoints.map(w => w.coords);
+
+      const routeGeoJson = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: lineCoordinates
+        },
+        properties: {
+          title: `${plan.destination} Route`
+        }
+      };
+
+      if (!map.getSource('ai-route-source')) {
+        map.addSource('ai-route-source', {
+          type: 'geojson',
+          data: routeGeoJson
+        });
+        map.addLayer({
+          id: 'ai-route-line',
+          type: 'line',
+          source: 'ai-route-source',
+          paint: {
+            'line-color': '#1a73e8',
+            'line-width': 5,
+            'line-dasharray': [2, 1.5]
+          }
+        });
+      } else {
+        map.getSource('ai-route-source').setData(routeGeoJson);
+      }
+
+      // Add Stop Markers
+      const bounds = new maplibregl.LngLatBounds();
+      allWaypoints.forEach((wp, idx) => {
+        bounds.extend(wp.coords);
+        const el = document.createElement('div');
+        el.style.cssText = `
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #1a73e8;
+          color: #fff;
+          font-weight: 800;
+          font-size: 13px;
+          display: grid;
+          place-items: center;
+          border: 2px solid #fff;
+          box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+          cursor: pointer;
+        `;
+        el.textContent = `${idx + 1}`;
+        el.title = `Stop ${idx + 1} (Day ${wp.day}): ${wp.name}`;
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat(wp.coords)
+          .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`
+            <div style="font-family:inherit; padding:4px;">
+              <div style="font-size:11px; font-weight:800; color:#1a73e8;">DAY ${wp.day} · STOP ${idx + 1}</div>
+              <div style="font-size:14px; font-weight:700; margin:2px 0;">${escapeHtml(wp.name)}</div>
+              <div style="font-size:12px; color:#5f6368;">Type: ${escapeHtml(wp.type || 'Attraction')}</div>
+            </div>
+          `))
+          .addTo(map);
+
+        aiItineraryMarkers.push(marker);
+      });
+
+      map.fitBounds(bounds, { padding: 90, duration: 1200, maxZoom: 14 });
+
+      const banner = document.getElementById('route-banner');
+      const bannerText = document.getElementById('route-banner-text');
+      bannerText.textContent = `📍 ${plan.destination} ${plan.duration_days}-Day Trip Route (${allWaypoints.length} stops plotted across city)`;
+      banner.classList.add('active');
+    }
 
     document.getElementById('analytics-btn').addEventListener('click', async () => {
       try {

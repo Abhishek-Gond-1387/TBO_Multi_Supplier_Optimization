@@ -44,11 +44,18 @@ from services.config import (
     MAP_DEFAULT_ZOOM,
     USE_DATABASE,
 )
+from services.ai_trip_planner import PAN_INDIA_HUBS, generate_itinerary, parse_trip_intent
 from services.dynamic_ranking_engine import rank_items
 from services.hotel_deduplication import compare_hotels, haversine_meters
 from services.ingestion_validator import RawSupplierHotelPayload, calculate_data_quality_score
 from services.models import InventoryItem
 from services.open_geo import geocode_address, reverse_geocode
+from services.pan_india_catalog import (
+    PAN_INDIA_DINING_SPOTS,
+    PAN_INDIA_TRANSPORT_HUBS,
+    get_pan_india_stats,
+    get_transit_corridors,
+)
 from services.room_normalizer import normalize_room_title
 from services.sightseeing_difference_engine import (
     extract_tour_inclusions,
@@ -410,6 +417,11 @@ async def load_inventory() -> list[InventoryItem]:
                         existing_sources.add(source_id)
             except (OSError, json.JSONDecodeError):
                 pass
+        existing_ids = {r.get("id") for r in rows}
+        for hub in PAN_INDIA_TRANSPORT_HUBS + PAN_INDIA_DINING_SPOTS:
+            if hub.get("id") not in existing_ids:
+                rows.append(hub)
+                existing_ids.add(hub.get("id"))
     items = [InventoryItem.model_validate(row) for row in rows]
     if not USE_DATABASE:
         _INVENTORY_CACHE_SIGNATURE = signature
@@ -669,14 +681,14 @@ async def search_inventory(
     destination: str | None = None,
     country_code: str | None = Query(default=None, min_length=2, max_length=2),
     currency: str | None = Query(default=None, min_length=3, max_length=3),
-    entity_type: Literal["HOTEL", "ATTRACTION"] | None = None,
+    entity_type: Literal["HOTEL", "ATTRACTION", "TRANSPORT", "DINING"] | str | None = None,
     max_price: float | None = Query(default=None, gt=0),
     min_stars: float | None = Query(default=None, ge=0, le=5),
     landmark: str | None = None,
     inclusions: list[str] = Query(default=[]),
 ) -> dict[str, Any]:
     items = await load_inventory()
-    if destination:
+    if destination and destination.casefold() not in {"pan-india", "all", "india"}:
         items = [item for item in items if destination.casefold() in item.destination.casefold()]
     if country_code:
         code = country_code.upper()
@@ -1179,6 +1191,104 @@ def analytics_summary() -> dict[str, Any]:
         "click_through_rate_pct": round(100 * views / impressions, 2) if impressions else 0.0,
         "booking_conversion_rate_pct": round(100 * bookings / impressions, 2) if impressions else 0.0,
         "audit_events": len(AUDIT_LOG),
+    }
+
+
+# --- Pan-India Interconnectivity & Live Stats ---
+@app.get(f"{API_V1_PREFIX}/pan-india/stats")
+def pan_india_stats() -> dict[str, Any]:
+    """Live statistics across 1,250,000+ Pan-India places, suppliers, and transit hubs."""
+    return get_pan_india_stats()
+
+
+@app.get(f"{API_V1_PREFIX}/pan-india/corridors")
+def pan_india_corridors() -> dict[str, Any]:
+    """Interconnectivity matrix across major high-speed rail, expressways, and flights."""
+    corridors = get_transit_corridors()
+    return {"count": len(corridors), "corridors": corridors}
+
+
+# --- Personal AI Travel Agent & Itinerary Planner ---
+class AIPlanRequest(BaseModel):
+    destination: str = "Delhi"
+    days: int = 3
+    budget_tier: Literal["budget", "mid", "luxury", "any"] = "mid"
+    query: str | None = None
+
+
+class AIChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    context: dict[str, Any] | None = None
+
+
+@app.post(f"{API_V1_PREFIX}/ai/plan-trip")
+def ai_plan_trip(request: AIPlanRequest) -> dict[str, Any]:
+    """Generate a complete N-day itinerary with Budget/Mid/Luxury pricing, stays, food, transit & map points."""
+    return generate_itinerary(
+        destination=request.destination,
+        days=request.days,
+        preferred_budget=request.budget_tier,
+    )
+
+
+@app.post(f"{API_V1_PREFIX}/ai/chat")
+def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
+    """Conversational Personal AI Agent for travel planning with clarifying questions & instant itineraries."""
+    user_msg = request.message.strip()
+    intent = parse_trip_intent(user_msg)
+
+    # If the user asks general greetings or open-ended request without city
+    if not intent.get("destination"):
+        days_txt = f"{intent['days']} days" if intent.get("days") else "a few days"
+        return {
+            "type": "question",
+            "reply": (
+                f"Namaste! 🙏 I'm your **TBO AI Personal Travel Concierge**.\n\n"
+                f"I'd love to craft the perfect {days_txt} trip plan for you across Pan-India or international destinations!\n\n"
+                f"To give you an exact day-by-day plan with stays, transit, and food, please let me know:\n"
+                f"1. 📍 **Which city would you like to visit?** *(e.g., Delhi, Goa, Jaipur, Mumbai, Agra, Varanasi, Manali)*\n"
+                f"2. 🗓️ **How many days?** *(e.g., 2, 3, 5 days)*\n"
+                f"3. 💰 **Preferred budget?** *(Budget / Mid-Level / Luxury)*"
+            ),
+            "suggestions": [
+                "Plan 3 days in Delhi (Mid-Range)",
+                "Plan 4 days in Goa Beach & Sunset",
+                "Plan 2 days in Jaipur Royal Palaces",
+                "Plan 1 day Taj Mahal Agra Trip",
+            ],
+            "itinerary": None,
+        }
+
+    dest = intent["destination"]
+    days = intent.get("days") or 3
+    budget = intent.get("budget_tier") if intent.get("budget_tier") != "any" else "mid"
+
+    plan = generate_itinerary(destination=dest, days=days, preferred_budget=budget)
+
+    tier_label = {
+        "budget": "Budget (Cheapest)",
+        "mid": "Mid-Level (Recommended)",
+        "luxury": "Luxury (5-Star VIP)",
+    }.get(budget, "Mid-Level")
+    total_est = plan["cost_comparison"][budget if budget in plan["cost_comparison"] else "mid"]["total_cost"]
+
+    reply_text = (
+        f"✨ **Here is your custom {days}-Day {dest} Itinerary!**\n\n"
+        f"🎯 **Target Tier:** {tier_label} (Estimated total: ~₹{total_est:,})\n"
+        f"☀️ **Best Season:** {plan['best_season']}\n"
+        f"🚇 **Key Transit Hub:** {plan['transit_connectivity'].get('airport', 'Airport')} | {plan['transit_connectivity'].get('metro', 'Metro Link')}\n\n"
+        f"I've mapped out where to stay across Budget, Mid-Level, and Luxury tiers, authentic food spots for every meal, and transit directions for each day. Click **'Plot on Map'** below to view all waypoints live!"
+    )
+
+    return {
+        "type": "itinerary",
+        "reply": reply_text,
+        "itinerary": plan,
+        "quick_actions": [
+            {"label": "🗺️ Plot on Map", "action": "plot_map"},
+            {"label": "💰 Compare Cheapest vs Luxury", "action": "show_pricing"},
+            {"label": "🍽️ View Famous Food Spots", "action": "show_food"},
+        ],
     }
 
 

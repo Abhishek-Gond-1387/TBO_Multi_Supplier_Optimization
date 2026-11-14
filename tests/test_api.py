@@ -177,3 +177,33 @@ def test_manual_review_flow_is_actionable():
         resolved = client.put(f"/api/v1/review-queue/{review_id}", json={"status": "APPROVED", "reviewer": "test"})
         assert resolved.status_code == 200
         assert resolved.json()["status"] == "APPROVED"
+
+
+def test_pan_india_stats_and_corridors_endpoints():
+    stats = client.get("/api/v1/pan-india/stats")
+    assert stats.status_code == 200
+    assert stats.json()["total_reachable_inventory"] >= 1000000
+
+    corridors = client.get("/api/v1/pan-india/corridors")
+    assert corridors.status_code == 200
+    assert corridors.json()["count"] >= 5
+
+
+def test_ai_trip_planner_endpoints():
+    chat_q = client.post("/api/v1/ai/chat", json={"message": "hello"})
+    assert chat_q.status_code == 200
+    assert chat_q.json()["type"] == "question"
+
+    plan = client.post(
+        "/api/v1/ai/chat",
+        json={"message": "Plan a 3 days trip to Delhi on mid budget"},
+    )
+    assert plan.status_code == 200
+    data = plan.json()
+    assert data["type"] == "itinerary"
+    assert data["itinerary"]["days"] == 3
+    assert "cost_comparison" in data["itinerary"]
+    assert "budget" in data["itinerary"]["cost_comparison"]
+    assert "luxury" in data["itinerary"]["cost_comparison"]
+    assert len(data["itinerary"]["itinerary"]) == 3
+

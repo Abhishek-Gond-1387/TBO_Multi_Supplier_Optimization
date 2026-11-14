@@ -23,7 +23,7 @@ class SupplierOffer(BaseModel):
 class InventoryItem(BaseModel):
     id: str
     name: str
-    entity_type: Literal["HOTEL", "ATTRACTION"]
+    entity_type: Literal["HOTEL", "ATTRACTION", "TRANSPORT", "DINING"] | str
     destination: str
     country_code: str = Field(default="IN", min_length=2, max_length=2)
     latitude: float = Field(ge=-90, le=90)
