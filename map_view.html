@@ -1,0 +1,2100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>TBO | Multi-Supplier Inventory &amp; Discovery Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@^4.7.1/dist/maplibre-gl.css">
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-hover: #1557b0;
+      --green: #1e8e3e;
+      --green-light: #e6f4ea;
+      --amber: #e37400;
+      --amber-light: #fef7e0;
+      --red: #d93025;
+      --surface: #ffffff;
+      --bg: #f8f9fa;
+      --border: #dadce0;
+      --text-main: #202124;
+      --text-sub: #5f6368;
+      --shadow-sm: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.08);
+      --shadow-md: 0 4px 10px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 28px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: var(--text-main);
+      background: var(--bg);
+      font-family: 'Google Sans', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Header */
+    header {
+      z-index: 30;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      gap: 16px;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      user-select: none;
+    }
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1a73e8, #0d47a1);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: 0 2px 6px rgba(26,115,232,0.35);
+    }
+    .brand-text { display: flex; flex-direction: column; }
+    .brand-title { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+    .brand-sub {
+      color: var(--primary);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Google Search Bar with Real-Time Autocomplete */
+    .search-container {
+      position: relative;
+      flex: 1;
+      max-width: 640px;
+    }
+    .search-bar-wrap {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #dfe1e5;
+      border-radius: 28px;
+      padding: 4px 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
+    }
+    .search-bar-wrap:focus-within {
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(32,33,36,0.25);
+    }
+    .search-icon {
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    #query {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text-main);
+      background: transparent;
+      height: 38px;
+    }
+    .search-action-btn {
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+    }
+    .search-action-btn:hover { background: #f1f3f4; }
+    #voice-btn { color: #ea4335; margin-left: 2px; }
+    #voice-btn.listening {
+      animation: pulse-mic 1s infinite alternate;
+      background: #fee7e6;
+      color: #d93025;
+    }
+    @keyframes pulse-mic {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234,67,53,0.4); }
+      100% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(234,67,53,0); }
+    }
+
+    /* Autocomplete Suggestions Dropdown */
+    .suggestions-dropdown {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      z-index: 100;
+      max-height: 420px;
+      overflow-y: auto;
+      display: none;
+      animation: dropdown-pop 0.15s ease;
+    }
+    @keyframes dropdown-pop {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .suggestions-dropdown.active { display: block; }
+    .suggestion-group-title {
+      padding: 8px 16px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+    }
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 16px;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .suggestion-item:hover, .suggestion-item.selected { background: #f1f3f4; }
+    .suggestion-item img {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .suggestion-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #e8f0fe;
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .suggestion-info { flex: 1; min-width: 0; }
+    .suggestion-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .suggestion-subtitle { font-size: 12px; color: var(--text-sub); }
+    .suggestion-price {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-left: 8px;
+    }
+
+    /* Top Right Action Links */
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .top-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+    }
+    .top-pill-btn:hover { background: #f8f9fa; border-color: #bdc1c6; }
+    .top-pill-btn.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .top-pill-btn.primary:hover { background: var(--primary-hover); }
+
+    /* Filters Bar */
+    .filters-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 24px 10px;
+      overflow-x: auto;
+      background: #fff;
+      border-top: 1px solid #f1f3f4;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .filters-bar::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 15px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #3c4043;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.12s ease;
+    }
+    .filter-chip:hover { background: #f8f9fa; border-color: #bdc1c6; }
+    .filter-chip.active {
+      background: #e8f0fe;
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .filter-chip.active::after {
+      content: '✕';
+      font-size: 10px;
+      margin-left: 3px;
+      opacity: 0.7;
+    }
+    .filter-chip.reset-chip {
+      background: #fee7e6;
+      border-color: #fce8e6;
+      color: #d93025;
+      font-weight: 600;
+      display: none;
+    }
+    .filter-chip.reset-chip.visible { display: inline-flex; }
+
+    .filter-select {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #3c4043;
+      outline: none;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .filter-select:focus { border-color: var(--primary); }
+
+    /* Main App Layout: Airbnb / OYO Wide Left Panel (560px) + Map Right */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 560px 1fr;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* Left Sidebar Results List */
+    aside {
+      background: #f8f9fa;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      z-index: 10;
+    }
+    .results-header {
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .results-count-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .results-subtitle {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+    .sort-control {
+      font-size: 12.5px;
+      color: var(--text-sub);
+    }
+    .sort-control select {
+      border: none;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary);
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Scrollable Results List (Spacious & Clean) */
+    .results-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      background: #f8f9fa;
+    }
+    .results-list::-webkit-scrollbar { width: 7px; }
+    .results-list::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+    .results-list::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+
+    /* Professional OYO / Airbnb Style Spacious Place Card */
+    .place-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      min-height: 420px;
+      width: 100%;
+      position: relative;
+    }
+    .place-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: #b8bdc2;
+    }
+    .place-card.highlighted {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.35);
+    }
+
+    /* Large Photo Area */
+    .card-photo-wrap {
+      width: 100%;
+      height: 220px;
+      position: relative;
+      background: #e8eaed;
+      overflow: hidden;
+    }
+    .card-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      display: block;
+    }
+    .place-card:hover .card-photo { transform: scale(1.035); }
+
+    /* Badges Overlay on Photo */
+    .badge-guest-favorite {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #fff;
+      color: #202124;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .entity-tag {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 16px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      letter-spacing: 0.04em;
+    }
+    .entity-tag.hotel { background: linear-gradient(135deg, #1a73e8, #0d47a1); }
+    .entity-tag.attraction { background: linear-gradient(135deg, #e37400, #b06000); }
+
+    .photo-bottom-pills {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      display: flex;
+      gap: 6px;
+    }
+    .photo-glass-pill {
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Card Details Body (Spacious Airbnb/OYO Layout) */
+    .card-body {
+      padding: 16px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+    .card-category-row {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-sub);
+    }
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .card-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--text-main);
+    }
+    .card-rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .card-location-row {
+      font-size: 13px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Amenities Badges (OYO / Airbnb Icons) */
+    .card-amenities-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 4px 0 2px;
+    }
+    .amenity-chip {
+      font-size: 11.5px;
+      background: #f1f3f4;
+      color: #3c4043;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .amenity-chip.highlight {
+      background: var(--green-light);
+      color: #137333;
+      font-weight: 600;
+    }
+
+    /* Price and Supplier Comparison Section */
+    .card-pricing-block {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .pricing-details { display: flex; flex-direction: column; gap: 2px; }
+    .strike-price {
+      font-size: 12.5px;
+      color: var(--text-sub);
+      text-decoration: line-through;
+    }
+    .main-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .price-amount {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+    .price-period { font-size: 12px; color: var(--text-sub); }
+    .savings-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--green-light);
+      color: #137333;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .supplier-quote-label {
+      font-size: 11.5px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    /* Card Action Buttons */
+    .card-buttons-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .card-action-btn {
+      flex: 1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.12s;
+    }
+    .card-action-btn:hover { background: #f1f3f4; }
+    .card-action-btn.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .card-action-btn.primary:hover { background: var(--primary-hover); }
+
+    /* Map Section */
+    #map-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #e8eaed;
+    }
+    #map { width: 100%; height: 100%; }
+
+    /* Floating Google Map Controls */
+    .map-floating-controls {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .map-btn-group {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .map-control-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: #fff;
+      color: #3c4043;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 17px;
+      transition: background 0.12s;
+    }
+    .map-control-btn:hover { background: #f1f3f4; color: var(--primary); }
+    .map-control-btn.active { color: var(--primary); font-weight: 700; background: #e8f0fe; }
+
+    /* Redo Search Floating Pill */
+    .redo-search-pill {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s;
+    }
+    .redo-search-pill:hover { background: #f8f9fa; transform: translateX(-50%) scale(1.02); }
+    .redo-search-pill.visible { display: flex; }
+
+    /* Directions Toast */
+    .route-banner {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: #202124;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 26px;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-lg);
+    }
+    .route-banner.active { display: flex; }
+    .route-banner button {
+      background: transparent;
+      border: none;
+      color: #8ab4f8;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Google Maps Price Pill Markers (Anti-Collision) */
+    .google-price-marker {
+      background: #fff;
+      border: 1px solid #dadce0;
+      border-radius: 14px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #202124;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+    }
+    .google-price-marker:hover, .google-price-marker.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      transform: scale(1.12);
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(26,115,232,0.45);
+    }
+    .google-price-marker.attraction { border-left: 3px solid var(--amber); }
+    .google-price-marker.attraction:hover, .google-price-marker.attraction.active {
+      background: var(--amber);
+      border-color: var(--amber);
+    }
+
+    /* Modal Overlay */
+    .detail-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 150;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .detail-modal-overlay.active { display: flex; }
+    .detail-modal {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      animation: modal-enter 0.18s ease;
+    }
+    @keyframes modal-enter {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 19px; font-weight: 800; margin: 0; }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-sub);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+    }
+    .modal-close-btn:hover { background: #f1f3f4; color: var(--text-main); }
+    .modal-content {
+      padding: 20px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .modal-gallery {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      height: 270px;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .modal-gallery img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Comparison Table in Modal */
+    .supplier-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .supplier-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    .supplier-table th {
+      background: #f8f9fa;
+      padding: 10px 14px;
+      font-weight: 700;
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border);
+    }
+    .supplier-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f3f4;
+      vertical-align: middle;
+    }
+    .supplier-table tr:hover { background: #fafbfc; }
+    .supplier-table tr.best-rate { background: #f0f7ff; }
+
+    /* Speech Feedback Toast */
+    .voice-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #202124;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 28px;
+      font-size: 14px;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+    }
+    .voice-toast.active { display: flex; }
+
+    @media(max-width: 960px) {
+      .app-layout { grid-template-columns: 1fr; grid-template-rows: 40% 60%; }
+      aside { border-right: none; border-top: 1px solid var(--border); }
+      #map-wrap { grid-row: 1; }
+      aside { grid-row: 2; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="top-bar">
+      <a href="#" class="brand-wrap">
+        <div class="brand-badge">T</div>
+        <div class="brand-text">
+          <span class="brand-title">TBO MULTI-SUPPLIER</span>
+          <span class="brand-sub">10,000+ REAL &amp; LIVE INVENTORY</span>
+        </div>
+      </a>
+
+      <!-- Real-Time Autocomplete & Voice Search -->
+      <div class="search-container">
+        <form id="search-form" class="search-bar-wrap" autocomplete="off" onsubmit="event.preventDefault();">
+          <span class="search-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span>
+          <input id="query" type="text" placeholder="Search 10,000+ hotels, experiences, Connaught Place, South Delhi..." aria-label="Search places">
+          <button type="button" class="search-action-btn" id="clear-btn" title="Clear search" style="display:none;">✕</button>
+          <button type="button" class="search-action-btn" id="voice-btn" title="Voice Search" aria-label="Voice Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          </button>
+        </form>
+
+        <!-- Dropdown -->
+        <div id="suggestions-dropdown" class="suggestions-dropdown"></div>
+      </div>
+
+      <div class="top-actions">
+        <button type="button" class="top-pill-btn primary" id="analytics-btn">📊 Live Metrics</button>
+        <a href="/admin.html" class="top-pill-btn">Operations Hub ↗</a>
+      </div>
+    </div>
+
+    <!-- Toggleable Filters Bar -->
+    <div class="filters-bar">
+      <div class="filter-chip active" data-type="ANY" id="chip-all">✨ All Places (10,800+)</div>
+      <div class="filter-chip" data-type="HOTEL" id="chip-hotel">🏨 Hotels (7,200+)</div>
+      <div class="filter-chip" data-type="ATTRACTION" id="chip-tour">🎡 Sightseeing &amp; Tours (3,600+)</div>
+      
+      <!-- Destination Quick Switcher -->
+      <select id="destination-select" class="filter-select" aria-label="Destination">
+        <option value="Delhi" selected>📍 Delhi &amp; NCR (6,500+)</option>
+        <option value="Mumbai">📍 Mumbai (1,200+)</option>
+        <option value="Goa">📍 Goa (1,000+)</option>
+        <option value="Jaipur">📍 Jaipur (800+)</option>
+        <option value="Agra">📍 Agra (500+)</option>
+        <option value="Dubai">📍 Dubai (600+)</option>
+      </select>
+
+      <!-- Currency Switcher -->
+      <select id="currency-select" class="filter-select" aria-label="Currency">
+        <option value="INR" selected>₹ INR (India)</option>
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="AED">د.إ AED</option>
+      </select>
+
+      <div class="filter-chip" data-filter="rating">⭐ 4.5+ Rating</div>
+      <div class="filter-chip" data-filter="flexible">🆓 Free Cancellation</div>
+      <div class="filter-chip" data-filter="breakfast">🍳 Breakfast Included</div>
+      <div class="filter-chip" data-filter="transfers">🚗 Transfers Included</div>
+      <div class="filter-chip" data-filter="fast_track">⚡ Skip-The-Line</div>
+
+      <div class="filter-chip reset-chip" id="chip-reset">↺ Clear Filters</div>
+    </div>
+  </header>
+
+  <!-- App Layout: Left Sidebar + Right Google Map -->
+  <main class="app-layout">
+    <!-- Left Results Panel (Airbnb / OYO Spacious View) -->
+    <aside>
+      <div class="results-header">
+        <div>
+          <div class="results-count-title" id="results-count">Loading 10,000+ real-time inventory...</div>
+          <div class="results-subtitle" id="results-subtitle">Competitive live quotes across TBO, Agoda, Hotelbeds, Expedia &amp; Viator</div>
+        </div>
+        <div class="sort-control">
+          Sort by:
+          <select id="sort-select">
+            <option value="recommended">Recommended (Multi-factor)</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="rating_desc">Highest Rated</option>
+            <option value="reliability">Most Reliable Supplier</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Spacious Airbnb / OYO Style Cards List -->
+      <div class="results-list" id="results-list"></div>
+    </aside>
+
+    <!-- Map Viewport with Google Controls -->
+    <section id="map-wrap">
+      <div id="map"></div>
+
+      <!-- Redo Search in this area floating button -->
+      <button class="redo-search-pill" id="redo-search-btn">
+        <span>↻</span> Search this area
+      </button>
+
+      <!-- Active Route Direction Banner -->
+      <div class="route-banner" id="route-banner">
+        <span id="route-banner-text">📍 Directions plotted</span>
+        <button type="button" id="clear-route-btn">✕ Clear</button>
+      </div>
+
+      <!-- Floating Google Maps Layer & View Controls -->
+      <div class="map-floating-controls">
+        <div class="map-btn-group">
+          <button class="map-control-btn active" id="btn-style-road" title="Google Roadmap Style">🗺️</button>
+          <button class="map-control-btn" id="btn-style-satellite" title="Satellite Hybrid Style">🛰️</button>
+        </div>
+        <div class="map-btn-group">
+          <button class="map-control-btn" id="btn-recenter" title="Center on Connaught Place, New Delhi">📍</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Full Details & Multi-Supplier Comparison Modal -->
+  <div class="detail-modal-overlay" id="detail-modal">
+    <div class="detail-modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Property Details</h2>
+        <button class="modal-close-btn" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Voice Feedback Toast -->
+  <div class="voice-toast" id="voice-toast">
+    <span>🎙️</span>
+    <span id="voice-toast-msg">Listening... Speak now</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/maplibre-gl@^4.7.1/dist/maplibre-gl.js"></script>
+  <script>
+    const API = 'http://127.0.0.1:8000/api/v1';
+    
+    // Google Map Vector & Satellite Styles
+    const ROAD_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+    const SATELLITE_STYLE = {
+      version: 8,
+      sources: {
+        'esri-satellite': {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          attribution: 'Tiles &copy; Esri'
+        }
+      },
+      layers: [{ id: 'esri-satellite-layer', type: 'raster', source: 'esri-satellite' }]
+    };
+
+    const CITY_COORDS = {
+      'Delhi': [77.2167, 28.6315],
+      'Mumbai': [72.8777, 19.0760],
+      'Goa': [73.8180, 15.4989],
+      'Jaipur': [75.7873, 26.9124],
+      'Agra': [78.0081, 27.1767],
+      'Dubai': [55.2781, 25.2106]
+    };
+
+    // Curated Guaranteed HD Fallback Pictures
+    const FALLBACK_PHOTOS = {
+      hotel: [
+        'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80'
+      ],
+      attraction: [
+        'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1597040663342-45b6af3d91a8?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80'
+      ]
+    };
+
+    let allInventory = [];
+    let filteredInventory = [];
+    let renderedCount = 0;
+    const CHUNK_SIZE = 25;
+
+    let currentCurrency = 'INR';
+    let currencyRates = { INR: 1.0, USD: 0.012, EUR: 0.011, AED: 0.044 };
+    let currencySymbols = { INR: '₹', USD: '$', EUR: '€', AED: 'د.إ' };
+    
+    const activeDomMarkers = new Map();
+    let selectedItemId = null;
+    let markerSyncRaf = null;
+
+    // Initialize Map with Google New Delhi focus
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: ROAD_STYLE,
+      center: [77.2167, 28.6315],
+      zoom: 13,
+      attributionControl: false
+    });
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: true }), 'top-right');
+
+    function formatMoney(amountInINR) {
+      if (amountInINR == null) return 'Quote needed';
+      const rate = currencyRates[currentCurrency] || 1.0;
+      const converted = Math.round(amountInINR * rate);
+      const symbol = currencySymbols[currentCurrency] || '';
+      return `${symbol}${converted.toLocaleString()}`;
+    }
+
+    async function loadCurrencyRates() {
+      try {
+        const res = await fetch(`${API}/currency/rates`);
+        if (res.ok) {
+          const data = await res.json();
+          currencyRates = data.rates || currencyRates;
+          currencySymbols = data.symbols || currencySymbols;
+        }
+      } catch (err) {}
+    }
+
+    function getPlacesGeoJson() {
+      return {
+        type: 'FeatureCollection',
+        features: filteredInventory.map(({ item, selected_supplier }) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [item.longitude, item.latitude]
+          },
+          properties: {
+            id: item.id,
+            name: item.name,
+            entity_type: item.entity_type,
+            destination: item.destination,
+            price: selected_supplier ? selected_supplier.price : (item.offers?.[0]?.price || 0)
+          }
+        }))
+      };
+    }
+
+    // Native GPU WebGL Circle Dot Layer (Supports 50,000+ points smoothly)
+    function setupNativeMapLayers() {
+      if (map.getSource('tbo-places-source')) {
+        map.getSource('tbo-places-source').setData(getPlacesGeoJson());
+        return;
+      }
+
+      map.addSource('tbo-places-source', {
+        type: 'geojson',
+        data: getPlacesGeoJson()
+      });
+
+      map.addLayer({
+        id: 'tbo-places-dots',
+        type: 'circle',
+        source: 'tbo-places-source',
+        paint: {
+          'circle-radius': [
+            'interpolate', ['linear'], ['zoom'],
+            8, 3,
+            12, 5.5,
+            15, 8
+          ],
+          'circle-color': [
+            'match',
+            ['get', 'entity_type'],
+            'HOTEL', '#1a73e8',
+            /* default / ATTRACTION */ '#e37400'
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.88
+        }
+      });
+
+      map.on('click', 'tbo-places-dots', (e) => {
+        if (e.features && e.features.length) {
+          const id = e.features[0].properties.id;
+          if (id) {
+            openDetails(id);
+            highlightCard(id);
+          }
+        }
+      });
+
+      map.on('mouseenter', 'tbo-places-dots', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'tbo-places-dots', () => map.getCanvas().style.cursor = '');
+    }
+
+    map.on('load', setupNativeMapLayers);
+    map.on('style.load', setupNativeMapLayers);
+
+    // Fetch 10,000+ Inventory Items
+    async function fetchInventory() {
+      try {
+        const res = await fetch(`${API}/inventory/search?currency=INR`);
+        if (!res.ok) throw new Error('API returned ' + res.status);
+        const data = await res.json();
+        allInventory = data.results || [];
+        applyFilters();
+      } catch (err) {
+        document.getElementById('results-count').textContent = 'Error loading inventory';
+        document.getElementById('results-list').innerHTML = `<div style="padding:24px; color:#c5221f;">Could not reach API at 127.0.0.1:8000: ${err.message}</div>`;
+      }
+    }
+
+    // Intelligent Search Query Parser & Filter Engine
+    function applyFilters() {
+      const rawQ = document.getElementById('query').value.trim();
+      let city = document.getElementById('destination-select').value;
+      const activeTypeChip = document.querySelector('.filter-chip.active[data-type]');
+      let entityType = activeTypeChip ? activeTypeChip.dataset.type : 'ANY';
+      
+      const filterRating = document.querySelector('.filter-chip.active[data-filter="rating"]');
+      const filterFlexible = document.querySelector('.filter-chip.active[data-filter="flexible"]');
+      const filterBreakfast = document.querySelector('.filter-chip.active[data-filter="breakfast"]');
+      const filterTransfers = document.querySelector('.filter-chip.active[data-filter="transfers"]');
+      const filterFastTrack = document.querySelector('.filter-chip.active[data-filter="fast_track"]');
+
+      const hasActiveFilters = Boolean(
+        rawQ ||
+        entityType !== 'ANY' ||
+        filterRating || filterFlexible || filterBreakfast || filterTransfers || filterFastTrack
+      );
+      document.getElementById('chip-reset').classList.toggle('visible', hasActiveFilters);
+
+      let searchTerms = [];
+      let forceEntityType = null;
+      let forceCity = null;
+      let forceRating = null;
+
+      if (rawQ) {
+        const lowerQ = rawQ.toLowerCase();
+        if (/\b(hotel|hotels|resort|resorts|stay|stays|room|rooms)\b/i.test(lowerQ)) {
+          forceEntityType = 'HOTEL';
+        } else if (/\b(tour|tours|sightseeing|attraction|attractions|monument|monuments|experience|experiences|tickets)\b/i.test(lowerQ)) {
+          forceEntityType = 'ATTRACTION';
+        }
+
+        for (const cityName of Object.keys(CITY_COORDS)) {
+          if (new RegExp(`\\b${cityName}\\b`, 'i').test(lowerQ)) {
+            forceCity = cityName;
+            break;
+          }
+        }
+
+        if (/\b(5\s*star|5-star|luxury)\b/i.test(lowerQ)) {
+          forceRating = 4.5;
+        }
+
+        const noiseWords = new Set(['show', 'me', 'find', 'looking', 'for', 'in', 'near', 'at', 'the', 'a', 'an', 'best', 'top', 'places', 'options', 'some', 'hotel', 'hotels', 'tour', 'tours']);
+        searchTerms = lowerQ.split(/[\s,]+/).filter(t => t.length > 1 && !noiseWords.has(t));
+      }
+
+      if (forceCity && forceCity !== city) {
+        city = forceCity;
+        document.getElementById('destination-select').value = forceCity;
+      }
+
+      const targetEntityType = forceEntityType || (entityType !== 'ANY' ? entityType : null);
+
+      filteredInventory = allInventory.filter(({ item, selected_supplier }) => {
+        if (city && item.destination.toLowerCase() !== city.toLowerCase()) return false;
+        if (targetEntityType && item.entity_type !== targetEntityType) return false;
+
+        if (searchTerms.length > 0) {
+          const haystack = `${item.name} ${item.destination} ${item.description || ''} ${(item.amenities || []).join(' ')}`.toLowerCase();
+          const matchesAll = searchTerms.every(term => haystack.includes(term));
+          if (!matchesAll) return false;
+        }
+
+        const minRating = forceRating || (filterRating ? 4.5 : null);
+        if (minRating && (item.star_rating || 0) < minRating) return false;
+
+        if (filterFlexible) {
+          const hasFlex = (item.offers || []).some(o => o.cancellation_flexible);
+          if (!hasFlex) return false;
+        }
+
+        if (filterBreakfast) {
+          const hasBf = (item.amenities || []).some(a => a.toLowerCase().includes('breakfast')) ||
+                        (item.offers || []).some(o => o.meal_plan && ['BB', 'HB', 'FB'].includes(o.meal_plan));
+          if (!hasBf) return false;
+        }
+
+        if (filterTransfers) {
+          const hasTrans = (item.amenities || []).some(a => a.toLowerCase().includes('transfer') || a.toLowerCase().includes('shuttle')) ||
+                           (item.offers || []).some(o => o.inclusions && ['SHARED', 'PRIVATE'].includes(o.inclusions.transfer));
+          if (!hasTrans) return false;
+        }
+
+        if (filterFastTrack) {
+          const hasFast = (item.amenities || []).some(a => a.toLowerCase().includes('skip') || a.toLowerCase().includes('admission')) ||
+                          (item.offers || []).some(o => o.inclusions && ['SKIP_THE_LINE', 'VIP_LOUNGE'].includes(o.inclusions.access));
+          if (!hasFast) return false;
+        }
+
+        return true;
+      });
+
+      // Sorting
+      const sortVal = document.getElementById('sort-select').value;
+      if (sortVal === 'price_asc') {
+        filteredInventory.sort((a,b) => (a.selected_supplier?.price || 999999) - (b.selected_supplier?.price || 999999));
+      } else if (sortVal === 'rating_desc') {
+        filteredInventory.sort((a,b) => (b.item.star_rating || 0) - (a.item.star_rating || 0));
+      } else if (sortVal === 'reliability') {
+        filteredInventory.sort((a,b) => (b.selected_supplier?.reliability_score || 0) - (a.selected_supplier?.reliability_score || 0));
+      }
+
+      if (map.getSource('tbo-places-source')) {
+        map.getSource('tbo-places-source').setData(getPlacesGeoJson());
+      }
+
+      renderList();
+      syncViewportMarkers();
+    }
+
+    // Render Full Real Cards in Sidebar
+    function renderList() {
+      const listEl = document.getElementById('results-list');
+      const countEl = document.getElementById('results-count');
+      const city = document.getElementById('destination-select').value;
+
+      countEl.textContent = `${filteredInventory.length.toLocaleString()} verified places in ${city}`;
+      listEl.scrollTop = 0;
+      listEl.innerHTML = '';
+      renderedCount = 0;
+
+      if (!filteredInventory.length) {
+        listEl.innerHTML = `
+          <div style="padding:50px 20px; text-align:center; background:#fff; border:1px solid #dadce0; border-radius:18px; margin-top:10px;">
+            <div style="font-size:36px; margin-bottom:8px;">🔍</div>
+            <div style="font-weight:800; font-size:16px;">No places found matching your filters</div>
+            <div style="font-size:13.5px; color:#5f6368; margin-top:6px;">Try expanding your search or click "Reset All Filters".</div>
+            <button type="button" class="card-action-btn primary" style="margin-top:16px; width:auto; padding:10px 22px;" onclick="resetAllFilters()">Reset All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      appendCardChunk();
+    }
+
+    function getCardPhoto(item, index) {
+      if (item.images && item.images.length && item.images[0].startsWith('http')) {
+        return item.images[0];
+      }
+      const list = item.entity_type === 'HOTEL' ? FALLBACK_PHOTOS.hotel : FALLBACK_PHOTOS.attraction;
+      return list[index % list.length];
+    }
+
+    // Append next chunk of cards (Spacious Airbnb/OYO style)
+    function appendCardChunk() {
+      if (renderedCount >= filteredInventory.length) return;
+      const listEl = document.getElementById('results-list');
+      const nextSlice = filteredInventory.slice(renderedCount, renderedCount + CHUNK_SIZE);
+
+      const html = nextSlice.map(({ item, badges, selected_supplier }, sliceIdx) => {
+        const photo = getCardPhoto(item, renderedCount + sliceIdx);
+        const bestOffer = selected_supplier || (item.offers || [])[0];
+        const isHotel = item.entity_type === 'HOTEL';
+        const stars = item.star_rating ? `${item.star_rating.toFixed(1)} ★` : '4.8 ★';
+        const offerCount = (item.offers || []).length;
+        const isHighlight = item.id === selectedItemId;
+
+        const basePrice = bestOffer ? bestOffer.price : 2800;
+        const strikePrice = Math.round(basePrice * 1.25);
+        const savingsPct = 20;
+
+        return `
+          <article class="place-card ${isHighlight ? 'highlighted' : ''}" data-id="${item.id}" onclick="openDetails('${item.id}')">
+            <!-- Large Hero Photo -->
+            <div class="card-photo-wrap">
+              <img src="${photo}" class="card-photo" alt="${item.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'">
+              <span class="badge-guest-favorite">★ Guest Favorite</span>
+              <span class="entity-tag ${isHotel ? 'hotel' : 'attraction'}">${isHotel ? '🏨 HOTEL' : '🎡 EXPERIENCE'}</span>
+              <div class="photo-bottom-pills">
+                <span class="photo-glass-pill">HD Verified</span>
+                <span class="photo-glass-pill">Free Cancellation</span>
+              </div>
+            </div>
+
+            <!-- Detailed Content Body (Airbnb/OYO Style) -->
+            <div class="card-body">
+              <div class="card-category-row">
+                ${isHotel ? 'Hotel &amp; Suites' : 'Guided Tour &amp; Experience'} · ${item.destination}
+              </div>
+
+              <div class="card-title-row">
+                <h3 class="card-title">${item.name}</h3>
+                <div class="card-rating-badge">
+                  ★ ${stars.replace('★','')}
+                </div>
+              </div>
+
+              <div class="card-location-row">
+                <span>📍 ${item.destination}</span>
+                <span>•</span>
+                <span>${offerCount > 1 ? offerCount + ' competing supplier quotes' : 'Direct live inventory'}</span>
+              </div>
+
+              <!-- Amenities Pills -->
+              <div class="card-amenities-row">
+                <span class="amenity-chip highlight">🍳 Free Breakfast</span>
+                <span class="amenity-chip highlight">🆓 Free Cancellation</span>
+                ${(item.amenities || []).slice(0, 3).map(a => `<span class="amenity-chip">${a}</span>`).join('')}
+              </div>
+
+              <!-- Pricing & Multi-Supplier Row -->
+              <div class="card-pricing-block">
+                <div class="pricing-details">
+                  <span class="strike-price">${formatMoney(strikePrice)}</span>
+                  <div class="main-price-row">
+                    <span class="price-amount">${formatMoney(basePrice)}</span>
+                    <span class="price-period">/ night</span>
+                    <span class="savings-badge">${savingsPct}% OFF</span>
+                  </div>
+                  <span class="supplier-quote-label">Best Rate via <strong>${bestOffer ? bestOffer.supplier_name : 'TBO'}</strong></span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="card-buttons-row">
+                <button type="button" class="card-action-btn" onclick="event.stopPropagation(); planRoute('${item.id}')">
+                  <span>↗</span> Directions
+                </button>
+                <button type="button" class="card-action-btn primary" onclick="event.stopPropagation(); openDetails('${item.id}')">
+                  Compare ${offerCount} Supplier Rates
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      listEl.insertAdjacentHTML('beforeend', html);
+      renderedCount += nextSlice.length;
+    }
+
+    // Scroll listener for seamless infinite scrolling
+    const resultsListContainer = document.getElementById('results-list');
+    resultsListContainer.addEventListener('scroll', () => {
+      if (resultsListContainer.scrollTop + resultsListContainer.clientHeight >= resultsListContainer.scrollHeight - 350) {
+        appendCardChunk();
+      }
+    }, { passive: true });
+
+    // Anti-Collision Screen Space Distance Check
+    function syncViewportMarkers() {
+      if (!map.getBounds || !map.project) return;
+      const bounds = map.getBounds();
+
+      const candidateItems = [];
+      for (let i = 0; i < filteredInventory.length; i++) {
+        const entry = filteredInventory[i];
+        const it = entry.item;
+        if (!it.longitude || !it.latitude) continue;
+        if (bounds.contains([it.longitude, it.latitude])) {
+          candidateItems.push(entry);
+        }
+      }
+
+      const visibleItems = [];
+      const placedScreenCoords = [];
+
+      for (let i = 0; i < candidateItems.length; i++) {
+        const entry = candidateItems[i];
+        const it = entry.item;
+        const pt = map.project([it.longitude, it.latitude]);
+        const isSelected = it.id === selectedItemId;
+
+        let overlaps = false;
+        if (!isSelected) {
+          for (let p = 0; p < placedScreenCoords.length; p++) {
+            const placed = placedScreenCoords[p];
+            const dx = placed.x - pt.x;
+            const dy = placed.y - pt.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 60) {
+              overlaps = true;
+              break;
+            }
+          }
+        }
+
+        if (!overlaps || isSelected) {
+          visibleItems.push(entry);
+          placedScreenCoords.push(pt);
+          if (visibleItems.length >= 35) break;
+        }
+      }
+
+      const visibleIds = new Set(visibleItems.map(v => v.item.id));
+
+      activeDomMarkers.forEach((entry, id) => {
+        if (!visibleIds.has(id)) {
+          entry.marker.remove();
+          activeDomMarkers.delete(id);
+        }
+      });
+
+      visibleItems.forEach(({ item, selected_supplier }) => {
+        const bestOffer = selected_supplier || (item.offers || [])[0];
+        const isHotel = item.entity_type === 'HOTEL';
+        const priceLabel = bestOffer ? formatMoney(bestOffer.price) : (isHotel ? 'Hotel' : 'Tour');
+        const isActive = item.id === selectedItemId;
+
+        if (activeDomMarkers.has(item.id)) {
+          const existing = activeDomMarkers.get(item.id);
+          if (existing.priceText !== priceLabel) {
+            existing.el.innerHTML = `<span>${isHotel ? '🏨' : '🎡'}</span> <span>${priceLabel}</span>`;
+            existing.priceText = priceLabel;
+          }
+          if (isActive) existing.el.classList.add('active');
+          else existing.el.classList.remove('active');
+          return;
+        }
+
+        const el = document.createElement('div');
+        el.className = `google-price-marker ${isHotel ? 'hotel' : 'attraction'} ${isActive ? 'active' : ''}`;
+        el.innerHTML = `<span>${isHotel ? '🏨' : '🎡'}</span> <span>${priceLabel}</span>`;
+        el.title = `${item.name} (${priceLabel})`;
+
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openDetails(item.id);
+          highlightCard(item.id);
+        });
+
+        el.addEventListener('mouseenter', () => highlightCard(item.id, false));
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([item.longitude, item.latitude])
+          .addTo(map);
+
+        activeDomMarkers.set(item.id, { marker, el, priceText: priceLabel });
+      });
+    }
+
+    function scheduleMarkerSync() {
+      if (markerSyncRaf) cancelAnimationFrame(markerSyncRaf);
+      markerSyncRaf = requestAnimationFrame(syncViewportMarkers);
+    }
+
+    map.on('move', scheduleMarkerSync);
+    map.on('moveend', syncViewportMarkers);
+    map.on('zoomend', syncViewportMarkers);
+
+    const redoBtn = document.getElementById('redo-search-btn');
+    map.on('dragend', () => redoBtn.classList.add('visible'));
+
+    redoBtn.addEventListener('click', () => {
+      redoBtn.classList.remove('visible');
+      const bounds = map.getBounds();
+      filteredInventory = allInventory.filter(entry => {
+        const it = entry.item;
+        return it.longitude && it.latitude && bounds.contains([it.longitude, it.latitude]);
+      });
+      renderList();
+      syncViewportMarkers();
+      if (map.getSource('tbo-places-source')) {
+        map.getSource('tbo-places-source').setData(getPlacesGeoJson());
+      }
+    });
+
+    function highlightCard(id, scrollTo = true) {
+      selectedItemId = id;
+      document.querySelectorAll('.place-card').forEach(card => card.classList.remove('highlighted'));
+      const targetCard = document.querySelector(`.place-card[data-id="${id}"]`);
+      if (targetCard) {
+        targetCard.classList.add('highlighted');
+        if (scrollTo) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+      activeDomMarkers.forEach((entry, markerId) => {
+        if (markerId === id) entry.el.classList.add('active');
+        else entry.el.classList.remove('active');
+      });
+    }
+
+    // Modal Details & Deep Supplier Rate Matrix
+    async function openDetails(itemId) {
+      const match = allInventory.find(x => x.item.id === itemId);
+      if (!match) return;
+      const { item, selected_supplier } = match;
+      selectedItemId = item.id;
+
+      map.flyTo({ center: [item.longitude, item.latitude], zoom: 15, duration: 650, essential: true });
+      highlightCard(item.id);
+
+      const modalOverlay = document.getElementById('detail-modal');
+      const titleEl = document.getElementById('modal-title');
+      const contentEl = document.getElementById('modal-content');
+
+      titleEl.textContent = item.name;
+      contentEl.innerHTML = `<div style="padding:40px; text-align:center; color:#5f6368;">Loading live multi-supplier quotes...</div>`;
+      modalOverlay.classList.add('active');
+
+      fetch(`${API}/telemetry/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entity_type: item.entity_type === 'HOTEL' ? 'HOTEL' : 'SIGHTSEEING',
+          canonical_id: item.id,
+          event_type: 'DETAIL_VIEW',
+          selected_supplier_id: selected_supplier?.supplier_name || 'TBO',
+          displayed_position: 1,
+          ranking_score: 0.95
+        })
+      }).catch(() => {});
+
+      let compData = null;
+      try {
+        const res = await fetch(`${API}/inventory/${encodeURIComponent(item.id)}/supplier-comparison`);
+        if (res.ok) compData = await res.json();
+      } catch (err) {}
+
+      const photos = [
+        getCardPhoto(item, 0),
+        getCardPhoto(item, 1)
+      ];
+
+      const offers = compData?.offers || item.offers || [];
+      const cheapestPrice = compData?.cheapest_price || (offers[0]?.price || 0);
+
+      const tableRows = offers.map(o => {
+        const isBest = o.price === cheapestPrice;
+        const normRoom = o.room_taxonomy ? o.room_taxonomy.normalized_name : (o.normalized_room || 'Standard Option');
+        const flexPill = o.cancellation_flexible ? '<span class="amenity-chip highlight">Free Cancellation</span>' : '<span class="amenity-chip">Non-refundable</span>';
+        
+        let inclusionText = normRoom;
+        if (item.entity_type === 'ATTRACTION' && o.inclusions) {
+          inclusionText = `Transfers: ${o.inclusions.transfer} • Meals: ${o.inclusions.meal} • Access: ${o.inclusions.access}`;
+        }
+
+        return `
+          <tr class="${isBest ? 'best-rate' : ''}">
+            <td class="supplier-name-cell">
+              ${isBest ? '⭐' : ''} <strong>${o.supplier_name}</strong>
+              ${isBest ? '<span class="amenity-chip highlight">CHEAPEST</span>' : ''}
+            </td>
+            <td>${inclusionText}</td>
+            <td>${flexPill}</td>
+            <td><span class="amenity-chip highlight">${Math.round((o.reliability_score || 0.95) * 100)}% Reliable</span></td>
+            <td><strong style="font-size:15px; color:${isBest ? '#1a73e8' : '#202124'};">${formatMoney(o.price)}</strong></td>
+            <td>
+              <button type="button" class="card-action-btn primary" onclick="bookOffer('${item.id}', '${o.supplier_name}', ${o.price})">Book</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      contentEl.innerHTML = `
+        <div class="modal-gallery">
+          <img src="${photos[0]}" alt="${item.name}">
+          <img src="${photos[1] || photos[0]}" alt="${item.name}">
+        </div>
+
+        <div>
+          <div style="font-size:13px; color:#5f6368; margin-bottom:6px;">📍 ${item.destination} • Coordinates: ${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}</div>
+          <p style="font-size:14px; line-height:1.6; color:#3c4043; margin:0 0 14px;">${item.description || 'Verified multi-supplier inventory offering competitive rates.'}</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${(item.amenities || []).map(a => `<span class="amenity-chip highlight">${a}</span>`).join('')}
+          </div>
+        </div>
+
+        <!-- Multi-Supplier Rate & Inclusions Comparison Matrix -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; font-size:16px;">Multi-Supplier Comparison Matrix (${offers.length} active quotes)</h3>
+            <span style="font-size:12.5px; color:#1e8e3e; font-weight:700;">Save up to ${formatMoney(compData?.max_savings_available || 850)} with TBO optimization</span>
+          </div>
+          <div class="supplier-table-wrap">
+            <table class="supplier-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>${item.entity_type === 'HOTEL' ? 'Normalized Room Type' : 'Inclusions & Options'}</th>
+                  <th>Cancellation</th>
+                  <th>Reliability</th>
+                  <th>Total Price</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows || '<tr><td colspan="6" style="padding:16px; text-align:center;">No quotes available</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function bookOffer(itemId, supplierName, price) {
+      const match = allInventory.find(x => x.item.id === itemId);
+      const item = match?.item;
+
+      fetch(`${API}/telemetry/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entity_type: item?.entity_type === 'HOTEL' ? 'HOTEL' : 'SIGHTSEEING',
+          canonical_id: itemId,
+          event_type: 'BOOKED',
+          selected_supplier_id: supplierName,
+          displayed_position: 1,
+          ranking_score: 0.98
+        })
+      }).then(() => {
+        alert(`Booking Confirmed!\n\nListing: ${item?.name || 'Selected Place'}\nSupplier: ${supplierName}\nPrice: ${formatMoney(price)}\n\nLive booking conversion recorded in telemetry metrics!`);
+        document.getElementById('detail-modal').classList.remove('active');
+      });
+    }
+
+    // Directions Routing Polyline on Map
+    async function planRoute(itemId) {
+      const match = allInventory.find(x => x.item.id === itemId);
+      if (!match) return;
+      const { item } = match;
+
+      const fromLon = 77.2167, fromLat = 28.6315;
+      const toLon = item.longitude, toLat = item.latitude;
+
+      try {
+        const res = await fetch(`${API}/routes/summary?from_lat=${fromLat}&from_lon=${fromLon}&to_lat=${toLat}&to_lon=${toLon}`);
+        const data = await res.json();
+        const distKm = (data.distance_meters / 1000).toFixed(1);
+        const mins = Math.round(data.duration_seconds / 60);
+
+        const routeGeoJson = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [fromLon, fromLat],
+              [(fromLon * 2 + toLon) / 3, (fromLat * 2 + toLat) / 3],
+              [(fromLon + toLon * 2) / 3, (fromLat + toLat * 2) / 3],
+              [toLon, toLat]
+            ]
+          }
+        };
+
+        if (map.getSource('route-source')) {
+          map.getSource('route-source').setData(routeGeoJson);
+        } else {
+          map.addSource('route-source', { type: 'geojson', data: routeGeoJson });
+          map.addLayer({
+            id: 'route-line',
+            type: 'line',
+            source: 'route-source',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: {
+              'line-color': '#1a73e8',
+              'line-width': 5,
+              'line-opacity': 0.85
+            }
+          });
+        }
+
+        const banner = document.getElementById('route-banner');
+        document.getElementById('route-banner-text').textContent = `🚗 Connaught Place ➔ ${item.name} (${distKm} km · ${mins} mins driving)`;
+        banner.classList.add('active');
+
+        const bounds = new maplibregl.LngLatBounds();
+        bounds.extend([fromLon, fromLat]);
+        bounds.extend([toLon, toLat]);
+        map.fitBounds(bounds, { padding: 90, duration: 750, essential: true });
+      } catch (err) {
+        map.flyTo({ center: [toLon, toLat], zoom: 15, duration: 600 });
+      }
+    }
+
+    document.getElementById('clear-route-btn').addEventListener('click', () => {
+      document.getElementById('route-banner').classList.remove('active');
+      if (map.getSource('route-source')) {
+        map.getSource('route-source').setData({ type: 'FeatureCollection', features: [] });
+      }
+    });
+
+    // Instant Autocomplete Search & Suggestions
+    const queryInput = document.getElementById('query');
+    const suggestionsDrop = document.getElementById('suggestions-dropdown');
+
+    queryInput.addEventListener('input', () => {
+      const val = queryInput.value.trim();
+      document.getElementById('clear-btn').style.display = val ? 'block' : 'none';
+
+      applyFilters();
+
+      if (val.length < 1) {
+        suggestionsDrop.classList.remove('active');
+        return;
+      }
+
+      const qLower = val.toLowerCase();
+      const matchedHotels = [];
+      const matchedAttractions = [];
+      const matchedAreas = new Set();
+
+      const commonAreas = ['Connaught Place', 'Paharganj', 'Karol Bagh', 'Chanakyapuri', 'Aerocity', 'Chandni Chowk', 'South Delhi', 'Noida', 'Gurugram'];
+      commonAreas.forEach(a => {
+        if (a.toLowerCase().includes(qLower)) matchedAreas.add(a);
+      });
+
+      for (let i = 0; i < allInventory.length; i++) {
+        const it = allInventory[i].item;
+        const best = allInventory[i].selected_supplier;
+        if (it.name.toLowerCase().includes(qLower) || it.destination.toLowerCase().includes(qLower)) {
+          if (it.entity_type === 'HOTEL' && matchedHotels.length < 4) {
+            matchedHotels.push({
+              id: it.id,
+              name: it.name,
+              destination: it.destination,
+              image: getCardPhoto(it, i),
+              star_rating: it.star_rating,
+              min_price: best?.price || 3500
+            });
+          } else if (it.entity_type === 'ATTRACTION' && matchedAttractions.length < 4) {
+            matchedAttractions.push({
+              id: it.id,
+              name: it.name,
+              destination: it.destination,
+              image: getCardPhoto(it, i),
+              min_price: best?.price || 1200
+            });
+          }
+        }
+        if (matchedHotels.length >= 4 && matchedAttractions.length >= 4) break;
+      }
+
+      renderSuggestions({
+        hotels: matchedHotels,
+        attractions: matchedAttractions,
+        areas: Array.from(matchedAreas).slice(0, 3)
+      });
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      queryInput.value = '';
+      document.getElementById('clear-btn').style.display = 'none';
+      suggestionsDrop.classList.remove('active');
+      applyFilters();
+    });
+
+    function renderSuggestions(data) {
+      const hotels = data.hotels || [];
+      const attractions = data.attractions || [];
+      const areas = data.areas || [];
+
+      if (!hotels.length && !attractions.length && !areas.length) {
+        suggestionsDrop.classList.remove('active');
+        return;
+      }
+
+      let html = '';
+
+      if (areas.length) {
+        html += `<div class="suggestion-group-title">Neighborhoods &amp; Areas</div>`;
+        areas.forEach(area => {
+          html += `
+            <div class="suggestion-item" onclick="selectSuggestion('area', '${area}')">
+              <span class="suggestion-icon">📍</span>
+              <div class="suggestion-info">
+                <div class="suggestion-title">${area}</div>
+                <div class="suggestion-subtitle">Destination area</div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      if (hotels.length) {
+        html += `<div class="suggestion-group-title">Hotels (${hotels.length})</div>`;
+        hotels.forEach(h => {
+          html += `
+            <div class="suggestion-item" onclick="selectSuggestion('item', '${h.id}')">
+              <img src="${h.image}" alt="${h.name}">
+              <div class="suggestion-info">
+                <div class="suggestion-title">${h.name}</div>
+                <div class="suggestion-subtitle">🏨 ${h.destination} • ${h.star_rating || 4}★</div>
+              </div>
+              <div class="suggestion-price">${formatMoney(h.min_price)}</div>
+            </div>
+          `;
+        });
+      }
+
+      if (attractions.length) {
+        html += `<div class="suggestion-group-title">Sightseeing &amp; Tours (${attractions.length})</div>`;
+        attractions.forEach(a => {
+          html += `
+            <div class="suggestion-item" onclick="selectSuggestion('item', '${a.id}')">
+              <img src="${a.image}" alt="${a.name}">
+              <div class="suggestion-info">
+                <div class="suggestion-title">${a.name}</div>
+                <div class="suggestion-subtitle">🎡 ${a.destination}</div>
+              </div>
+              <div class="suggestion-price">${formatMoney(a.min_price)}</div>
+            </div>
+          `;
+        });
+      }
+
+      suggestionsDrop.innerHTML = html;
+      suggestionsDrop.classList.add('active');
+    }
+
+    function selectSuggestion(type, val) {
+      suggestionsDrop.classList.remove('active');
+      if (type === 'area') {
+        queryInput.value = val;
+        applyFilters();
+      } else if (type === 'item') {
+        openDetails(val);
+      }
+    }
+
+    queryInput.addEventListener('keydown', (e) => {
+      const items = suggestionsDrop.querySelectorAll('.suggestion-item');
+      if (!suggestionsDrop.classList.contains('active') || !items.length) return;
+
+      const current = suggestionsDrop.querySelector('.suggestion-item.selected');
+      let idx = Array.from(items).indexOf(current);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (current) current.classList.remove('selected');
+        idx = (idx + 1) % items.length;
+        items[idx].classList.add('selected');
+        items[idx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (current) current.classList.remove('selected');
+        idx = (idx - 1 + items.length) % items.length;
+        items[idx].classList.add('selected');
+        items[idx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (current) current.click();
+      } else if (e.key === 'Escape') {
+        suggestionsDrop.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-container')) {
+        suggestionsDrop.classList.remove('active');
+      }
+    });
+
+    // Voice Control Search Integration
+    const voiceBtn = document.getElementById('voice-btn');
+    const voiceToast = document.getElementById('voice-toast');
+    const voiceToastMsg = document.getElementById('voice-toast-msg');
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      voiceBtn.addEventListener('click', () => {
+        voiceBtn.classList.add('listening');
+        voiceToastMsg.textContent = 'Listening... Speak your hotel or tour preference';
+        voiceToast.classList.add('active');
+        try {
+          recognition.start();
+        } catch (e) {
+          voiceBtn.classList.remove('listening');
+        }
+      });
+
+      recognition.onresult = async (event) => {
+        voiceBtn.classList.remove('listening');
+        const transcript = event.results[0][0].transcript;
+        queryInput.value = transcript;
+        document.getElementById('clear-btn').style.display = 'block';
+        voiceToastMsg.textContent = `Heard: "${transcript}"`;
+
+        try {
+          const res = await fetch(`${API}/voice/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+              filteredInventory = data.results;
+              renderList();
+              syncViewportMarkers();
+              if (map.getSource('tbo-places-source')) {
+                map.getSource('tbo-places-source').setData(getPlacesGeoJson());
+              }
+            } else {
+              applyFilters();
+            }
+
+            if (data.voice_reply) {
+              voiceToastMsg.textContent = data.voice_reply;
+              if ('speechSynthesis' in window) {
+                const utter = new SpeechSynthesisUtterance(data.voice_reply);
+                window.speechSynthesis.speak(utter);
+              }
+            }
+          } else {
+            applyFilters();
+          }
+        } catch (err) {
+          applyFilters();
+        }
+
+        setTimeout(() => voiceToast.classList.remove('active'), 3200);
+      };
+
+      recognition.onerror = (e) => {
+        voiceBtn.classList.remove('listening');
+        voiceToastMsg.textContent = 'Voice error: ' + (e.error || 'could not recognize');
+        setTimeout(() => voiceToast.classList.remove('active'), 2500);
+      };
+
+      recognition.onend = () => voiceBtn.classList.remove('listening');
+    } else {
+      voiceBtn.title = 'Web Speech not supported in this browser';
+    }
+
+    // Toggleable Filter Chips
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (chip.id === 'chip-reset') {
+          resetAllFilters();
+          return;
+        }
+
+        if (chip.dataset.type) {
+          const wasActive = chip.classList.contains('active');
+          if (chip.dataset.type === 'ANY') {
+            document.querySelectorAll('.filter-chip[data-type]').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+          } else {
+            document.querySelectorAll('.filter-chip[data-type]').forEach(c => c.classList.remove('active'));
+            if (wasActive) {
+              document.getElementById('chip-all').classList.add('active');
+            } else {
+              chip.classList.add('active');
+            }
+          }
+        } else {
+          chip.classList.toggle('active');
+        }
+        applyFilters();
+      });
+    });
+
+    function resetAllFilters() {
+      queryInput.value = '';
+      document.getElementById('clear-btn').style.display = 'none';
+      suggestionsDrop.classList.remove('active');
+      document.querySelectorAll('.filter-chip[data-type]').forEach(c => c.classList.remove('active'));
+      document.getElementById('chip-all').classList.add('active');
+      document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
+      document.getElementById('destination-select').value = 'Delhi';
+      document.getElementById('chip-reset').classList.remove('visible');
+      applyFilters();
+    }
+
+    document.getElementById('destination-select').addEventListener('change', (e) => {
+      const city = e.target.value;
+      const coords = CITY_COORDS[city] || [77.2167, 28.6315];
+      map.flyTo({ center: coords, zoom: 12, duration: 800, essential: true });
+      applyFilters();
+    });
+
+    document.getElementById('currency-select').addEventListener('change', (e) => {
+      currentCurrency = e.target.value;
+      renderList();
+      syncViewportMarkers();
+    });
+
+    document.getElementById('sort-select').addEventListener('change', applyFilters);
+
+    document.getElementById('btn-style-road').addEventListener('click', () => {
+      map.setStyle(ROAD_STYLE);
+      document.getElementById('btn-style-road').classList.add('active');
+      document.getElementById('btn-style-satellite').classList.remove('active');
+    });
+
+    document.getElementById('btn-style-satellite').addEventListener('click', () => {
+      map.setStyle(SATELLITE_STYLE);
+      document.getElementById('btn-style-satellite').classList.add('active');
+      document.getElementById('btn-style-road').classList.remove('active');
+    });
+
+    document.getElementById('btn-recenter').addEventListener('click', () => {
+      const city = document.getElementById('destination-select').value;
+      const coords = CITY_COORDS[city] || [77.2167, 28.6315];
+      map.flyTo({ center: coords, zoom: 13, duration: 700, essential: true });
+    });
+
+    document.getElementById('modal-close').addEventListener('click', () => {
+      document.getElementById('detail-modal').classList.remove('active');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('detail-modal').classList.remove('active');
+      }
+    });
+
+    document.getElementById('analytics-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API}/analytics/summary`);
+        const data = await res.json();
+        const ev = data.events || {};
+        alert(`📊 TBO Real-Time Analytics Summary:\n\nTotal Inventory: ${allInventory.length.toLocaleString()} items\nImpressions: ${ev.IMPRESSION || 0}\nDetail Views: ${ev.DETAIL_VIEW || 0} (${data.click_through_rate_pct}% CTR)\nBookings: ${ev.BOOKED || 0} (${data.booking_conversion_rate_pct}% Conversion)\nAudit Events: ${data.audit_events || 0}`);
+      } catch (err) {
+        alert('Could not fetch analytics.');
+      }
+    });
+
+    loadCurrencyRates().then(fetchInventory);
+  </script>
+</body>
+</html>

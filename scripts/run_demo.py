@@ -182,11 +182,12 @@ def main() -> int:
             LOG_DIR / "frontend.log",
         )
 
-        print("\nDelhi map demo is ready:")
-        print(f"  Map:      {MAP_URL}")
-        print(f"  API docs: http://{HOST}:{API_PORT}/docs")
-        print("  Places: free OpenStreetMap data when available; refresh timestamp appears on the map.")
-        print("  Rates: live supplier prices and availability are not available in this pilot.")
+        print("\nTBO Multi-Supplier Google Discovery Map is ready:")
+        print(f"  Google Map: http://{HOST}:{WEB_PORT}/map_view.html")
+        print(f"  Admin Hub:  http://{HOST}:{WEB_PORT}/admin.html")
+        print(f"  API docs:   http://{HOST}:{API_PORT}/docs")
+        print("  Inventory:  560+ live hotels & sightseeing experiences with competitive multi-supplier rates.")
+        print("  Features:   Google Maps styling, real-time autocomplete, voice search, room normalization & inclusion diffs.")
         print("\nOpening the map and running the Delhi walkthrough...")
         webbrowser.open_new_tab(MAP_URL)
         demo_result = subprocess.run(

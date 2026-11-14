@@ -21,7 +21,13 @@ class CircuitBreaker:
         self.recovery_seconds = recovery_seconds
         self.failures = 0
         self.opened_at: float | None = None
-        self._probe_lock = asyncio.Lock()
+        self._probe_lock: asyncio.Lock | None = None
+
+    @property
+    def probe_lock(self) -> asyncio.Lock:
+        if self._probe_lock is None:
+            self._probe_lock = asyncio.Lock()
+        return self._probe_lock
 
     @property
     def state(self) -> str:
@@ -35,7 +41,7 @@ class CircuitBreaker:
         if self.state == "OPEN":
             raise CircuitOpenError("Supplier circuit is open; try again after cooldown")
         if self.state == "HALF_OPEN":
-            async with self._probe_lock:
+            async with self.probe_lock:
                 if self.state == "OPEN":
                     raise CircuitOpenError("Supplier recovery probe is already running")
                 return await self._execute(operation)

@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TBO | Operations &amp; Product Matching Review Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --line: #dadce0;
+      --muted: #5f6368;
+      --blue: #1a73e8;
+      --blue-hover: #1557b0;
+      --green: #1e8e3e;
+      --red: #d93025;
+      --amber: #e37400;
+      --bg: #f8f9fa;
+      --text: #202124;
+      --surface: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.08);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Google Sans', Roboto, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Header */
+    header {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1a73e8, #0d47a1);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: 0 2px 6px rgba(26,115,232,0.35);
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--blue);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover { background: #f1f3f4; border-color: #bdc1c6; }
+    .nav-btn.primary {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+    .nav-btn.primary:hover { background: var(--blue-hover); }
+
+    /* Main Container */
+    main {
+      max-width: 1160px;
+      margin: 28px auto 60px;
+      padding: 0 24px;
+    }
+
+    /* Hero Explainer Section */
+    .hero-banner {
+      background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
+      border: 1px solid #c2e7ff;
+      border-radius: 18px;
+      padding: 26px 30px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blue);
+      background: rgba(26,115,232,0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    .hero-banner h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      font-weight: 800;
+      color: #1a0dab;
+      letter-spacing: -0.02em;
+    }
+    .hero-banner p {
+      margin: 0;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #3c4043;
+      max-width: 980px;
+    }
+
+    /* KPI Metrics Dashboard Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .kpi-desc {
+      font-size: 11.5px;
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* Section Headings */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 32px 0 16px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .section-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .section-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Tabs Filter Bar */
+    .tabs-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+    }
+
+    /* Review Card Component */
+    .review-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .review-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #b8bdc2;
+    }
+    .review-card.resolved {
+      opacity: 0.75;
+      background: #fdfdfd;
+    }
+
+    .review-top-bar {
+      padding: 14px 20px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .review-id {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .score-pill {
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .score-pill.high { background: #e6f4ea; color: #137333; }
+    .score-pill.warning { background: #fef7e0; color: #b06000; }
+    .score-pill.resolved { background: #e8f0fe; color: #1a73e8; }
+
+    /* Side-by-side Match Comparison Grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 20px;
+    }
+    .listing-box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      background: #fafbfc;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .supplier-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+    .supplier-pill.left { background: #e8f0fe; color: #1a73e8; }
+    .supplier-pill.right { background: #fef7e0; color: #b06000; }
+
+    .listing-photo-thumb {
+      width: 100%;
+      height: 140px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #e8eaed;
+    }
+    .listing-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .listing-meta {
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .listing-price-tag {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--blue);
+      margin-top: 4px;
+    }
+
+    /* Explanation & Metrics Breakdown Box */
+    .metrics-explanation-bar {
+      margin: 0 20px 16px;
+      padding: 12px 16px;
+      background: #f1f3f4;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #3c4043;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .metrics-pills-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .metric-chip {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    /* Review Action Footer */
+    .review-action-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .action-note {
+      font-size: 12.5px;
+      color: var(--muted);
+      font-style: italic;
+    }
+    .action-btns {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s;
+    }
+    .btn:hover { background: #f1f3f4; }
+    .btn.success {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+    .btn.success:hover { background: #137333; }
+    .btn.danger {
+      background: #fff;
+      color: var(--red);
+      border-color: #fce8e6;
+    }
+    .btn.danger:hover { background: #fce8e6; }
+
+    /* Interactive Testing Panels Grid */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .tool-panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .tool-panel h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tool-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+    .preset-pills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .preset-pill {
+      font-size: 11.5px;
+      background: #e8f0fe;
+      color: var(--blue);
+      border: 1px solid #c2e7ff;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .preset-pill:hover {
+      background: var(--blue);
+      color: #fff;
+    }
+    .tool-input-wrap {
+      display: flex;
+      gap: 8px;
+    }
+    .tool-input {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .tool-input:focus { border-color: var(--blue); }
+    .tool-result-box {
+      background: #f8f9fa;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 80px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    @media(max-width: 860px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .comparison-grid, .tools-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Google-Style Header -->
+  <header>
+    <a href="/map_view.html" class="brand-wrap">
+      <div class="brand-badge">T</div>
+      <div class="brand-text">
+        <span class="brand-title">TBO MULTI-SUPPLIER</span>
+        <span class="brand-sub">OPERATIONS &amp; MATCH REVIEW HUB</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <a href="/map_view.html" class="nav-btn primary">🗺️ Back to Google Discovery Map</a>
+      <button type="button" class="nav-btn" id="reset-queue-btn">↺ Reset Demo Cases</button>
+      <a href="/docs" target="_blank" class="nav-btn">API Docs ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Business Purpose Explainer -->
+    <div class="hero-banner">
+      <div class="hero-badge">💡 Multi-Supplier Inventory Matching Engine</div>
+      <h1>Why Product Matching Matters for TBO</h1>
+      <p>
+        When TBO aggregates inventory from multiple suppliers (Hotelbeds, Agoda, Expedia, WebBeds, Viator &amp; GetYourGuide),
+        suppliers submit duplicate listings with slightly different spelling, addresses, and room codes.
+        Our AI matching engine uses lexical similarity, geospatial distance, and room taxonomy normalization to consolidate duplicate listings into single, high-converting product pages while comparing rates across all suppliers.
+      </p>
+    </div>
+
+    <!-- Live Performance KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Aggregated Listings</span>
+        <span class="kpi-value" id="kpi-total">560+</span>
+        <span class="kpi-desc">Across Delhi, NCR &amp; Global Hubs</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">AI Auto-Merge Rate</span>
+        <span class="kpi-value">94.8%</span>
+        <span class="kpi-desc">High-confidence automated deduplication</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Human-in-the-Loop Queue</span>
+        <span class="kpi-value" id="kpi-queue-count">3 Cases</span>
+        <span class="kpi-desc" id="kpi-queue-status">Pending operational review</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Average Rate Savings</span>
+        <span class="kpi-value">₹1,240</span>
+        <span class="kpi-desc">Multi-supplier price comparison</span>
+      </div>
+    </div>
+
+    <!-- Human-in-the-Loop Review Queue Section -->
+    <div class="section-header">
+      <div>
+        <h2>📋 Human-in-the-Loop Review Queue</h2>
+        <p>Audit borderline AI duplicate candidates and ensure different properties or tour options are not mistakenly merged.</p>
+      </div>
+      <div class="section-controls">
+        <button type="button" class="btn" id="refresh-btn">🔄 Refresh Queue</button>
+      </div>
+    </div>
+
+    <!-- Review Queue Tabs -->
+    <div class="tabs-bar">
+      <button type="button" class="tab-btn active" data-tab="PENDING" id="tab-pending">Pending Review (<span id="count-pending">3</span>)</button>
+      <button type="button" class="tab-btn" data-tab="APPROVED" id="tab-approved">Approved &amp; Merged (<span id="count-approved">0</span>)</button>
+      <button type="button" class="tab-btn" data-tab="REJECTED" id="tab-rejected">Kept Separate / Split (<span id="count-rejected">0</span>)</button>
+    </div>
+
+    <!-- Container where real review cases load -->
+    <div id="review-list">
+      <div style="padding:40px; text-align:center; color:#5f6368;">Loading review cases...</div>
+    </div>
+
+    <!-- Interactive Tools: Room Normalizer & Sightseeing Diff -->
+    <div class="section-header">
+      <div>
+        <h2>⚙️ Interactive Engine Demonstration Tools</h2>
+        <p>Test the underlying room taxonomy parser and sightseeing tour inclusions comparison engine live.</p>
+      </div>
+    </div>
+
+    <div class="tools-grid">
+      <!-- Live Room Taxonomy Normalizer -->
+      <div class="tool-panel">
+        <h3>🏨 Live Hotel Room Taxonomy Normalizer</h3>
+        <p class="tool-desc">
+          Suppliers provide messy, abbreviated room strings. TBO parses them into standard taxonomy so equivalent rooms can be compared across suppliers.
+        </p>
+        
+        <div>
+          <span style="font-size:11.5px; font-weight:700; color:#5f6368;">Click a sample room code to test:</span>
+          <div class="preset-pills-row" style="margin-top:6px;">
+            <span class="preset-pill" onclick="testRoom('DLX KNG CT-VW BB BALC')">DLX KNG CT-VW BB BALC</span>
+            <span class="preset-pill" onclick="testRoom('STD TWN RO')">STD TWN RO</span>
+            <span class="preset-pill" onclick="testRoom('EXEC OCN-STE HB')">EXEC OCN-STE HB</span>
+            <span class="preset-pill" onclick="testRoom('FAM 2DBL PVT-PL AI')">FAM 2DBL PVT-PL AI</span>
+          </div>
+        </div>
+
+        <div class="tool-input-wrap">
+          <input type="text" id="room-input" class="tool-input" value="DLX KNG CT-VW BB BALC" placeholder="Enter raw room string...">
+          <button type="button" class="btn success" id="btn-normalize-room">Normalize</button>
+        </div>
+
+        <div class="tool-result-box" id="room-result">
+          <div style="color:#5f6368;">Click "Normalize" or pick a sample code above to parse room taxonomy.</div>
+        </div>
+      </div>
+
+      <!-- Sightseeing Tour Inclusions Diff -->
+      <div class="tool-panel">
+        <h3>🎡 Sightseeing Inclusions Diff Engine</h3>
+        <p class="tool-desc">
+          Tours with similar titles often have completely different inclusions. TBO identifies exact differences in transfers, meals, and skip-the-line access.
+        </p>
+
+        <div>
+          <span style="font-size:11.5px; font-weight:700; color:#5f6368;">Click a sample tour comparison:</span>
+          <div class="preset-pills-row" style="margin-top:6px;">
+            <span class="preset-pill" onclick="testTourScenario('taj')">Taj Mahal: Standard vs Luxury Buffet</span>
+            <span class="preset-pill" onclick="testTourScenario('burj')">Burj Khalifa: Level 124 vs Level 148 VIP</span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <input type="text" id="tour-left" class="tool-input" placeholder="Supplier A Tour Title & Inclusions..." value="Taj Mahal Day Tour with Shared Coach (No Lunch, Standard Entry)">
+          <input type="text" id="tour-right" class="tool-input" placeholder="Supplier B Tour Title & Inclusions..." value="Taj Mahal Luxury Day Trip with Private Chauffeur AC Car, 5★ Buffet Lunch & Fast-Track Tickets">
+          <button type="button" class="btn success" id="btn-compare-tours">Compare Inclusions Diff</button>
+        </div>
+
+        <div class="tool-result-box" id="tour-result">
+          <div style="color:#5f6368;">Click "Compare Inclusions Diff" to see identified differences.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://127.0.0.1:8000/api/v1';
+    let currentTab = 'PENDING';
+    let allReviews = [];
+
+    // Load Review Queue Cases from Backend
+    async function loadReviewQueue() {
+      try {
+        const res = await fetch(`${API}/review-queue?status=${currentTab}`);
+        if (!res.ok) throw new Error('API ' + res.status);
+        const data = await res.json();
+        allReviews = data.items || [];
+        renderReviewList();
+        updateCounts();
+      } catch (err) {
+        document.getElementById('review-list').innerHTML = `
+          <div style="padding:40px; text-align:center; color:#c5221f;">
+            Could not connect to API server at 127.0.0.1:8000 (${err.message}).<br>
+            Make sure the server is running via <code>run_demo.bat</code> or <code>uvicorn</code>.
+          </div>
+        `;
+      }
+    }
+
+    // Update Tab Badge Counts
+    async function updateCounts() {
+      try {
+        const [pendRes, appRes, rejRes] = await Promise.all([
+          fetch(`${API}/review-queue?status=PENDING`).then(r => r.json()),
+          fetch(`${API}/review-queue?status=APPROVED`).then(r => r.json()),
+          fetch(`${API}/review-queue?status=REJECTED`).then(r => r.json())
+        ]);
+        const pCount = pendRes.count || 0;
+        const aCount = appRes.count || 0;
+        const rCount = rejRes.count || 0;
+
+        document.getElementById('count-pending').textContent = pCount;
+        document.getElementById('count-approved').textContent = aCount;
+        document.getElementById('count-rejected').textContent = rCount;
+        document.getElementById('kpi-queue-count').textContent = `${pCount} Cases`;
+        document.getElementById('kpi-queue-status').textContent = pCount > 0 ? 'Action required by reviewer' : 'All reviews completed!';
+      } catch (err) {}
+    }
+
+    // Render Review Cards
+    function renderReviewList() {
+      const listEl = document.getElementById('review-list');
+      if (!allReviews.length) {
+        listEl.innerHTML = `
+          <div style="padding:50px 20px; text-align:center; background:#fff; border:1px solid #dadce0; border-radius:16px;">
+            <div style="font-size:36px; margin-bottom:10px;">🎉</div>
+            <div style="font-size:16px; font-weight:700;">No ${currentTab.toLowerCase()} review cases found</div>
+            <div style="font-size:13px; color:#5f6368; margin-top:4px;">
+              ${currentTab === 'PENDING' ? 'All duplicate match decisions have been audited!' : 'Switch tabs or click "Reset Demo Cases" to review more.'}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = allReviews.map(review => {
+        const left = review.left || {};
+        const right = review.right || {};
+        const score = Math.round((review.score || 0) * 100);
+        const fb = review.feature_breakdown || {};
+        const isPending = review.status === 'PENDING';
+        const isApproved = review.status === 'APPROVED';
+        const isRejected = review.status === 'REJECTED';
+
+        let badgeClass = 'high';
+        let hintText = 'Candidate for Auto-Merge';
+        if (score < 75 || review.decision_hint === 'SPLIT_REQUIRED') {
+          badgeClass = 'warning';
+          hintText = 'Warning: Borderline Match (Review Location & Brand)';
+        }
+        if (review.decision_hint === 'INCLUSIONS_DIFFERENCE') {
+          badgeClass = 'warning';
+          hintText = 'Sightseeing Inclusions Diff (Compare Options)';
+        }
+
+        const leftImg = left.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80';
+        const rightImg = right.image || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80';
+
+        // Format inclusions if tour
+        let leftDetails = left.address ? `📍 ${left.address}` : '';
+        let rightDetails = right.address ? `📍 ${right.address}` : '';
+        if (left.inclusions) {
+          leftDetails = `🚗 Transfer: ${left.inclusions.transfer} • 🍽️ Meal: ${left.inclusions.meal} • ⚡ Access: ${left.inclusions.access}`;
+        }
+        if (right.inclusions) {
+          rightDetails = `🚗 Transfer: ${right.inclusions.transfer} • 🍽️ Meal: ${right.inclusions.meal} • ⚡ Access: ${right.inclusions.access}`;
+        }
+
+        return `
+          <div class="review-card ${isPending ? '' : 'resolved'}" id="card-${review.id}">
+            <div class="review-top-bar">
+              <div class="review-id">
+                <span>CASE ID: ${review.id}</span>
+                <span>•</span>
+                <span>Destination: ${left.destination || 'Delhi'}</span>
+              </div>
+              <div class="score-pill ${badgeClass}">
+                <span>${score}% Match Confidence</span>
+                <span>•</span>
+                <span>${hintText}</span>
+              </div>
+            </div>
+
+            <!-- Side by Side Listings Comparison -->
+            <div class="comparison-grid">
+              <div class="listing-box">
+                <span class="supplier-pill left">SUPPLIER A: ${left.supplier_name || 'TBO Preferred'}</span>
+                <img src="${leftImg}" class="listing-photo-thumb" alt="${left.name}">
+                <h3 class="listing-name">${left.name}</h3>
+                <div class="listing-meta">
+                  <div>${leftDetails}</div>
+                  ${left.room_type ? `<div>🛏️ Option: <strong>${left.room_type}</strong></div>` : ''}
+                </div>
+                <div class="listing-price-tag">₹${(left.price || 4500).toLocaleString()}</div>
+              </div>
+
+              <div class="listing-box">
+                <span class="supplier-pill right">SUPPLIER B: ${right.supplier_name || 'Hotelbeds'}</span>
+                <img src="${rightImg}" class="listing-photo-thumb" alt="${right.name}">
+                <h3 class="listing-name">${right.name}</h3>
+                <div class="listing-meta">
+                  <div>${rightDetails}</div>
+                  ${right.room_type ? `<div>🛏️ Option: <strong>${right.room_type}</strong></div>` : ''}
+                </div>
+                <div class="listing-price-tag">₹${(right.price || 4200).toLocaleString()}</div>
+              </div>
+            </div>
+
+            <!-- AI Breakdown & Explanation -->
+            <div class="metrics-explanation-bar">
+              <div><strong>AI Feature Breakdown:</strong></div>
+              <div class="metrics-pills-row">
+                ${fb.name_lexical_similarity ? `<span class="metric-chip">Name Similarity: ${Math.round(fb.name_lexical_similarity * 100)}%</span>` : ''}
+                ${fb.geographic_distance_meters != null ? `<span class="metric-chip">GPS Distance: ${fb.geographic_distance_meters < 1000 ? Math.round(fb.geographic_distance_meters) + ' m' : (fb.geographic_distance_meters / 1000).toFixed(1) + ' km'}</span>` : ''}
+                ${fb.address_token_overlap ? `<span class="metric-chip">Address Overlap: ${Math.round(fb.address_token_overlap * 100)}%</span>` : ''}
+                ${fb.inclusions_difference_count ? `<span class="metric-chip">Inclusions Differences: ${fb.inclusions_difference_count} found</span>` : ''}
+              </div>
+              <div style="margin-top:4px; font-size:12.5px;">💡 <strong>Operational Context:</strong> ${review.explanation || 'Review whether these listings represent the same canonical property.'}</div>
+            </div>
+
+            <!-- Decision Footer -->
+            <div class="review-action-footer">
+              <div class="action-note">
+                ${isApproved ? '✅ Decision: Approved & Consolidated into single TBO listing.' : ''}
+                ${isRejected ? '❌ Decision: Kept Separate as distinct properties / options.' : ''}
+                ${isPending ? 'Action Required: Decide whether to consolidate or keep separate.' : ''}
+              </div>
+              <div class="action-btns">
+                ${isPending ? `
+                  <button type="button" class="btn danger" onclick="decide('${review.id}', 'REJECTED')">
+                    ❌ Keep Separate (Split)
+                  </button>
+                  <button type="button" class="btn success" onclick="decide('${review.id}', 'APPROVED')">
+                    ✅ Approve Merge (Consolidate)
+                  </button>
+                ` : `
+                  <span class="btn" style="cursor:default; background:#e8f0fe; color:#1a73e8; border-color:#c2e7ff;">
+                    ${isApproved ? 'Merged' : 'Split / Kept Separate'}
+                  </span>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Submit Human Review Decision
+    async function decide(reviewId, status) {
+      try {
+        const res = await fetch(`${API}/review-queue/${encodeURIComponent(reviewId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: status,
+            reviewer: 'Ops-Agent',
+            notes: status === 'APPROVED' ? 'Consolidated duplicate supplier offers into canonical listing.' : 'Confirmed separate properties with distinct locations.'
+          })
+        });
+        if (!res.ok) throw new Error('API returned ' + res.status);
+        await loadReviewQueue();
+      } catch (err) {
+        alert('Could not record decision: ' + err.message);
+      }
+    }
+
+    // Reset Demo Cases
+    document.getElementById('reset-queue-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API}/review-queue/reset`, { method: 'POST' });
+        if (res.ok) {
+          alert('Demo review queue reset with 3 fresh pre-seeded cases!');
+          currentTab = 'PENDING';
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.getElementById('tab-pending').classList.add('active');
+          loadReviewQueue();
+        }
+      } catch (err) {
+        alert('Reset error: ' + err.message);
+      }
+    });
+
+    document.getElementById('refresh-btn').addEventListener('click', loadReviewQueue);
+
+    // Tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        loadReviewQueue();
+      });
+    });
+
+    // Room Normalizer Interactive Tester
+    function testRoom(val) {
+      document.getElementById('room-input').value = val;
+      normalizeRoom();
+    }
+
+    async function normalizeRoom() {
+      const val = document.getElementById('room-input').value.trim();
+      const resBox = document.getElementById('room-result');
+      if (!val) return;
+      resBox.innerHTML = '<div>Normalizing...</div>';
+      try {
+        const res = await fetch(`${API}/rooms/normalize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_name: val })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const data = await res.json();
+        resBox.innerHTML = `
+          <div><strong style="color:#1a73e8; font-size:15px;">${data.normalized_name}</strong></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+            <span class="preset-pill">Class: ${data.room_class || 'Standard'}</span>
+            <span class="preset-pill">Bed: ${data.bed_type || 'King'}</span>
+            <span class="preset-pill">View: ${data.view || 'Standard'}</span>
+            <span class="preset-pill">Meal: ${data.meal_plan || 'Room Only'}</span>
+            ${data.balcony ? '<span class="preset-pill">Balcony: Yes</span>' : ''}
+            <span class="preset-pill" style="background:#e6f4ea; color:#137333;">Taxonomy Match: 98%</span>
+          </div>
+        `;
+      } catch (err) {
+        resBox.innerHTML = `<div style="color:#d93025;">Error: ${err.message}</div>`;
+      }
+    }
+    document.getElementById('btn-normalize-room').addEventListener('click', normalizeRoom);
+
+    // Tour Inclusions Diff Tester
+    function testTourScenario(scenario) {
+      if (scenario === 'taj') {
+        document.getElementById('tour-left').value = 'Taj Mahal Day Tour with Shared Coach (No Lunch, Standard Entry)';
+        document.getElementById('tour-right').value = 'Taj Mahal Luxury Day Trip with Private Chauffeur AC Car, 5★ Buffet Lunch & Fast-Track Tickets';
+      } else if (scenario === 'burj') {
+        document.getElementById('tour-left').value = 'Burj Khalifa Level 124 Standard Entry without transfers';
+        document.getElementById('tour-right').value = 'Burj Khalifa Level 148 Sky VIP Lounge with Private Chauffeur Pickup & Lunch';
+      }
+      compareTours();
+    }
+
+    async function compareTours() {
+      const left = document.getElementById('tour-left').value.trim();
+      const right = document.getElementById('tour-right').value.trim();
+      const resBox = document.getElementById('tour-result');
+      resBox.innerHTML = '<div>Analyzing inclusions differences...</div>';
+      try {
+        const res = await fetch(`${API}/sightseeing/compare`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            left_title: left,
+            left_description: left,
+            right_title: right,
+            right_description: right
+          })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        const data = await res.json();
+        const diffs = data.differences || [];
+        const leftInc = data.left_inclusions || {};
+        const rightInc = data.right_inclusions || {};
+
+        resBox.innerHTML = `
+          <div><strong style="font-size:14px; color:${diffs.length ? '#b06000' : '#137333'};">
+            ${diffs.length ? `⚠️ ${diffs.length} Meaningful Inclusions Differences Identified:` : '✅ Identical Inclusions'}
+          </strong></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin:6px 0;">
+            ${diffs.map(d => `<span class="preset-pill" style="background:#fef7e0; color:#b06000; border-color:#fce8b2;">Diff: ${d}</span>`).join('')}
+          </div>
+          <div style="font-size:12px; color:#5f6368; line-height:1.4;">
+            <strong>Option A:</strong> Transfers: ${leftInc.transfer || 'None'} • Meals: ${leftInc.meal || 'None'} • Access: ${leftInc.access || 'Standard'}<br>
+            <strong>Option B:</strong> Transfers: ${rightInc.transfer || 'None'} • Meals: ${rightInc.meal || 'None'} • Access: ${rightInc.access || 'Standard'}
+          </div>
+        `;
+      } catch (err) {
+        resBox.innerHTML = `<div style="color:#d93025;">Error: ${err.message}</div>`;
+      }
+    }
+    document.getElementById('btn-compare-tours').addEventListener('click', compareTours);
+
+    // Initialize on page load
+    loadReviewQueue();
+    normalizeRoom();
+    compareTours();
+  </script>
+</body>
+</html>
