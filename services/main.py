@@ -1298,6 +1298,20 @@ def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
     days = intent.get("days") or 3
     budget = intent.get("budget_tier") if intent.get("budget_tier") != "any" else "mid"
 
+    ctx = request.context or {}
+    star_pref = ctx.get("star_preference") or ctx.get("stars")
+    if star_pref:
+        try:
+            star_val = float(star_pref)
+            if star_val >= 4.5:
+                budget = "luxury"
+            elif star_val >= 3.0:
+                budget = "mid"
+            else:
+                budget = "budget"
+        except (ValueError, TypeError):
+            pass
+
     plan = generate_itinerary(destination=dest, days=days, preferred_budget=budget)
 
     tier_label = {

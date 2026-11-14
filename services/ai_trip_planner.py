@@ -360,19 +360,27 @@ def parse_trip_intent(text: str) -> dict[str, Any]:
     elif re.search(r'\b(saat din|7 days|seven days|hafta|one week|week)\b', text_lower):
         days = 7
 
-    # 3. Extract budget tier (English & Hindi)
+    # 3. Extract budget tier & star rating preference (1 to 5 stars)
     budget = "any"
-    if re.search(r'\b(cheap|cheapest|budget|sasta|low cost|backpacker|affordable|kam budget|kam daam|under \d+k?)\b', text_lower):
-        budget = "budget"
-    elif re.search(r'\b(luxury|expensive|mehanga|mehenga|5 star|five star|premium|lavish|royal|shahi)\b', text_lower):
+    star_rating = None
+    if re.search(r'\b(5\s*star|five\s*star|5-star|5★|five\s*stars|luxury|expensive|mehanga|mehenga|premium|lavish|royal|shahi)\b', text_lower):
         budget = "luxury"
-    elif re.search(r'\b(mid|medium|moderate|normal|standard|balanced|beech ka|thik thak)\b', text_lower):
+        star_rating = 5
+    elif re.search(r'\b(4\s*star|four\s*star|4-star|4★|four\s*stars)\b', text_lower):
         budget = "mid"
+        star_rating = 4
+    elif re.search(r'\b(3\s*star|three\s*star|3-star|3★|three\s*stars|mid|medium|moderate|normal|standard|balanced|beech ka|thik thak)\b', text_lower):
+        budget = "mid"
+        star_rating = 3
+    elif re.search(r'\b(1\s*star|2\s*star|1-star|2-star|1★|2★|one\s*star|two\s*stars|cheap|cheapest|budget|sasta|low cost|backpacker|affordable|kam budget|kam daam|under \d+k?)\b', text_lower):
+        budget = "budget"
+        star_rating = 2
 
     return {
         "destination": dest,
         "days": days,
-        "budget_tier": budget
+        "budget_tier": budget,
+        "star_rating": star_rating
     }
 
 

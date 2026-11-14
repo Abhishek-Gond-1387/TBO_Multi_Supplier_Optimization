@@ -937,6 +937,46 @@
       color: #4338ca;
     }
 
+    /* Star Rating Preference Bar inside AI Drawer */
+    .ai-star-pref-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 18px;
+      background: #fffbeb;
+      border-bottom: 1px solid #fef3c7;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .ai-star-pref-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #92400e;
+    }
+    .ai-star-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .ai-star-pill {
+      border: 1px solid #fcd34d;
+      background: #fff;
+      color: #78350f;
+      padding: 4px 11px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .ai-star-pill:hover { background: #fef3c7; }
+    .ai-star-pill.active {
+      background: #d97706;
+      color: #fff;
+      border-color: #d97706;
+      box-shadow: 0 2px 5px rgba(217,119,6,0.3);
+    }
+
     /* Chat Messages Stream */
     .ai-chat-stream {
       flex: 1;
@@ -1407,6 +1447,17 @@
         <option value="AED">د.إ AED</option>
       </select>
 
+      <!-- 1 to 5 Star Rating Preference Selector -->
+      <select id="star-select" class="filter-select" aria-label="Star Rating Preference" style="font-weight: 700; color: #b45309; border-color: #fde68a; background: #fffbeb;">
+        <option value="0" selected>⭐ Any Rating (1-5★)</option>
+        <option value="1">⭐ 1★ &amp; above</option>
+        <option value="2">⭐ 2★ &amp; above</option>
+        <option value="3">⭐ 3★ &amp; above (Comfort)</option>
+        <option value="4">⭐ 4★ &amp; above (Superior)</option>
+        <option value="4.5">⭐ 4.5★ &amp; above (Guest Favorite)</option>
+        <option value="5">⭐ 5★ Only (Luxury / Heritage)</option>
+      </select>
+
       <div class="filter-chip" data-filter="rating">⭐ 4.5+ Rating</div>
       <div class="filter-chip" data-filter="flexible">🆓 Free Cancellation</div>
       <div class="filter-chip" data-filter="breakfast">🍳 Breakfast Included</div>
@@ -1506,6 +1557,17 @@
         <button class="ai-chip-btn" data-prompt="Plan a 3-day Mumbai coastal and Bollywood trip">💼 3-Day Mumbai</button>
       </div>
 
+      <!-- 1 to 5 Star Rating Preference Bar in AI Chatbot -->
+      <div class="ai-star-pref-container">
+        <span class="ai-star-pref-title">⭐ Hotel Preference:</span>
+        <div class="ai-star-pills" id="ai-star-pills">
+          <button type="button" class="ai-star-pill active" data-stars="any">All (1-5★)</button>
+          <button type="button" class="ai-star-pill" data-stars="3">3★ Comfort</button>
+          <button type="button" class="ai-star-pill" data-stars="4">4★ Superior</button>
+          <button type="button" class="ai-star-pill" data-stars="5">5★ Luxury Palace</button>
+        </div>
+      </div>
+
       <!-- Chat Stream -->
       <div class="ai-chat-stream" id="ai-chat-body"></div>
 
@@ -1542,6 +1604,15 @@
   <script>
     const API = (window.location.port === '8000') ? '/api/v1' : `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
     
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
     // Google Map Vector & Satellite Styles
     const ROAD_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
     const SATELLITE_STYLE = {
@@ -2185,6 +2256,9 @@
       const activeTypeChip = document.querySelector('.filter-chip.active[data-type]');
       let entityType = activeTypeChip ? activeTypeChip.dataset.type : 'ANY';
       
+      const starSelect = document.getElementById('star-select');
+      const selectedMinStars = starSelect ? parseFloat(starSelect.value) : 0;
+
       const filterRating = document.querySelector('.filter-chip.active[data-filter="rating"]');
       const filterFlexible = document.querySelector('.filter-chip.active[data-filter="flexible"]');
       const filterBreakfast = document.querySelector('.filter-chip.active[data-filter="breakfast"]');
@@ -2194,6 +2268,7 @@
       const hasActiveFilters = Boolean(
         rawQ ||
         entityType !== 'ANY' ||
+        selectedMinStars > 0 ||
         filterRating || filterFlexible || filterBreakfast || filterTransfers || filterFastTrack
       );
       document.getElementById('chip-reset').classList.toggle('visible', hasActiveFilters);
@@ -2243,7 +2318,7 @@
           if (!matchesAll) return false;
         }
 
-        const minRating = forceRating || (filterRating ? 4.5 : null);
+        const minRating = forceRating || (selectedMinStars > 0 ? selectedMinStars : (filterRating ? 4.5 : null));
         if (minRating && (item.star_rating || 0) < minRating) return false;
 
         if (filterFlexible) {
@@ -3089,6 +3164,7 @@
       document.querySelectorAll('.filter-chip[data-type]').forEach(c => c.classList.remove('active'));
       document.getElementById('chip-all').classList.add('active');
       document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
+      if (document.getElementById('star-select')) document.getElementById('star-select').value = '0';
       document.getElementById('destination-select').value = 'Delhi';
       document.getElementById('chip-reset').classList.remove('visible');
       fetchInventory('Delhi');
@@ -3100,6 +3176,8 @@
       map.flyTo({ center: coords, zoom: 12, duration: 800, essential: true });
       fetchInventory(city);
     });
+
+    document.getElementById('star-select').addEventListener('change', applyFilters);
 
     document.getElementById('currency-select').addEventListener('change', (e) => {
       currentCurrency = e.target.value;
@@ -3184,6 +3262,15 @@
           aiInput.value = prompt;
           sendAIMessage();
         }
+      });
+    });
+
+    let selectedAiStarPreference = 'any';
+    document.querySelectorAll('.ai-star-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ai-star-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedAiStarPreference = btn.getAttribute('data-stars');
       });
     });
 
@@ -3355,7 +3442,13 @@
         const res = await fetch(`${API}/ai/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: query })
+          body: JSON.stringify({
+            message: query,
+            context: {
+              star_preference: selectedAiStarPreference,
+              stars: selectedAiStarPreference
+            }
+          })
         });
         const data = await res.json();
         const existingLoader = document.getElementById('ai-loading-indicator');
