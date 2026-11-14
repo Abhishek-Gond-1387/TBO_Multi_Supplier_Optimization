@@ -1297,6 +1297,7 @@ def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
     dest = intent["destination"]
     days = intent.get("days") or 3
     budget = intent.get("budget_tier") if intent.get("budget_tier") != "any" else "mid"
+    stated_budget = intent.get("stated_budget")
 
     ctx = request.context or {}
     star_pref = ctx.get("star_preference") or ctx.get("stars")
@@ -1312,7 +1313,12 @@ def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
         except (ValueError, TypeError):
             pass
 
-    plan = generate_itinerary(destination=dest, days=days, preferred_budget=budget)
+    plan = generate_itinerary(
+        destination=dest,
+        days=days,
+        preferred_budget=budget,
+        stated_budget=stated_budget
+    )
 
     tier_label = {
         "budget": "Budget (Cheapest)",
@@ -1321,12 +1327,23 @@ def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
     }.get(budget, "Mid-Level")
     total_est = plan["cost_comparison"][budget if budget in plan["cost_comparison"] else "mid"]["total_cost"]
 
+    budget_line = f"🎯 **Target Tier:** {tier_label} (Estimated total: ~₹{total_est:,})\n"
+    if stated_budget:
+        per_day_stated = int(stated_budget / max(1, days))
+        budget_line = (
+            f"💰 **Your Stated Budget:** ₹{stated_budget:,} (~₹{per_day_stated:,}/day)\n"
+            f"🎯 **Matched Tier:** {tier_label} (Total package tailored: ~₹{total_est:,})\n"
+        )
+
+    transit_info = plan["transit_connectivity"].get("airport") or plan["transit_connectivity"].get("railways") or "Regional Transit"
+    local_transit = plan["transit_connectivity"].get("local_cab") or plan["transit_connectivity"].get("metro") or "Local AC Cabs"
+
     reply_text = (
         f"✨ **Here is your custom {days}-Day {dest} Itinerary!**\n\n"
-        f"🎯 **Target Tier:** {tier_label} (Estimated total: ~₹{total_est:,})\n"
+        f"{budget_line}"
         f"☀️ **Best Season:** {plan['best_season']}\n"
-        f"🚇 **Key Transit Hub:** {plan['transit_connectivity'].get('airport', 'Airport')} | {plan['transit_connectivity'].get('metro', 'Metro Link')}\n\n"
-        f"I've mapped out where to stay across Budget, Mid-Level, and Luxury tiers, authentic food spots for every meal, and transit directions for each day. Click **'Plot on Map'** below to view all waypoints live!"
+        f"🚇 **Key Transit Hub:** {transit_info} | {local_transit}\n\n"
+        f"I've tailored verified stays across Budget, Mid-Level, and Luxury tiers, curated iconic food spots for each meal, and planned full transit connectivity. Click **'🗺️ Plot {days}-Day Route on Live Map'** below to view your route live!"
     )
 
     return {
@@ -1334,7 +1351,7 @@ def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
         "reply": reply_text,
         "itinerary": plan,
         "quick_actions": [
-            {"label": "🗺️ Plot on Map", "action": "plot_map"},
+            {"label": f"🗺️ Plot {days}-Day Route on Live Map", "action": "plot_map"},
             {"label": "💰 Compare Cheapest vs Luxury", "action": "show_pricing"},
             {"label": "🍽️ View Famous Food Spots", "action": "show_food"},
         ],

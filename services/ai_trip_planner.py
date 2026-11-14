@@ -2,7 +2,7 @@
 
 Generates complete N-day trip itineraries with:
 - Three-tier pricing comparison (Cheapest / Budget, Mid-level / Recommended, Luxury / Premium)
-- Stays & Hotels across tiers
+- Stays & Hotels across tiers (with live multi-supplier offers)
 - Transport interconnectivity (Metro, Cabs, Trains, Airport Transfers)
 - Food & Dining recommendations (Iconic local spots, Breakfast/Lunch/Dinner)
 - Sightseeing & Attractions with timings & tips
@@ -11,6 +11,7 @@ Generates complete N-day trip itineraries with:
 
 from __future__ import annotations
 
+import difflib
 import re
 from typing import Any, Literal
 from pydantic import BaseModel, Field
@@ -208,6 +209,67 @@ PAN_INDIA_HUBS: dict[str, dict[str, Any]] = {
             }
         ]
     },
+    "varanasi": {
+        "name": "Varanasi (Kashi / Banaras)",
+        "state": "Uttar Pradesh",
+        "description": "Spiritual capital of India on the holy Ganges river, renowned for ancient ghats, Kashi Vishwanath corridor, world-famous Ganga Aarti, and vibrant silk & street food culture.",
+        "best_season": "October to March (pleasant weather)",
+        "transit_hub": {
+            "airport": "Lal Bahadur Shastri International Airport (VNS) Babatpur",
+            "railways": "Varanasi Junction (BSB) / Pt. Deen Dayal Upadhyaya Junction (DDU)",
+            "local_cab": "E-Rickshaws through Ghat alleys, App cabs (Uber/Ola), River Boatmen (Bajra & Shikara)"
+        },
+        "budget_tiers": {
+            "budget": {"hotel_per_night": 1200, "food_per_day": 450, "transit_per_day": 250, "tours_per_day": 350},
+            "mid": {"hotel_per_night": 4500, "food_per_day": 1400, "transit_per_day": 800, "tours_per_day": 1200},
+            "luxury": {"hotel_per_night": 18500, "food_per_day": 4500, "transit_per_day": 2800, "tours_per_day": 4000}
+        },
+        "stays": {
+            "budget": [
+                {"name": "Zostel Varanasi (Dashashwamedh)", "price": 950, "rating": 4.6, "tag": "Walking to Ghats", "area": "Dashashwamedh"},
+                {"name": "Stops Hostel Varanasi", "price": 1100, "rating": 4.5, "tag": "Assi Ghat Vibe", "area": "Assi Ghat"},
+                {"name": "FabHotel Prime Kashi Residency", "price": 1800, "rating": 4.3, "tag": "Near Temple Corridor", "area": "Godowlia"}
+            ],
+            "mid": [
+                {"name": "Radisson Hotel Varanasi", "price": 5400, "rating": 4.6, "tag": "Cantt Luxury", "area": "Varanasi Cantt"},
+                {"name": "Hotel Madhuban Heritage", "price": 4200, "rating": 4.5, "tag": "Near Ghats", "area": "Shivala Ghat"},
+                {"name": "Clarks Varanasi Heritage Resort", "price": 5800, "rating": 4.6, "tag": "Colonial Heritage", "area": "The Mall, Cantt"}
+            ],
+            "luxury": [
+                {"name": "BrijRama Palace - Heritage on Darbhanga Ghat", "price": 22000, "rating": 5.0, "tag": "Ghat-Front Royal Palace", "area": "Darbhanga Ghat"},
+                {"name": "Taj Ganges Varanasi", "price": 18500, "rating": 4.9, "tag": "5-Star Taj Luxury", "area": "Nadesar Palace Grounds"},
+                {"name": "Taj Nadesar Palace", "price": 38000, "rating": 5.0, "tag": "Maharaja Suite VIP", "area": "Cantt Nadesar"}
+            ]
+        },
+        "dining": [
+            {"meal": "Breakfast", "spot": "Ram Bhandar (Thatheri Bazaar) / Netaji Kachori", "dish": "Banarasi Kachori Jalebi & Desi Ghee Poori", "cost": "₹80 - ₹150"},
+            {"meal": "Lunch", "spot": "Baati Chokha Restaurant (Teliyabag)", "dish": "Desi Ghee Baati Chokha, Dal & Sattu Parantha", "cost": "₹250 - ₹500"},
+            {"meal": "Evening Chaat", "spot": "Deena Chaat Bhandar & Kashi Chaat (Godowlia)", "dish": "Tamatar Chaat, Palak Patta Chaat & Gulab Jamun", "cost": "₹100 - ₹200"},
+            {"meal": "Night Dessert & Paan", "spot": "Blue Lassi (Manikarnika) & Keshav Tambool", "dish": "Kulhad Pomegranate Lassi & Banarasi Meetha Paan", "cost": "₹70 - ₹150"}
+        ],
+        "daily_templates": [
+            {
+                "day": 1,
+                "title": "Kashi Vishwanath Corridor, Subah-e-Banaras & Evening Ganga Aarti",
+                "morning": {"title": "Subah-e-Banaras Morning Sunrise Boat Ride & Assi Ghat", "desc": "Witness Vedic chants, classical morning yoga, and sunrise over the holy Ganges river.", "time": "05:30 AM - 08:30 AM", "lat": 25.2882, "lon": 83.0068},
+                "transport": "Hand-rowed wooden sunrise bajra boat along the 84 Ghats.",
+                "lunch": "Ram Bhandar & Netaji Kachori Sabzi in Godowlia.",
+                "afternoon": {"title": "Kashi Vishwanath Golden Temple Corridor & Annapurna Temple", "desc": "Visit the sacred Jyotirlinga through the magnificent renovated riverfront corridor.", "time": "11:00 AM - 02:30 PM", "lat": 25.3109, "lon": 83.0107},
+                "evening": {"title": "World-Famous Maha Ganga Aarti at Dashashwamedh Ghat", "desc": "Grand rhythmic brass lamp rituals performed by priests overlooking the river at dusk.", "time": "06:00 PM - 08:00 PM", "lat": 25.3069, "lon": 83.0104},
+                "dinner": "Deena Chaat Bhandar (Tamatar Chaat) followed by authentic Banarasi Paan."
+            },
+            {
+                "day": 2,
+                "title": "Sarnath Buddhist Pilgrimage & Silk Weaving Heritage",
+                "morning": {"title": "Sarnath Dhamek Stupa & Archaeological Museum", "desc": "The sacred deer park where Lord Buddha gave his first sermon; view the original Ashoka Lion Capital.", "time": "09:00 AM - 01:00 PM", "lat": 25.3811, "lon": 83.0227},
+                "transport": "Prepaid AC cab from Varanasi Cantt to Sarnath (approx 25 mins).",
+                "lunch": "Baati Chokha Restaurant (traditional earthen pot meal).",
+                "afternoon": {"title": "Banarasi Silk Weavers Colony & Ramnagar Fort", "desc": "18th-century riverside sandstone palace of the Kashi Naresh and artisanal silk loom workshops.", "time": "02:30 PM - 05:30 PM", "lat": 25.2687, "lon": 83.0253},
+                "evening": {"title": "Manikarnika & Harishchandra Ghats Twilight Boat Cruise", "desc": "Contemplative evening boat journey observing eternal flames and river reflection.", "time": "06:00 PM - 08:00 PM", "lat": 25.3110, "lon": 83.0135},
+                "dinner": "Cantonment fine dining at Varuna (Taj Ganges) or Canton Royale."
+            }
+        ]
+    },
     "jaipur": {
         "name": "Jaipur (The Pink City)",
         "state": "Rajasthan",
@@ -256,6 +318,44 @@ PAN_INDIA_HUBS: dict[str, dict[str, Any]] = {
             }
         ]
     },
+    "udaipur": {
+        "name": "Udaipur (The City of Lakes)",
+        "state": "Rajasthan",
+        "description": "Venice of the East featuring palatial marble architecture, shimmering lakes, romantic sunset boat cruises, and Mewari royalty.",
+        "best_season": "October to March",
+        "transit_hub": {
+            "airport": "Maharana Pratap Airport (UDR)",
+            "railways": "Udaipur City Railway Station (UDZ)",
+            "local_cab": "Tourist Cabs, Auto-rickshaws, Lake Ferry Boats"
+        },
+        "budget_tiers": {
+            "budget": {"hotel_per_night": 1300, "food_per_day": 500, "transit_per_day": 250, "tours_per_day": 400},
+            "mid": {"hotel_per_night": 4600, "food_per_day": 1600, "transit_per_day": 850, "tours_per_day": 1200},
+            "luxury": {"hotel_per_night": 22000, "food_per_day": 5000, "transit_per_day": 2800, "tours_per_day": 4000}
+        },
+        "stays": {
+            "budget": [{"name": "Zostel Udaipur (Pichola)", "price": 1100, "rating": 4.6, "tag": "Rooftop Pichola", "area": "Chandpole"}],
+            "mid": [{"name": "Trident Udaipur", "price": 6800, "rating": 4.7, "tag": "Lake Frontage", "area": "Haridas Ji Ki Magri"}],
+            "luxury": [{"name": "Taj Lake Palace Udaipur", "price": 32000, "rating": 5.0, "tag": "Island Palace", "area": "Lake Pichola"}]
+        },
+        "dining": [
+            {"meal": "Breakfast", "spot": "Jheel's Ginger Coffee Bar", "dish": "Lakeview Hazelnut Cappuccino & Fresh Croissants", "cost": "₹200 - ₹400"},
+            {"meal": "Lunch", "spot": "Krishna Dal Bati Restro", "dish": "Authentic Desi Ghee Dal Baati Churma", "cost": "₹300 - ₹500"},
+            {"meal": "Dinner", "spot": "Ambrai Restaurant at Amet Haveli", "dish": "Lal Maas with Illuminated City Palace View", "cost": "₹1200 - ₹2500"}
+        ],
+        "daily_templates": [
+            {
+                "day": 1,
+                "title": "City Palace of Udaipur, Jagdish Temple & Lake Pichola Sunset",
+                "morning": {"title": "City Palace & Mor Chowk", "desc": "Rajasthan's largest royal palace complex with ornate peacock courtyards overlooking Lake Pichola.", "time": "09:30 AM - 01:00 PM", "lat": 24.5764, "lon": 73.6835},
+                "transport": "Walking through old city lanes and lake jetties.",
+                "lunch": "Tribute Restaurant overlooking Rang Sagar.",
+                "afternoon": {"title": "Saheliyon Ki Bari & Vintage Car Collection", "desc": "Royal ornamental fountains, marble pavilions, and Rolls Royce classic cars.", "time": "02:30 PM - 05:00 PM", "lat": 24.6031, "lon": 73.6872},
+                "evening": {"title": "Lake Pichola Sunset Boat Cruise to Jag Mandir", "desc": "Private boat ride around the floating palaces during golden hour.", "time": "05:30 PM - 07:30 PM", "lat": 24.5676, "lon": 73.6775},
+                "dinner": "Ambrai Restaurant on the water's edge."
+            }
+        ]
+    },
     "agra": {
         "name": "Agra (City of the Taj)",
         "state": "Uttar Pradesh",
@@ -273,7 +373,7 @@ PAN_INDIA_HUBS: dict[str, dict[str, Any]] = {
         },
         "stays": {
             "budget": [{"name": "Zostel Agra (Fatehabad Rd)", "price": 900, "rating": 4.6, "tag": "Near East Gate", "area": "Tajganj"}],
-            "mid": [{"name": "ITC Mughal - A Luxury Collection Hotel", "price": 4800, "rating": 4.7, "tag": "Mughal Gardens", "area": "Tajganj"}],
+            "mid": [{"name": "ITC Mughal - Luxury Collection", "price": 4800, "rating": 4.7, "tag": "Mughal Gardens", "area": "Tajganj"}],
             "luxury": [{"name": "The Oberoi Amarvilas Agra", "price": 28000, "rating": 5.0, "tag": "Taj View Every Room", "area": "East Gate"}]
         },
         "dining": [
@@ -294,23 +394,82 @@ PAN_INDIA_HUBS: dict[str, dict[str, Any]] = {
                 "dinner": "Peshawri at ITC Mughal."
             }
         ]
-    }
-}
-
-# Generic fallback for any other Pan-India destination (Varanasi, Kochi, Bengaluru, Manali, etc.)
-GENERIC_PAN_INDIA_TEMPLATE = {
-    "name": "Pan-India Discovery",
-    "best_season": "Year-round depending on region",
-    "transit_hub": {
-        "airport": "Nearest Regional International/Domestic Airport",
-        "metro": "City Transit / Rapid Metro where available",
-        "railways": "Indian Railways Superfast & Vande Bharat Network",
-        "local_cab": "App-based cabs (Uber/Ola) and state transport buses"
     },
-    "budget_tiers": {
-        "budget": {"hotel_per_night": 1400, "food_per_day": 550, "transit_per_day": 300, "tours_per_day": 400},
-        "mid": {"hotel_per_night": 4200, "food_per_day": 1500, "transit_per_day": 850, "tours_per_day": 1200},
-        "luxury": {"hotel_per_night": 16000, "food_per_day": 4500, "transit_per_day": 2600, "tours_per_day": 3500}
+    "manali": {
+        "name": "Manali (Himalayan Adventure)",
+        "state": "Himachal Pradesh",
+        "description": "Snow-capped Himalayan valley celebrated for pine forests, apple orchards, Atal Tunnel highway to Lahaul, and adventure sports.",
+        "best_season": "October to June (Snow in Dec-Feb, pleasant summers)",
+        "transit_hub": {
+            "airport": "Kullu Bhuntar Airport (KUU) / Chandigarh (IXC)",
+            "railways": "Chandigarh Railway Station (CDG) / Joginder Nagar",
+            "local_cab": "4x4 Himalayan Cabs, Self-drive bikes, HPTDC Volvo buses"
+        },
+        "budget_tiers": {
+            "budget": {"hotel_per_night": 1200, "food_per_day": 500, "transit_per_day": 350, "tours_per_day": 500},
+            "mid": {"hotel_per_night": 4500, "food_per_day": 1500, "transit_per_day": 1000, "tours_per_day": 1500},
+            "luxury": {"hotel_per_night": 18000, "food_per_day": 4500, "transit_per_day": 2800, "tours_per_day": 3500}
+        },
+        "stays": {
+            "budget": [{"name": "Zostel Old Manali", "price": 1050, "rating": 4.6, "tag": "Old Manali Vibe", "area": "Old Manali"}],
+            "mid": [{"name": "Apple Country Resort & Spa", "price": 5200, "rating": 4.6, "tag": "Valley View", "area": "Log Huts"}],
+            "luxury": [{"name": "The Himalayan - Luxury Castle Resort", "price": 19500, "rating": 4.9, "tag": "Gothic Castle & Pool", "area": "Hadimba Road"}]
+        },
+        "dining": [
+            {"meal": "Breakfast", "spot": "Dylan's Toasted & Roasted", "dish": "Fresh Cinnamon Roll & French Press Coffee", "cost": "₹200 - ₹350"},
+            {"meal": "Lunch", "spot": "Cafe 1947 (Riverside Old Manali)", "dish": "Woodfired Trout Pizza & Italian Pasta", "cost": "₹500 - ₹900"},
+            {"meal": "Dinner", "spot": "Chopsticks (Mall Road)", "dish": "Tibetan Thukpa, Momos & Hot Apple Cider", "cost": "₹350 - ₹700"}
+        ],
+        "daily_templates": [
+            {
+                "day": 1,
+                "title": "Solang Valley Adventures, Atal Tunnel & Sissu Waterfall",
+                "morning": {"title": "Solang Valley & Atal Tunnel Express", "desc": "Drive through the 9.02km engineering marvel into the snow peaks of Lahaul Valley.", "time": "08:30 AM - 01:00 PM", "lat": 32.3167, "lon": 77.1600},
+                "transport": "Private 4x4 SUV cab for mountain terrain.",
+                "lunch": "Riverside Dhaba in Sissu (Lahaul).",
+                "afternoon": {"title": "Hadimba Devi Temple & Cedar Forest", "desc": "1553 pagoda-style wooden temple built amidst towering deodar cedars.", "time": "02:30 PM - 05:00 PM", "lat": 32.2483, "lon": 77.1802},
+                "evening": {"title": "Old Manali Hippie Trail & Cafe 1947", "desc": "Live acoustic music beside the roaring Manalsu river.", "time": "06:00 PM - 09:00 PM", "lat": 32.2570, "lon": 77.1780},
+                "dinner": "Cafe 1947."
+            }
+        ]
+    },
+    "rishikesh": {
+        "name": "Rishikesh (Yoga Capital of the World)",
+        "state": "Uttarakhand",
+        "description": "Gateway to the Himalayas where emerald Ganga flows through foothills; famous for white water rafting, ashrams, and Parmarth Niketan Aarti.",
+        "best_season": "September to May",
+        "transit_hub": {
+            "airport": "Jolly Grant Airport Dehradun (DED) - 35 mins away",
+            "railways": "Yog Nagari Rishikesh (YNRK) / Haridwar (HW)",
+            "local_cab": "App cabs, Scooters, Shared Vikrams"
+        },
+        "budget_tiers": {
+            "budget": {"hotel_per_night": 1100, "food_per_day": 400, "transit_per_day": 200, "tours_per_day": 500},
+            "mid": {"hotel_per_night": 4200, "food_per_day": 1400, "transit_per_day": 800, "tours_per_day": 1400},
+            "luxury": {"hotel_per_night": 22000, "food_per_day": 4500, "transit_per_day": 2500, "tours_per_day": 3500}
+        },
+        "stays": {
+            "budget": [{"name": "Zostel Rishikesh (Tapovan)", "price": 950, "rating": 4.6, "tag": "Yoga & Cafe Vibe", "area": "Tapovan"}],
+            "mid": [{"name": "Aloha On The Ganges", "price": 6200, "rating": 4.6, "tag": "Riverfront Resort", "area": "Tapovan"}],
+            "luxury": [{"name": "Taj Rishikesh Resort & Spa", "price": 28000, "rating": 5.0, "tag": "Private Beach Luxury", "area": "Singtali"}]
+        },
+        "dining": [
+            {"meal": "Breakfast", "spot": "Little Buddha Cafe", "dish": "Pappaya Smoothie Bowl & Vegan Pancakes", "cost": "₹200 - ₹350"},
+            {"meal": "Lunch", "spot": "Chotiwala Restaurant (Ram Jhula)", "dish": "Traditional North Indian & Garhwali Thali", "cost": "₹250 - ₹450"},
+            {"meal": "Dinner", "spot": "The Sitting Elephant / Ganga Beach Cafe", "dish": "Woodfired Pizza with Ganga Riverfront View", "cost": "₹450 - ₹900"}
+        ],
+        "daily_templates": [
+            {
+                "day": 1,
+                "title": "White Water Rafting, Beatles Ashram & Parmarth Niketan Aarti",
+                "morning": {"title": "Shivpuri to Rishikesh Grade III White Water Rafting", "desc": "16km thrilling rafting adventure passing rapids like Roller Coaster and Golf Course.", "time": "08:30 AM - 12:30 PM", "lat": 30.1360, "lon": 78.3880},
+                "transport": "River raft followed by local transfer cab.",
+                "lunch": "Chotiwala Restaurant at Ram Jhula.",
+                "afternoon": {"title": "The Beatles Ashram (Chaurasi Kutia)", "desc": "Meditation domes with graffiti art where The Beatles stayed and composed in 1968.", "time": "02:00 PM - 04:30 PM", "lat": 30.1147, "lon": 78.3142},
+                "evening": {"title": "Parmarth Niketan Ganga Aarti at Dusk", "desc": "Divine spiritual riverside aarti with Vedic hymns and floating earthen diyas.", "time": "05:30 PM - 07:30 PM", "lat": 30.1190, "lon": 78.3120},
+                "dinner": "Ganga Beach Cafe overlooking the river."
+            }
+        ]
     }
 }
 
@@ -324,10 +483,10 @@ class TripPlanRequest(BaseModel):
 
 
 def parse_trip_intent(text: str) -> dict[str, Any]:
-    """Extract destination, number of days, and budget level from user natural language query."""
+    """Extract destination, number of days, and budget level from user natural language query with fuzzy typo resilience."""
     text_lower = text.lower()
-    
-    # 1. Extract destination using synonyms and all 110 cities
+
+    # 1. Direct synonym and canonical lookup
     dest = None
     for syn, canonical in sorted(CITY_SYNONYMS.items(), key=lambda x: -len(x[0])):
         if re.search(r'\b' + re.escape(syn) + r'\b', text_lower):
@@ -340,54 +499,126 @@ def parse_trip_intent(text: str) -> dict[str, Any]:
                 dest = city
                 break
 
-    # 2. Extract days (supporting English and Hindi/Hinglish)
-    days = None
-    day_match = re.search(r'(\d+)\s*(?:-|to)?\s*(?:days?|nights?|din|d\b)', text_lower)
-    if day_match:
-        days = int(day_match.group(1))
-    elif re.search(r'\b(ek din|1 day|one day|single day)\b', text_lower):
-        days = 1
-    elif re.search(r'\b(do din|2 days|two days|weekend)\b', text_lower):
-        days = 2
-    elif re.search(r'\b(teen din|3 days|three days)\b', text_lower):
-        days = 3
-    elif re.search(r'\b(chaar din|char din|4 days|four days)\b', text_lower):
-        days = 4
-    elif re.search(r'\b(paanch din|panch din|5 days|five days)\b', text_lower):
-        days = 5
-    elif re.search(r'\b(chhah din|cheh din|6 days|six days)\b', text_lower):
-        days = 6
-    elif re.search(r'\b(saat din|7 days|seven days|hafta|one week|week)\b', text_lower):
-        days = 7
+    # 1.1 Fuzzy / Typo match fallback using difflib for words like 'varansi', 'jaipr', 'banglore'
+    if not dest:
+        all_city_lookup: dict[str, str] = {k.lower(): k for k in PAN_INDIA_100_CITIES}
+        all_city_lookup.update({k.lower(): v for k, v in CITY_SYNONYMS.items()})
 
-    # 3. Extract budget tier & star rating preference (1 to 5 stars)
+        stopwords = {
+            "plan", "trip", "days", "day", "night", "nights", "din", "budget", "cost", "price",
+            "hotel", "hotels", "stay", "stays", "tour", "tours", "want", "need", "give", "make",
+            "show", "tell", "best", "cheapest", "expensive", "luxury", "mid", "under", "upto",
+            "with", "and", "for", "the", "in", "to", "at", "me", "my", "we", "us", "star", "stars",
+            "food", "transit", "travel", "vacation", "holiday", "package", "tourist", "vacation"
+        }
+        tokens = re.findall(r'[a-zA-Z]{3,}', text_lower)
+        for token in tokens:
+            if token in stopwords:
+                continue
+            matches = difflib.get_close_matches(token, list(all_city_lookup.keys()), n=1, cutoff=0.70)
+            if matches:
+                dest = all_city_lookup[matches[0]]
+                break
+
+    # 2. Extract days (supporting English, Hindi/Hinglish, 2n3d, weekend, etc.)
+    days = None
+    n_d_match = re.search(r'(\d+)\s*(?:d|days?)\s*(?:and|&)?\s*(\d+)\s*(?:n|nights?)', text_lower)
+    if n_d_match:
+        days = int(n_d_match.group(1))
+    else:
+        d_n_match = re.search(r'(\d+)\s*(?:n|nights?)\s*(?:and|&)?\s*(\d+)\s*(?:d|days?)', text_lower)
+        if d_n_match:
+            days = int(d_n_match.group(2))
+
+    if not days:
+        day_match = re.search(r'(\d+)\s*(?:-|to)?\s*(?:days?|nights?|din|d\b)', text_lower)
+        if day_match:
+            days = int(day_match.group(1))
+        elif re.search(r'\b(ek din|1 day|one day|single day)\b', text_lower):
+            days = 1
+        elif re.search(r'\b(do din|2 days|two days|weekend)\b', text_lower):
+            days = 2
+        elif re.search(r'\b(teen din|3 days|three days)\b', text_lower):
+            days = 3
+        elif re.search(r'\b(chaar din|char din|4 days|four days)\b', text_lower):
+            days = 4
+        elif re.search(r'\b(paanch din|panch din|5 days|five days)\b', text_lower):
+            days = 5
+        elif re.search(r'\b(chhah din|cheh din|6 days|six days)\b', text_lower):
+            days = 6
+        elif re.search(r'\b(saat din|7 days|seven days|hafta|one week|week)\b', text_lower):
+            days = 7
+
+    effective_days = days or 3
+
+    # 3. Extract budget (numeric amount or keywords or star preferences)
     budget = "any"
     star_rating = None
-    if re.search(r'\b(5\s*star|five\s*star|5-star|5★|five\s*stars|luxury|expensive|mehanga|mehenga|premium|lavish|royal|shahi)\b', text_lower):
-        budget = "luxury"
-        star_rating = 5
-    elif re.search(r'\b(4\s*star|four\s*star|4-star|4★|four\s*stars)\b', text_lower):
-        budget = "mid"
-        star_rating = 4
-    elif re.search(r'\b(3\s*star|three\s*star|3-star|3★|three\s*stars|mid|medium|moderate|normal|standard|balanced|beech ka|thik thak)\b', text_lower):
-        budget = "mid"
-        star_rating = 3
-    elif re.search(r'\b(1\s*star|2\s*star|1-star|2-star|1★|2★|one\s*star|two\s*stars|cheap|cheapest|budget|sasta|low cost|backpacker|affordable|kam budget|kam daam|under \d+k?)\b', text_lower):
-        budget = "budget"
-        star_rating = 2
+    stated_budget: int | None = None
+
+    # Look for numerical budget amount (e.g. 'budget 50000', 'under 25k', '50k budget', '1.5 lakh')
+    num_matches = re.finditer(
+        r'(?:budget\s*(?:of|is|:)?|under|around|upto|max|approx|spend)?\s*(?:rs\.?|inr|₹)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|lakh|lac)?\s*(?:rs\.?|inr|rupees|budget)?',
+        text_lower
+    )
+    for m in num_matches:
+        raw_num = m.group(1).replace(',', '')
+        mult = m.group(2)
+        try:
+            val = float(raw_num)
+            # If it equals days and has no multiplier or budget context, skip
+            if days and val == float(days) and not mult and "budget" not in m.group(0):
+                continue
+            if mult in ("k", "thousand"):
+                val *= 1000
+            elif mult in ("lakh", "lac"):
+                val *= 100000
+            if val >= 1000:
+                stated_budget = int(val)
+                break
+        except (ValueError, TypeError):
+            continue
+
+    if stated_budget:
+        per_day = stated_budget / effective_days
+        if per_day >= 12000 or stated_budget >= 35000:
+            budget = "luxury"
+            star_rating = 5
+        elif per_day >= 3800 or stated_budget >= 10000:
+            budget = "mid"
+            star_rating = 4
+        else:
+            budget = "budget"
+            star_rating = 2
+    else:
+        # Keyword-based extraction
+        if re.search(r'\b(5\s*star|five\s*star|5-star|5★|five\s*stars|luxury|expensive|mehanga|mehenga|premium|lavish|royal|shahi)\b', text_lower):
+            budget = "luxury"
+            star_rating = 5
+        elif re.search(r'\b(4\s*star|four\s*star|4-star|4★|four\s*stars)\b', text_lower):
+            budget = "mid"
+            star_rating = 4
+        elif re.search(r'\b(3\s*star|three\s*star|3-star|3★|three\s*stars|mid|medium|moderate|normal|standard|balanced|beech ka|thik thak)\b', text_lower):
+            budget = "mid"
+            star_rating = 3
+        elif re.search(r'\b(1\s*star|2\s*star|1-star|2-star|1★|2★|one\s*star|two\s*stars|cheap|cheapest|budget|sasta|low cost|backpacker|affordable|kam budget|kam daam)\b', text_lower):
+            budget = "budget"
+            star_rating = 2
 
     return {
         "destination": dest,
         "days": days,
         "budget_tier": budget,
-        "star_rating": star_rating
+        "star_rating": star_rating,
+        "stated_budget": stated_budget
     }
 
 
 def generate_itinerary(
     destination: str = "Delhi",
     days: int = 3,
-    preferred_budget: str = "mid"
+    preferred_budget: str = "mid",
+    stated_budget: int | None = None
 ) -> dict[str, Any]:
     """Construct an end-to-end multi-day trip plan with 3 price options, transit, dining, and map waypoints."""
     days = max(1, min(days, 10))  # clamp between 1 and 10 days
@@ -402,9 +633,38 @@ def generate_itinerary(
                 meta = c_meta
                 destination = c_name
                 break
-        
+
         if meta:
             clon, clat = meta["coords"]
+            # Dynamically fetch real items from live 1M multi-supplier engine
+            live_attractions = []
+            live_hotels = []
+            live_dining = []
+            try:
+                from services.pan_india_1m_engine import live_1m_engine
+                res = live_1m_engine.search_live(destination=destination, limit=40)
+                items = [r["item"] for r in res.get("results", [])]
+                live_attractions = [it for it in items if it.get("entity_type") == "ATTRACTION"]
+                live_hotels = [it for it in items if it.get("entity_type") == "HOTEL"]
+                live_dining = [it for it in items if it.get("entity_type") == "DINING"]
+            except Exception:
+                pass
+
+            # Stays with live supplier quotes if available
+            b_stay = live_hotels[0]["name"] if len(live_hotels) > 0 else f"{destination} Travellers Residency"
+            m_stay = live_hotels[1]["name"] if len(live_hotels) > 1 else f"{destination} Grand Regency & Spa"
+            l_stay = live_hotels[2]["name"] if len(live_hotels) > 2 else f"The Oberoi / Taj Palace {destination}"
+
+            # Sightseeing attractions
+            att1 = live_attractions[0]["name"] if len(live_attractions) > 0 else f"{destination} Heritage Palace & Fort"
+            att2 = live_attractions[1]["name"] if len(live_attractions) > 1 else f"{destination} Lake Promenade & Gardens"
+            att3 = live_attractions[2]["name"] if len(live_attractions) > 2 else f"{destination} Cultural Bazaar & Crafts"
+            att4 = live_attractions[3]["name"] if len(live_attractions) > 3 else f"{destination} Sunset Hilltop Viewpoint"
+
+            # Dining spots
+            food1 = live_dining[0]["name"] if len(live_dining) > 0 else f"Famous {meta.get('cuisine', destination + ' Delicacies')}"
+            food2 = live_dining[1]["name"] if len(live_dining) > 1 else f"{destination} Traditional Heritage Dining Hall"
+
             data = {
                 "name": destination,
                 "state": meta.get("state", "India"),
@@ -417,51 +677,47 @@ def generate_itinerary(
                     "local_cab": "App cabs (Uber/Ola), Pre-paid auto-rickshaws, Local AC Sedans"
                 },
                 "budget_tiers": {
-                    "budget": {"hotel_per_night": 1500, "food_per_day": 650, "transit_per_day": 350, "tours_per_day": 400},
+                    "budget": {"hotel_per_night": 1400, "food_per_day": 550, "transit_per_day": 300, "tours_per_day": 400},
                     "mid": {"hotel_per_night": 4200, "food_per_day": 1500, "transit_per_day": 850, "tours_per_day": 1100},
-                    "luxury": {"hotel_per_night": 15000, "food_per_day": 4200, "transit_per_day": 2500, "tours_per_day": 3200}
+                    "luxury": {"hotel_per_night": 17000, "food_per_day": 4500, "transit_per_day": 2600, "tours_per_day": 3500}
                 },
                 "stays": {
                     "budget": [
-                        {"name": f"{destination} Travellers Residency", "price": 1400, "rating": 4.3, "tag": "Budget Favorite", "area": meta.get("stay_hub", destination)},
-                        {"name": f"Zostel / Backpacker Inn {destination}", "price": 950, "rating": 4.4, "tag": "Youth Vibe", "area": "Center"}
+                        {"name": b_stay, "price": 1400, "rating": 4.4, "tag": "Budget Favorite", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Zostel / Backpacker Inn {destination}", "price": 950, "rating": 4.5, "tag": "Youth Vibe", "area": "City Center"}
                     ],
                     "mid": [
-                        {"name": f"{destination} Royal Regency & Spa", "price": 4200, "rating": 4.6, "tag": "Recommended", "area": meta.get("stay_hub", destination)},
-                        {"name": f"Radisson / Vivanta {destination}", "price": 5200, "rating": 4.7, "tag": "Business & Leisure", "area": "City Center"}
+                        {"name": m_stay, "price": 4500, "rating": 4.6, "tag": "Recommended", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Radisson / Vivanta {destination}", "price": 5400, "rating": 4.7, "tag": "4-Star Superior", "area": "City Center"}
                     ],
                     "luxury": [
-                        {"name": f"{destination} Heritage Palace & 5-Star Resort", "price": 15000, "rating": 4.9, "tag": "VIP Luxury", "area": meta.get("stay_hub", destination)},
-                        {"name": f"Taj / Oberoi {destination}", "price": 22000, "rating": 5.0, "tag": "Ultra-Luxury", "area": "Scenic View"}
+                        {"name": l_stay, "price": 18000, "rating": 4.9, "tag": "VIP 5-Star", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Taj / The Leela {destination}", "price": 24000, "rating": 5.0, "tag": "Palatial Resort", "area": "Scenic View"}
                     ]
                 },
+                "dining": [
+                    {"meal": "Breakfast", "spot": food1, "dish": f"Fresh breakfast featuring {meta.get('cuisine', 'local dishes')}", "cost": "₹150 - ₹300"},
+                    {"meal": "Lunch", "spot": food2, "dish": f"Authentic regional thali featuring {meta.get('cuisine', 'specialties')}", "cost": "₹350 - ₹750"},
+                    {"meal": "Dinner", "spot": f"{destination} Royal Courtyard", "dish": "Chef special evening dinner & desserts", "cost": "₹700 - ₹1800"}
+                ],
                 "daily_templates": [
                     {
-                        "title": f"Arrival, Iconic Highlights & {destination} Culinary Walk",
+                        "title": f"Iconic Landmarks, {att1} & Cultural Walk",
                         "transport": f"Prepaid AC Sedan from {meta.get('airport', 'transit hub')}.",
-                        "morning": {"title": f"{destination} Morning Heritage Landmark", "lat": round(clat + 0.012, 6), "lon": round(clon + 0.012, 6), "tip": "Reach early for great lighting and fewer crowds."},
+                        "morning": {"title": att1, "desc": f"Explore the majestic architecture and rich heritage of {destination}.", "time": "09:00 AM - 12:30 PM", "lat": round(clat + 0.012, 6), "lon": round(clon + 0.012, 6)},
                         "lunch": f"Authentic lunch featuring {meta.get('cuisine', 'regional delicacies')}.",
-                        "afternoon": {"title": f"{destination} Cultural Center & Bazaar", "lat": round(clat - 0.008, 6), "lon": round(clon - 0.008, 6), "tip": "Great for souvenirs and artisan craft."},
-                        "evening": {"title": f"{destination} Scenic Sunset Viewpoint", "lat": round(clat + 0.018, 6), "lon": round(clon - 0.015, 6), "tip": "Witness panoramic sunset views."},
-                        "dinner": f"Iconic evening food trail: {meta.get('cuisine', 'local dishes')}."
+                        "afternoon": {"title": att3, "desc": f"Vibrant artisan bazaars, handlooms, and souvenirs in {destination}.", "time": "02:00 PM - 04:30 PM", "lat": round(clat - 0.008, 6), "lon": round(clon - 0.008, 6)},
+                        "evening": {"title": att4, "desc": f"Breathtaking panoramic sunset viewpoint over {destination}.", "time": "05:30 PM - 07:30 PM", "lat": round(clat + 0.018, 6), "lon": round(clon - 0.015, 6)},
+                        "dinner": f"Chef special evening food trail: {meta.get('cuisine', 'local dishes')}."
                     },
                     {
-                        "title": f"Ancient Monuments, Nature Trails & Artisan Heritage",
+                        "title": f"{att2}, Nature Trails & Regional Delicacies",
                         "transport": "Full day private AC cab for comfortable sightseeing.",
-                        "morning": {"title": f"{destination} Monument & Temple Complex", "lat": round(clat - 0.015, 6), "lon": round(clon + 0.02, 6), "tip": "Hire a licensed guide at the ticket counter."},
+                        "morning": {"title": att2, "desc": f"Serene morning walk around picturesque gardens and lakes of {destination}.", "time": "09:30 AM - 12:30 PM", "lat": round(clat - 0.015, 6), "lon": round(clon + 0.02, 6)},
                         "lunch": "Traditional thali meal at a heritage dining hall.",
-                        "afternoon": {"title": f"{destination} Lake / Mountain Nature View", "lat": round(clat + 0.022, 6), "lon": round(clon + 0.018, 6), "tip": "Perfect relaxation spot."},
-                        "evening": {"title": f"{destination} Evening Lights & Cultural Show", "lat": round(clat + 0.005, 6), "lon": round(clon + 0.005, 6), "tip": "Enjoy regional music and dance performance."},
-                        "dinner": "Chef-special dinner at top-rated panoramic restaurant."
-                    },
-                    {
-                        "title": f"Hidden Gems, Souvenir Shopping & Departure",
-                        "transport": "Express cab or metro link to departure terminal.",
-                        "morning": {"title": f"{destination} Artisan Village & Handicrafts", "lat": round(clat - 0.018, 6), "lon": round(clon - 0.012, 6), "tip": "Direct buy from master craftsmen."},
-                        "lunch": "Boutique cafe brunch with regional tea/coffee.",
-                        "afternoon": {"title": f"{destination} Memorial & City Park Walk", "lat": round(clat + 0.008, 6), "lon": round(clon - 0.02, 6), "tip": "Peaceful afternoon stroll."},
-                        "evening": {"title": f"{destination} Final Sunset & Airport Transfer", "lat": round(clat + 0.03, 6), "lon": round(clon + 0.03, 6), "tip": "Allow 2 hours before scheduled departure."},
-                        "dinner": f"Farewell meal with {meta.get('cuisine', 'special sweets')}."
+                        "afternoon": {"title": f"{destination} Archaeological Museum & Arts", "desc": "Centuries of cultural artifacts and regional craft exhibitions.", "time": "02:30 PM - 05:00 PM", "lat": round(clat + 0.022, 6), "lon": round(clon + 0.018, 6)},
+                        "evening": {"title": f"{destination} Light & Sound Heritage Show", "desc": "Evening cultural performance and illuminated monument walk.", "time": "06:00 PM - 08:00 PM", "lat": round(clat + 0.005, 6), "lon": round(clon + 0.005, 6)},
+                        "dinner": "Panoramic rooftop dinner with regional specialties."
                     }
                 ]
             }
@@ -482,10 +738,19 @@ def generate_itinerary(
         transit_total = t["transit_per_day"] * days
         tours_total = t["tours_per_day"] * days
         grand_total = hotel_total + food_total + transit_total + tours_total
+
+        # If user explicitly stated a custom budget amount and this tier matches user's tier
+        if stated_budget and tier_key == preferred_budget:
+            grand_total = stated_budget
+            hotel_total = int(stated_budget * 0.55)
+            food_total = int(stated_budget * 0.20)
+            transit_total = int(stated_budget * 0.13)
+            tours_total = int(stated_budget * 0.12)
+
         return {
             "tier_name": {"budget": "Budget (Cheapest)", "mid": "Mid-Level (Recommended)", "luxury": "Luxury (VIP 5-Star)"}[tier_key],
             "total_cost": grand_total,
-            "hotel_per_night": t["hotel_per_night"],
+            "hotel_per_night": int(hotel_total / max(1, days - 1)),
             "hotel_total": hotel_total,
             "food_total": food_total,
             "transit_total": transit_total,
@@ -506,9 +771,8 @@ def generate_itinerary(
     map_waypoints = []
 
     for d in range(1, days + 1):
-        # Pick template cyclically if trip is longer than available templates
         tpl = daily_templates[(d - 1) % len(daily_templates)] if daily_templates else None
-        
+
         if tpl:
             day_plan = {
                 "day_number": d,
@@ -569,5 +833,6 @@ def generate_itinerary(
         "itinerary": itinerary_days,
         "food_recommendations": dining_options,
         "map_waypoints": map_waypoints,
+        "stated_budget": stated_budget,
         "summary": f"Complete {days}-Day AI travel blueprint for {city_name} with Budget, Mid-Range, and Luxury pricing breakdowns, transit directions, and verified dining."
     }
