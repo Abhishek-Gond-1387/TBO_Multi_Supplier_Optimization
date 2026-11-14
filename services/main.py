@@ -56,6 +56,7 @@ from services.pan_india_catalog import (
     get_pan_india_stats,
     get_transit_corridors,
 )
+from services.pan_india_1m_engine import live_1m_engine
 from services.room_normalizer import normalize_room_title
 from services.sightseeing_difference_engine import (
     extract_tour_inclusions,
@@ -713,6 +714,34 @@ async def search_inventory(
         items = [item for item in items if _item_matches_landmark(item, landmark)]
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
+
+    # Seamlessly enrich with live 1M multi-supplier items for India destinations
+    is_dubai = (destination and destination.casefold() == "dubai") or (country_code and country_code.upper() == "AE")
+    if not is_dubai:
+        live_res = live_1m_engine.search_live(
+            destination=destination,
+            entity_type=entity_type if entity_type and entity_type != "ANY" else None,
+            q=q,
+            limit=150,
+            currency=currency or "INR",
+        )
+        existing_ids = {it.id for it in items}
+        for r in live_res.get("results", []):
+            raw = r["item"]
+            if raw["id"] not in existing_ids:
+                try:
+                    item_obj = InventoryItem(**raw)
+                    if max_price is not None and not any(o.available and o.price <= max_price for o in item_obj.offers):
+                        continue
+                    if min_stars is not None and (item_obj.star_rating is None or item_obj.star_rating < min_stars):
+                        continue
+                    if inclusions and not _has_inclusions(item_obj, inclusions):
+                        continue
+                    items.append(item_obj)
+                    existing_ids.add(raw["id"])
+                except Exception:
+                    pass
+
     cache_descriptor = json.dumps(
         {
             "q": q,
@@ -728,10 +757,16 @@ async def search_inventory(
         },
         sort_keys=True,
     )
+    dest_count = live_1m_engine.get_destination_inventory_count(destination) if destination else live_1m_engine.total_inventory
     cached = get_or_set(
         _stable_cache_key("inventory:search", cache_descriptor),
         CACHE_TTL_LIVE_RATES,
-        lambda: {"count": len(items), "results": rank_items(items, " ".join([q, landmark or ""]).strip())},
+        lambda: {
+            "count": len(items),
+            "total_reachable_inventory": live_1m_engine.total_inventory,
+            "destination_total": dest_count,
+            "results": rank_items(items, " ".join([q, landmark or ""]).strip()),
+        },
     )
     return cached
 

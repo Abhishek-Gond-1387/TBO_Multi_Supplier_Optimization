@@ -262,7 +262,11 @@ PAN_INDIA_DINING_SPOTS = [
 
 
 def get_pan_india_stats() -> dict[str, Any]:
-    return PAN_INDIA_STATS
+    try:
+        from services.pan_india_1m_engine import live_1m_engine
+        return live_1m_engine.get_stats()
+    except Exception:
+        return PAN_INDIA_STATS
 
 
 def get_transit_corridors() -> list[dict[str, Any]]:

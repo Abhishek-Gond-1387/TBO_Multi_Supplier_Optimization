@@ -12,3 +12,5 @@ data/osm_inventory.status.json.tmp
 data/.osm_inventory.json.tmp
 *.log
 .demo-logs/
+*.db
+data/*.db
