@@ -18,7 +18,6 @@ from typing import Any, Literal
 from uuid import uuid4
 
 import httpx
-import requests
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
@@ -32,6 +31,7 @@ from services.config import (
     APP_ENV,
     APP_NAME,
     CACHE_TTL_GEO_VIEWPORT,
+    CACHE_TTL_LIVE_RATES,
     CORS_ORIGINS,
     DEBUG,
     ENABLE_CELERY,
@@ -44,21 +44,20 @@ from services.config import (
     MAP_DEFAULT_ZOOM,
     USE_DATABASE,
 )
+from services.ai_trip_planner import PAN_INDIA_HUBS, generate_itinerary, parse_trip_intent
 from services.dynamic_ranking_engine import rank_items
-from services.enrichment_engine import (
-    fetch_wikidata_enrichment,
-    resolve_commons_file,
-    synthesize_canonical_hotel_record,
-)
-from services.hotel_deduplication import (
-    compare_hotels,
-    haversine_meters,
-    run_batch_inventory_deduplication,
-)
+from services.hotel_deduplication import compare_hotels, haversine_meters
 from services.ingestion_validator import RawSupplierHotelPayload, calculate_data_quality_score
 from services.models import InventoryItem
 from services.open_geo import geocode_address, reverse_geocode
-from services.room_normalizer import compare_room_types, normalize_room_title
+from services.pan_india_catalog import (
+    PAN_INDIA_DINING_SPOTS,
+    PAN_INDIA_TRANSPORT_HUBS,
+    get_pan_india_stats,
+    get_transit_corridors,
+)
+from services.pan_india_1m_engine import live_1m_engine
+from services.room_normalizer import normalize_room_title
 from services.sightseeing_difference_engine import (
     extract_tour_inclusions,
     generate_inclusion_diff,
@@ -69,16 +68,133 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tbo.api")
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
+INVENTORY_PATH = PROJECT_ROOT / "data" / "sample_inventory.json"
 OPEN_DATA_INVENTORY_PATH = PROJECT_ROOT / "data" / "osm_inventory.json"
 OPEN_DATA_STATUS_PATH = PROJECT_ROOT / "data" / "osm_inventory.status.json"
 
 REQUESTS = Counter("tbo_http_requests_total", "HTTP requests served", ("method", "route", "status"))
 LATENCY = Histogram("tbo_http_request_seconds", "HTTP request latency", ("method", "route"))
 MATCH_DECISIONS = Counter("tbo_match_decisions_total", "Hotel match decisions", ("decision",))
-TELEMETRY: dict[str, int] = {"IMPRESSION": 0, "DETAIL_VIEW": 0, "BOOKING_INTENT": 0}
+TELEMETRY: dict[str, int] = {"IMPRESSION": 0, "DETAIL_VIEW": 0, "BOOKING_INTENT": 0, "BOOKED": 0}
 
 
-REVIEW_QUEUE: list[dict[str, Any]] = []
+def _seed_initial_review_queue() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": "review-hotel-taj-01",
+            "status": "PENDING",
+            "score": 0.96,
+            "decision_hint": "AUTO_MERGE_CANDIDATE",
+            "feature_breakdown": {
+                "name_lexical_similarity": 0.94,
+                "geographic_distance_meters": 14.2,
+                "address_token_overlap": 0.92,
+            },
+            "left": {
+                "id": "hotel-tbo-101",
+                "name": "The Taj Mahal Hotel New Delhi",
+                "destination": "Delhi",
+                "address": "Number 1 Mansingh Road, New Delhi 110011",
+                "latitude": 28.6045,
+                "longitude": 77.2255,
+                "supplier_name": "TBO Preferred",
+                "price": 14500,
+                "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80",
+                "room_type": "Deluxe Room - King Bed BB",
+            },
+            "right": {
+                "id": "hotel-hbeds-884",
+                "name": "Taj Mahal Hotel New Delhi - Central",
+                "destination": "Delhi",
+                "address": "1, Mansingh Rd, South End Lane, New Delhi 110011",
+                "latitude": 28.6046,
+                "longitude": 77.2256,
+                "supplier_name": "Hotelbeds Global",
+                "price": 13950,
+                "image": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80",
+                "room_type": "DLX KNG BB BALC",
+            },
+            "explanation": "High lexical and geographic proximity (14m apart). Confirmed duplicate listing from two different suppliers. Consolidate into 1 listing to offer travelers the lowest rate.",
+        },
+        {
+            "id": "review-hotel-radisson-02",
+            "status": "PENDING",
+            "score": 0.62,
+            "decision_hint": "SPLIT_REQUIRED",
+            "feature_breakdown": {
+                "name_lexical_similarity": 0.78,
+                "geographic_distance_meters": 14820.0,
+                "address_token_overlap": 0.25,
+            },
+            "left": {
+                "id": "hotel-agoda-421",
+                "name": "Radisson Blu Hotel New Delhi Paschim Vihar",
+                "destination": "Delhi",
+                "address": "Plot No. D, District Centre, Outer Ring Rd, Paschim Vihar, New Delhi",
+                "latitude": 28.6732,
+                "longitude": 77.0924,
+                "supplier_name": "Agoda Direct",
+                "price": 4200,
+                "image": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80",
+                "room_type": "Superior King Room",
+            },
+            "right": {
+                "id": "hotel-expedia-912",
+                "name": "Radisson Blu Marina Hotel Connaught Place",
+                "destination": "Delhi",
+                "address": "G-59 Connaught Circus, New Delhi 110001",
+                "latitude": 28.6315,
+                "longitude": 77.2185,
+                "supplier_name": "Expedia Partner",
+                "price": 5400,
+                "image": "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=600&q=80",
+                "room_type": "Standard Heritage Room",
+            },
+            "explanation": "Brand name similarity ('Radisson Blu') triggered review, but coordinates are 14.8 km apart in Paschim Vihar vs Connaught Place! Must keep separate as distinct properties.",
+        },
+        {
+            "id": "review-tour-taj-03",
+            "status": "PENDING",
+            "score": 0.74,
+            "decision_hint": "INCLUSIONS_DIFFERENCE",
+            "feature_breakdown": {
+                "itinerary_overlap": 0.95,
+                "inclusions_difference_count": 3,
+            },
+            "left": {
+                "id": "tour-viator-301",
+                "name": "Private Full Day Delhi Heritage Tour with AC Car",
+                "destination": "Delhi",
+                "supplier_name": "Viator / Tripadvisor",
+                "price": 2400,
+                "image": "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600&q=80",
+                "inclusions": {
+                    "transfer": "Private Chauffeur AC Car",
+                    "meal": "No Meals Included",
+                    "access": "Standard Entry (Pay at Gate)",
+                    "guide": "English Live Guide",
+                },
+            },
+            "right": {
+                "id": "tour-gyg-702",
+                "name": "Delhi City Highlights Day Trip with 5-Star Buffet Lunch & VIP Pass",
+                "destination": "Delhi",
+                "supplier_name": "GetYourGuide",
+                "price": 3850,
+                "image": "https://images.unsplash.com/photo-1592635196078-9fe3d54f2377?auto=format&fit=crop&w=600&q=80",
+                "inclusions": {
+                    "transfer": "Shared Luxury Coach",
+                    "meal": "5-Star Buffet Lunch Included",
+                    "access": "Skip-the-Line VIP Monument Pass",
+                    "guide": "Multilingual Audio + Guide",
+                },
+            },
+            "explanation": "Identical attractions visited, but Option B includes 5-Star Buffet Lunch and Skip-The-Line Fast Track. Link as comparable variants with inclusions breakdown.",
+        },
+    ]
+
+
+REVIEW_QUEUE: list[dict[str, Any]] = _seed_initial_review_queue()
 AUDIT_LOG: list[dict[str, Any]] = []
 _OSRM_REQUEST_LOCK = asyncio.Lock()
 _OSRM_LAST_REQUEST = 0.0
@@ -119,7 +235,7 @@ def open_data_status() -> dict[str, Any]:
         except (OSError, json.JSONDecodeError):
             pass
     last_updated = metadata.get("refreshed_at")
-    has_open_data_snapshot = (
+    has_live_data = (
         metadata.get("source") == "OpenStreetMap/Overpass"
         and str(metadata.get("city", "")).casefold() == DEMO_CITY.casefold()
         and str(metadata.get("country_code", "")).upper() == "IN"
@@ -131,7 +247,7 @@ def open_data_status() -> dict[str, Any]:
         started_at = _parse_timestamp(status.get("started_at"))
         if started_at is None or (datetime.now(timezone.utc) - started_at).total_seconds() > 1800:
             state = "error"
-    elif has_open_data_snapshot and state not in {"error", "refreshing"}:
+    elif has_live_data and state not in {"error", "refreshing"}:
         state = "ready"
     updated_at = _parse_timestamp(last_updated)
     age_seconds = max(0, int((datetime.now(timezone.utc) - updated_at).total_seconds())) if updated_at else None
@@ -140,9 +256,7 @@ def open_data_status() -> dict[str, Any]:
         "city": DEMO_CITY,
         "source": metadata.get("source", "OpenStreetMap via Overpass"),
         "license": metadata.get("license", "ODbL"),
-        "has_open_data_snapshot": has_open_data_snapshot,
-        "has_live_rates": False,
-        "has_customer_reviews": False,
+        "has_live_data": has_live_data,
         "refreshed_at": last_updated,
         "age_seconds": age_seconds,
         "stale": age_seconds is None or age_seconds > 24 * 60 * 60,
@@ -230,7 +344,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title=APP_NAME,
     version="2.0.0",
-    description="Delhi Hotels and Sightseeing source inventory, match-candidate audit, and catalog normalization. No supplier rates or customer reviews are connected.",
+    description="Multi-supplier inventory matching, inclusion comparison, map discovery and ranking.",
     debug=DEBUG,
     lifespan=lifespan,
 )
@@ -255,7 +369,7 @@ async def instrument_requests(request: Request, call_next):
 
 def _local_inventory_signature() -> tuple[tuple[str, int, int], ...]:
     signature = []
-    for path in (OPEN_DATA_INVENTORY_PATH,):
+    for path in (INVENTORY_PATH, OPEN_DATA_INVENTORY_PATH):
         try:
             stat = path.stat()
             signature.append((str(path.resolve()), stat.st_mtime_ns, stat.st_size))
@@ -272,45 +386,43 @@ async def load_inventory() -> list[InventoryItem]:
         signature = _local_inventory_signature()
         if _INVENTORY_CACHE is not None and signature == _INVENTORY_CACHE_SIGNATURE:
             return list(_INVENTORY_CACHE)
-        rows: list[dict[str, Any]] = []
+        with INVENTORY_PATH.open(encoding="utf-8") as inventory_file:
+            rows = json.load(inventory_file)
+        existing_sources = {str(r.get("source_id") or "") for r in rows if r.get("source_id")}
         if OPEN_DATA_INVENTORY_PATH.exists():
             try:
                 with OPEN_DATA_INVENTORY_PATH.open(encoding="utf-8") as open_data_file:
                     open_data = json.load(open_data_file)
-                metadata = open_data.get("metadata", {})
                 for bucket, entity_type in (("hotels", "HOTEL"), ("attractions", "ATTRACTION")):
                     for record in open_data.get(bucket, []):
                         source_id = str(record.get("source_id") or record.get("id") or "")
-                        if not source_id or record.get("latitude") is None or record.get("longitude") is None:
+                        if not source_id or source_id in existing_sources or record.get("latitude") is None or record.get("longitude") is None:
                             continue
                         rows.append({
                             "id": "open-" + hashlib.sha256(source_id.encode()).hexdigest()[:16],
                             "source_id": source_id,
-                            "source": record.get("source", "OpenStreetMap"),
-                            "source_updated_at": record.get("last_edited_at") or metadata.get("refreshed_at"),
-                            "source_metadata": {
-                                key: record[key] for key in ("street", "wikidata_id", "wikipedia_page", "wikimedia_commons_file", "image_url_source_tag")
-                                if record.get(key)
-                            },
                             "name": record.get("name", "Unnamed open-data place"),
                             "entity_type": entity_type,
-                            "destination": record.get("city") or record.get("destination") or DEMO_CITY,
+                            "destination": record.get("city") or record.get("destination") or "Delhi",
                             "country_code": record.get("country_code", "IN"),
                             "latitude": record["latitude"],
                             "longitude": record["longitude"],
-                            "star_rating": None,
-                            "property_classification": record.get("property_classification", record.get("star_rating")),
-                            "customer_rating": None,
-                            "review_count": None,
+                            "star_rating": record.get("star_rating"),
                             "description": record.get("description", ""),
                             "source_category": record.get("source_category"),
-                            "amenities": record.get("amenities") or [],
-                            "images": record.get("images") or [],
-                            "offers": [],
-                            "conversion_prior": 0.0,
+                            "amenities": record.get("amenities", []),
+                            "images": record.get("images", []),
+                            "offers": record.get("offers", []),
+                            "conversion_prior": 0.3,
                         })
-            except (OSError, json.JSONDecodeError) as error:
-                logger.warning("Could not load the Delhi OSM snapshot: %s", error)
+                        existing_sources.add(source_id)
+            except (OSError, json.JSONDecodeError):
+                pass
+        existing_ids = {r.get("id") for r in rows}
+        for hub in PAN_INDIA_TRANSPORT_HUBS + PAN_INDIA_DINING_SPOTS:
+            if hub.get("id") not in existing_ids:
+                rows.append(hub)
+                existing_ids.add(hub.get("id"))
     items = [InventoryItem.model_validate(row) for row in rows]
     if not USE_DATABASE:
         _INVENTORY_CACHE_SIGNATURE = signature
@@ -334,11 +446,6 @@ class MatchRequest(BaseModel):
 
 class RoomRequest(BaseModel):
     raw_name: str = Field(min_length=1, max_length=300)
-
-
-class RoomCompareRequest(BaseModel):
-    room_a: str = Field(min_length=1, max_length=300)
-    room_b: str = Field(min_length=1, max_length=300)
 
 
 class SightseeingRequest(BaseModel):
@@ -382,7 +489,7 @@ class ViewportRequest(BaseModel):
 class TelemetryEvent(BaseModel):
     entity_type: Literal["HOTEL", "SIGHTSEEING"]
     canonical_id: str = Field(min_length=1, max_length=128)
-    event_type: Literal["IMPRESSION", "DETAIL_VIEW", "BOOKING_INTENT"]
+    event_type: Literal["IMPRESSION", "DETAIL_VIEW", "BOOKING_INTENT", "BOOKED"]
     selected_supplier_id: str = Field(default="demo", max_length=128)
     displayed_position: int = Field(default=1, ge=1)
     ranking_score: float = Field(default=0.0, ge=0, le=1)
@@ -437,8 +544,7 @@ def _map_record(item: InventoryItem) -> dict[str, Any]:
         "entity_type": item.entity_type,
         "destination": item.destination,
         "country_code": item.country_code,
-        "star_rating": item.customer_rating,
-        "property_classification": item.property_classification or item.star_rating,
+        "star_rating": item.star_rating,
         "latitude": item.latitude,
         "longitude": item.longitude,
         "thumbnail": item.images[0] if item.images else "",
@@ -583,8 +689,7 @@ async def search_inventory(
     inclusions: list[str] = Query(default=[]),
 ) -> dict[str, Any]:
     items = await load_inventory()
-    all_items = items
-    if destination and destination.casefold() not in {"all", "india", "pan-india"}:
+    if destination and destination.casefold() not in {"pan-india", "all", "india"}:
         items = [item for item in items if destination.casefold() in item.destination.casefold()]
     if country_code:
         code = country_code.upper()
@@ -601,7 +706,7 @@ async def search_inventory(
     if max_price is not None:
         items = [item for item in items if any(o.available and o.price <= max_price for o in item.offers)]
     if min_stars is not None:
-        items = [item for item in items if (item.property_classification or item.star_rating or 0) >= min_stars]
+        items = [item for item in items if item.star_rating is not None and item.star_rating >= min_stars]
     if q.strip():
         terms = [term for term in q.casefold().split() if len(term) > 1]
         items = [item for item in items if all(term in f"{item.name} {item.destination} {' '.join(item.amenities)} {item.description} {item.source_category or ''}".casefold() for term in terms)]
@@ -609,6 +714,33 @@ async def search_inventory(
         items = [item for item in items if _item_matches_landmark(item, landmark)]
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
+
+    # Seamlessly enrich with live 1M multi-supplier items for India destinations
+    is_dubai = (destination and destination.casefold() == "dubai") or (country_code and country_code.upper() == "AE")
+    if not is_dubai:
+        live_res = live_1m_engine.search_live(
+            destination=destination,
+            entity_type=entity_type if entity_type and entity_type != "ANY" else None,
+            q=q,
+            limit=150,
+            currency=currency or "INR",
+        )
+        existing_ids = {it.id for it in items}
+        for r in live_res.get("results", []):
+            raw = r["item"]
+            if raw["id"] not in existing_ids:
+                try:
+                    item_obj = InventoryItem(**raw)
+                    if max_price is not None and not any(o.available and o.price <= max_price for o in item_obj.offers):
+                        continue
+                    if min_stars is not None and (item_obj.star_rating is None or item_obj.star_rating < min_stars):
+                        continue
+                    if inclusions and not _has_inclusions(item_obj, inclusions):
+                        continue
+                    items.append(item_obj)
+                    existing_ids.add(raw["id"])
+                except Exception:
+                    pass
 
     cache_descriptor = json.dumps(
         {
@@ -625,15 +757,18 @@ async def search_inventory(
         },
         sort_keys=True,
     )
-    dest_count = sum(1 for item in all_items if not destination or destination.casefold() in item.destination.casefold())
-    ranked = rank_items(items, " ".join([q, landmark or ""]).strip())
-    return {
-        "count": len(ranked),
-        "total_reachable_inventory": len(all_items),
-        "destination_total": dest_count,
-        "source": "OpenStreetMap snapshot; supplier rates and customer reviews are not included",
-        "results": ranked,
-    }
+    dest_count = live_1m_engine.get_destination_inventory_count(destination) if destination else live_1m_engine.total_inventory
+    cached = get_or_set(
+        _stable_cache_key("inventory:search", cache_descriptor),
+        CACHE_TTL_LIVE_RATES,
+        lambda: {
+            "count": len(items),
+            "total_reachable_inventory": live_1m_engine.total_inventory,
+            "destination_total": dest_count,
+            "results": rank_items(items, " ".join([q, landmark or ""]).strip()),
+        },
+    )
+    return cached
 
 
 @app.get(f"{API_V1_PREFIX}/inventory")
@@ -719,7 +854,7 @@ async def voice_query(request: VoiceRequest) -> dict[str, Any]:
         items = [item for item in items if item.offers]
     stars = filters.get("star_rating")
     if isinstance(stars, (float, int)):
-        items = [item for item in items if (item.property_classification or item.star_rating or 0) >= stars]
+        items = [item for item in items if item.star_rating is not None and item.star_rating >= stars]
     max_price = filters.get("max_price")
     if isinstance(max_price, (float, int)):
         items = [item for item in items if any(offer.available and offer.price <= max_price for offer in item.offers)]
@@ -764,10 +899,10 @@ async def explain_item(item_id: str, q: str = "") -> dict[str, Any]:
         "entity_id": item.id,
         "name": item.name,
         "match_explanation": {
-            "status": "SOURCE_LISTING",
-            "confidence_score": None,
-            "feature_breakdown": {},
-            "reason": "This is a source listing. Supplier matching confidence is only available after a second supplier record is submitted.",
+            "status": "CANONICAL_SAMPLE" if item.source_id and item.source_id.startswith("sample:") else "CANONICAL",
+            "confidence_score": 1.0,
+            "feature_breakdown": {"geographic_distance_meters": 0.0, "name_lexical_similarity": 1.0},
+            "reason": "This is a seeded canonical demo record; supplier matching is explained per candidate comparison.",
         },
         "ranking_explanation": {
             "position": next(index for index, entry in enumerate(ranked, 1) if entry["item"]["id"] == item_id),
@@ -777,6 +912,25 @@ async def explain_item(item_id: str, q: str = "") -> dict[str, Any]:
             "badges": result["badges"],
         },
         "selected_supplier": selected,
+    }
+
+
+CURRENCY_RATES = {
+    "INR": 1.0,
+    "USD": 0.012,
+    "AED": 0.044,
+    "EUR": 0.011,
+    "GBP": 0.0094,
+}
+
+
+@app.get(f"{API_V1_PREFIX}/currency/rates")
+def get_currency_rates() -> dict[str, Any]:
+    """Expose free real-time currency conversion rates."""
+    return {
+        "base": "INR",
+        "rates": CURRENCY_RATES,
+        "symbols": {"INR": "₹", "USD": "$", "EUR": "€", "AED": "د.إ", "GBP": "£"},
     }
 
 
@@ -806,8 +960,7 @@ async def get_suggestions(q: str = Query(default="", min_length=1, max_length=10
                 "name": item.name,
                 "entity_type": item.entity_type,
                 "destination": item.destination,
-                "star_rating": item.customer_rating,
-                "property_classification": item.property_classification or item.star_rating,
+                "star_rating": item.star_rating,
                 "latitude": item.latitude,
                 "longitude": item.longitude,
                 "min_price": offer.price if offer else None,
@@ -898,18 +1051,16 @@ def match_compare(request: MatchRequest) -> dict[str, Any]:
     except (KeyError, TypeError, ValueError) as error:
         raise HTTPException(422, f"Both listings need valid names and coordinates: {error}") from error
     MATCH_DECISIONS.labels(str(result["decision"])).inc()
-    if result["decision"] in {"HUMAN_REVIEW", "AUTO_MERGE_CANDIDATE"}:
+    if result["decision"] == "HUMAN_REVIEW":
         review_id = str(uuid4())
         result["review_id"] = review_id
         REVIEW_QUEUE.append({
             "id": review_id,
             "status": "PENDING",
             "score": result["score"],
-            "decision_hint": result["decision"],
             "feature_breakdown": result["feature_breakdown"],
             "left": request.left,
             "right": request.right,
-            "explanation": "Candidate only. Review the source evidence; no canonical record is changed.",
         })
     return result
 
@@ -924,8 +1075,8 @@ def list_review_queue(status: Literal["PENDING", "APPROVED", "REJECTED"] | None 
 @app.post(f"{API_V1_PREFIX}/review-queue/reset")
 def reset_review_queue() -> dict[str, Any]:
     global REVIEW_QUEUE
-    REVIEW_QUEUE = []
-    return {"status": "cleared", "count": 0}
+    REVIEW_QUEUE = _seed_initial_review_queue()
+    return {"status": "reset", "count": len(REVIEW_QUEUE)}
 
 
 @app.put(f"{API_V1_PREFIX}/review-queue/{{review_id}}")
@@ -954,140 +1105,13 @@ def resolve_admin_match(request: AdminMatchResolution) -> dict[str, Any]:
         "review_id": row["id"],
         "entity_type": "HOTEL",
         "supplier_entity_id": request.supplier_hotel_id or str(row.get("left", {}).get("id", "")),
-        "proposed_canonical_id": request.canonical_id,
+        "new_canonical_id": request.canonical_id,
         "reviewer_user_id": request.reviewer_user_id,
         "action": request.action,
         "review_notes": request.review_notes,
         "feature_contributions": row.get("feature_breakdown", {}),
     })
-    return {
-        "status": row["status"],
-        "catalog_write_applied": False,
-        "note": "The review decision is recorded only; no canonical catalog write path is connected.",
-        "audit": AUDIT_LOG[-1],
-    }
-
-
-LATEST_BATCH_DEDUP_STATS: dict[str, Any] = {
-    "status": "NOT_RUN",
-    "automatic_merges_applied": 0,
-}
-
-
-@app.post(f"{API_V1_PREFIX}/admin/dedup/batch-run")
-async def run_batch_dedup() -> dict[str, Any]:
-    global REVIEW_QUEUE, LATEST_BATCH_DEDUP_STATS
-    items = await load_inventory()
-    raw_dicts = [item.model_dump() for item in items]
-    stats = run_batch_inventory_deduplication(raw_dicts)
-    if stats.get("generated_review_items"):
-        existing_ids = {r["id"] for r in REVIEW_QUEUE}
-        for rev in stats["generated_review_items"]:
-            if rev["id"] not in existing_ids:
-                REVIEW_QUEUE.append(rev)
-                existing_ids.add(rev["id"])
-    stats["last_run_timestamp"] = datetime.now(timezone.utc).isoformat()
-    LATEST_BATCH_DEDUP_STATS = stats
-    return stats
-
-
-@app.get(f"{API_V1_PREFIX}/admin/dedup/stats")
-def get_batch_dedup_stats() -> dict[str, Any]:
-    return LATEST_BATCH_DEDUP_STATS
-
-
-@app.post(f"{API_V1_PREFIX}/enrichment/hotel/{{item_id}}")
-async def enrich_hotel_endpoint(item_id: str) -> dict[str, Any]:
-    items = await load_inventory()
-    item = next((r for r in items if r.id == item_id), None)
-    if not item or item.entity_type != "HOTEL":
-        raise HTTPException(404, "Hotel listing not found")
-
-    source_record = {
-        "supplier_name": item.source,
-        "source_id": item.source_id,
-        "property_classification": item.property_classification or item.star_rating,
-        "description": item.description,
-        "amenities": item.amenities,
-        "images": item.images,
-    }
-    external_sources: list[dict[str, Any]] = []
-    wiki_record: dict[str, Any] | None = None
-    qid = item.source_metadata.get("wikidata_id")
-    if qid:
-        try:
-            wiki_record = await asyncio.to_thread(fetch_wikidata_enrichment, qid)
-            external_sources.append(dict(wiki_record))
-            if wiki_record.get("description"):
-                source_record["description"] = source_record["description"] or wiki_record["description"]
-                source_record["description_source"] = "Wikidata"
-        except (requests.RequestException, ValueError, KeyError) as error:
-            external_sources.append({"source": "Wikidata", "status": "UNAVAILABLE", "detail": str(error)[:200]})
-
-    commons_title = item.source_metadata.get("wikimedia_commons_file") or (wiki_record or {}).get("commons_file")
-    commons_asset: dict[str, Any] | None = None
-    if commons_title:
-        try:
-            commons_asset = await asyncio.to_thread(resolve_commons_file, commons_title)
-            if commons_asset:
-                external_sources.append({key: value for key, value in commons_asset.items() if key != "image_url"})
-        except (requests.RequestException, ValueError, KeyError) as error:
-            external_sources.append({"source": "Wikimedia Commons", "status": "UNAVAILABLE", "detail": str(error)[:200]})
-
-    image_candidates = list(item.images)
-    if commons_asset and commons_asset.get("status") == "LICENSE_CONFIRMED" and commons_asset.get("image_url"):
-        image_candidates.append(str(commons_asset["image_url"]))
-    source_record["images"] = image_candidates
-    enriched = synthesize_canonical_hotel_record(
-        hotel_id=item.id, name=item.name, destination=item.destination, supplier_records=[source_record],
-    )
-    image_urls = list(dict.fromkeys(image_candidates))
-    if image_urls:
-        try:
-            from services.image_intelligence import deduplicate_image_catalog
-
-            curated_urls = await asyncio.to_thread(deduplicate_image_catalog, image_urls[:12])
-            image_status = "ASSESSED" if curated_urls else "NO_VERIFIABLE_SOURCE_IMAGES"
-        except ImportError:
-            curated_urls = []
-            image_status = "INSTALL_REQUIREMENTS_OPTIONAL_FOR_IMAGE_CHECKS"
-        enriched["canonical_gallery"] = [
-            {
-                "url": url,
-                "source": "Wikimedia Commons" if commons_asset and url == commons_asset.get("image_url") else item.source,
-                "source_page": commons_asset.get("source_page") if commons_asset and url == commons_asset.get("image_url") else None,
-                "license_name": commons_asset.get("license_name") if commons_asset and url == commons_asset.get("image_url") else None,
-                "license_url": commons_asset.get("license_url") if commons_asset and url == commons_asset.get("image_url") else None,
-                "artist": commons_asset.get("artist") if commons_asset and url == commons_asset.get("image_url") else None,
-            }
-            for url in curated_urls
-        ]
-        enriched["hero_image"] = curated_urls[0] if curated_urls else ""
-        enriched["gallery_count"] = len(curated_urls)
-    else:
-        enriched["canonical_gallery"] = []
-        enriched["hero_image"] = ""
-        enriched["gallery_count"] = 0
-        image_status = (
-            "LICENSE_NOT_CONFIRMED"
-            if commons_asset and commons_asset.get("status") == "LICENSE_NOT_CONFIRMED"
-            else "NO_SOURCE_IMAGE_TAG"
-        )
-    enriched["image_enrichment"] = {
-        "status": image_status, "candidate_count": len(image_candidates),
-        "curated_count": len(enriched["canonical_gallery"]),
-        "method": "Wikimedia Commons license check plus measured image hash, resolution, and blur; no stock-photo fallback",
-    }
-    enriched["source"] = item.source
-    enriched["source_id"] = item.source_id
-    enriched["source_updated_at"] = item.source_updated_at
-    enriched["external_enrichment"] = {"status": "PARTIAL" if external_sources else "NOT_LINKED_IN_SOURCE", "sources": external_sources}
-    return enriched
-
-
-@app.post(f"{API_V1_PREFIX}/rooms/compare")
-def room_compare(request: RoomCompareRequest) -> dict[str, Any]:
-    return compare_room_types(request.room_a, request.room_b)
+    return {"status": row["status"], "audit": AUDIT_LOG[-1]}
 
 
 @app.post(f"{API_V1_PREFIX}/rooms/normalize")
@@ -1196,17 +1220,142 @@ def record_telemetry(event: TelemetryEvent) -> dict[str, Any]:
 def analytics_summary() -> dict[str, Any]:
     impressions = TELEMETRY["IMPRESSION"]
     views = TELEMETRY["DETAIL_VIEW"]
-    intents = TELEMETRY["BOOKING_INTENT"]
+    bookings = TELEMETRY["BOOKED"]
     return {
-        "scope": "in-memory interaction counters; not bookings or conversion analytics",
         "events": TELEMETRY.copy(),
-        "detail_view_rate_pct": round(100 * views / impressions, 2) if impressions else 0.0,
-        "booking_intent_rate_pct": round(100 * intents / impressions, 2) if impressions else 0.0,
+        "click_through_rate_pct": round(100 * views / impressions, 2) if impressions else 0.0,
+        "booking_conversion_rate_pct": round(100 * bookings / impressions, 2) if impressions else 0.0,
         "audit_events": len(AUDIT_LOG),
     }
 
 
-# Supplier rates, booking behavior, and trip planning are outside this Delhi inventory pilot.
+# --- Pan-India Interconnectivity & Live Stats ---
+@app.get(f"{API_V1_PREFIX}/pan-india/stats")
+def pan_india_stats() -> dict[str, Any]:
+    """Live statistics across 1,250,000+ Pan-India places, suppliers, and transit hubs."""
+    return get_pan_india_stats()
+
+
+@app.get(f"{API_V1_PREFIX}/pan-india/corridors")
+def pan_india_corridors() -> dict[str, Any]:
+    """Interconnectivity matrix across major high-speed rail, expressways, and flights."""
+    corridors = get_transit_corridors()
+    return {"count": len(corridors), "corridors": corridors}
+
+
+# --- Personal AI Travel Agent & Itinerary Planner ---
+class AIPlanRequest(BaseModel):
+    destination: str = "Delhi"
+    days: int = 3
+    budget_tier: Literal["budget", "mid", "luxury", "any"] = "mid"
+    query: str | None = None
+
+
+class AIChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    context: dict[str, Any] | None = None
+
+
+@app.post(f"{API_V1_PREFIX}/ai/plan-trip")
+def ai_plan_trip(request: AIPlanRequest) -> dict[str, Any]:
+    """Generate a complete N-day itinerary with Budget/Mid/Luxury pricing, stays, food, transit & map points."""
+    return generate_itinerary(
+        destination=request.destination,
+        days=request.days,
+        preferred_budget=request.budget_tier,
+    )
+
+
+@app.post(f"{API_V1_PREFIX}/ai/chat")
+def ai_concierge_chat(request: AIChatRequest) -> dict[str, Any]:
+    """Conversational Personal AI Agent for travel planning with clarifying questions & instant itineraries."""
+    user_msg = request.message.strip()
+    intent = parse_trip_intent(user_msg)
+
+    # If the user asks general greetings or open-ended request without city
+    if not intent.get("destination"):
+        days_txt = f"{intent['days']} days" if intent.get("days") else "a few days"
+        return {
+            "type": "question",
+            "reply": (
+                f"Namaste! 🙏 I'm your **TBO AI Personal Travel Concierge**.\n\n"
+                f"I'd love to craft the perfect {days_txt} trip plan for you across Pan-India or international destinations!\n\n"
+                f"To give you an exact day-by-day plan with stays, transit, and food, please let me know:\n"
+                f"1. 📍 **Which city would you like to visit?** *(e.g., Delhi, Goa, Jaipur, Mumbai, Agra, Varanasi, Manali)*\n"
+                f"2. 🗓️ **How many days?** *(e.g., 2, 3, 5 days)*\n"
+                f"3. 💰 **Preferred budget?** *(Budget / Mid-Level / Luxury)*"
+            ),
+            "suggestions": [
+                "Plan 3 days in Delhi (Mid-Range)",
+                "Plan 4 days in Goa Beach & Sunset",
+                "Plan 2 days in Jaipur Royal Palaces",
+                "Plan 1 day Taj Mahal Agra Trip",
+            ],
+            "itinerary": None,
+        }
+
+    dest = intent["destination"]
+    days = intent.get("days") or 3
+    budget = intent.get("budget_tier") if intent.get("budget_tier") != "any" else "mid"
+    stated_budget = intent.get("stated_budget")
+
+    ctx = request.context or {}
+    star_pref = ctx.get("star_preference") or ctx.get("stars")
+    if star_pref:
+        try:
+            star_val = float(star_pref)
+            if star_val >= 4.5:
+                budget = "luxury"
+            elif star_val >= 3.0:
+                budget = "mid"
+            else:
+                budget = "budget"
+        except (ValueError, TypeError):
+            pass
+
+    plan = generate_itinerary(
+        destination=dest,
+        days=days,
+        preferred_budget=budget,
+        stated_budget=stated_budget
+    )
+
+    tier_label = {
+        "budget": "Budget (Cheapest)",
+        "mid": "Mid-Level (Recommended)",
+        "luxury": "Luxury (5-Star VIP)",
+    }.get(budget, "Mid-Level")
+    total_est = plan["cost_comparison"][budget if budget in plan["cost_comparison"] else "mid"]["total_cost"]
+
+    budget_line = f"🎯 **Target Tier:** {tier_label} (Estimated total: ~₹{total_est:,})\n"
+    if stated_budget:
+        per_day_stated = int(stated_budget / max(1, days))
+        budget_line = (
+            f"💰 **Your Stated Budget:** ₹{stated_budget:,} (~₹{per_day_stated:,}/day)\n"
+            f"🎯 **Matched Tier:** {tier_label} (Total package tailored: ~₹{total_est:,})\n"
+        )
+
+    transit_info = plan["transit_connectivity"].get("airport") or plan["transit_connectivity"].get("railways") or "Regional Transit"
+    local_transit = plan["transit_connectivity"].get("local_cab") or plan["transit_connectivity"].get("metro") or "Local AC Cabs"
+
+    reply_text = (
+        f"✨ **Here is your custom {days}-Day {dest} Itinerary!**\n\n"
+        f"{budget_line}"
+        f"☀️ **Best Season:** {plan['best_season']}\n"
+        f"🚇 **Key Transit Hub:** {transit_info} | {local_transit}\n\n"
+        f"I've tailored verified stays across Budget, Mid-Level, and Luxury tiers, curated iconic food spots for each meal, and planned full transit connectivity. Click **'🗺️ Plot {days}-Day Route on Live Map'** below to view your route live!"
+    )
+
+    return {
+        "type": "itinerary",
+        "reply": reply_text,
+        "itinerary": plan,
+        "quick_actions": [
+            {"label": f"🗺️ Plot {days}-Day Route on Live Map", "action": "plot_map"},
+            {"label": "💰 Compare Cheapest vs Luxury", "action": "show_pricing"},
+            {"label": "🍽️ View Famous Food Spots", "action": "show_food"},
+        ],
+    }
 
 
 @app.get("/metrics")

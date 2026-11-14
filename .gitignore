@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 models_cache/
+data/osm_inventory.json
 data/osm_inventory.status.json
 data/osm_inventory.status.json.tmp
 data/.osm_inventory.json.tmp

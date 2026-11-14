@@ -32,7 +32,7 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
-APP_NAME = os.getenv("APP_NAME", "TBO Delhi Inventory Quality Pilot")
+APP_NAME = os.getenv("APP_NAME", "TBO Multi-Supplier Inventory Engine")
 APP_ENV = os.getenv("APP_ENV", "development")
 DEBUG = env_bool("DEBUG", True)
 HOST = os.getenv("HOST", "127.0.0.1")

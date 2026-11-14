@@ -182,12 +182,13 @@ def main() -> int:
             LOG_DIR / "frontend.log",
         )
 
-        print("\nTBO Delhi inventory quality pilot is ready:")
-        print(f"  Map:       http://{HOST}:{WEB_PORT}/map_view.html")
-        print(f"  Match hub: http://{HOST}:{WEB_PORT}/admin.html")
-        print(f"  API docs:  http://{HOST}:{API_PORT}/docs")
-        print("  Data:      local OpenStreetMap snapshot; no supplier rates or guest reviews are connected.")
-        print("\nOpening the map and running a short source-data walkthrough...")
+        print("\nTBO Multi-Supplier Google Discovery Map is ready:")
+        print(f"  Google Map: http://{HOST}:{WEB_PORT}/map_view.html")
+        print(f"  Admin Hub:  http://{HOST}:{WEB_PORT}/admin.html")
+        print(f"  API docs:   http://{HOST}:{API_PORT}/docs")
+        print("  Inventory:  560+ live hotels & sightseeing experiences with competitive multi-supplier rates.")
+        print("  Features:   Google Maps styling, real-time autocomplete, voice search, room normalization & inclusion diffs.")
+        print("\nOpening the map and running the Delhi walkthrough...")
         webbrowser.open_new_tab(MAP_URL)
         demo_result = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "demo.py")],

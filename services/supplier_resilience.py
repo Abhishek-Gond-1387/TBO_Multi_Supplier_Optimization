@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
@@ -20,7 +21,13 @@ class CircuitBreaker:
         self.recovery_seconds = recovery_seconds
         self.failures = 0
         self.opened_at: float | None = None
-        self._probing: bool = False
+        self._probe_lock: asyncio.Lock | None = None
+
+    @property
+    def probe_lock(self) -> asyncio.Lock:
+        if self._probe_lock is None:
+            self._probe_lock = asyncio.Lock()
+        return self._probe_lock
 
     @property
     def state(self) -> str:
@@ -30,42 +37,14 @@ class CircuitBreaker:
             return "HALF_OPEN"
         return "OPEN"
 
-    def call_sync(self, operation: Callable[[], Any]) -> Any:
-        if self.state == "OPEN":
-            raise CircuitOpenError("Supplier circuit is open; try again after cooldown")
-        if self.state == "HALF_OPEN":
-            if self._probing:
-                raise CircuitOpenError("Supplier recovery probe is already running")
-            self._probing = True
-            try:
-                return self._execute_sync(operation)
-            finally:
-                self._probing = False
-        return self._execute_sync(operation)
-
-    def _execute_sync(self, operation: Callable[[], Any]) -> Any:
-        try:
-            result = operation()
-        except Exception:
-            self.failures += 1
-            if self.failures >= self.failure_threshold:
-                self.opened_at = time.monotonic()
-            raise
-        self.failures = 0
-        self.opened_at = None
-        return result
-
     async def call(self, operation: Callable[[], Awaitable[Any]]) -> Any:
         if self.state == "OPEN":
             raise CircuitOpenError("Supplier circuit is open; try again after cooldown")
         if self.state == "HALF_OPEN":
-            if self._probing:
-                raise CircuitOpenError("Supplier recovery probe is already running")
-            self._probing = True
-            try:
+            async with self.probe_lock:
+                if self.state == "OPEN":
+                    raise CircuitOpenError("Supplier recovery probe is already running")
                 return await self._execute(operation)
-            finally:
-                self._probing = False
         return await self._execute(operation)
 
     async def _execute(self, operation: Callable[[], Awaitable[Any]]) -> Any:
