@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import re
 
-DESTINATIONS = (
+from services.pan_india_100_cities import PAN_INDIA_100_CITIES, CITY_SYNONYMS
+
+BASE_DESTINATIONS = (
     "abu dhabi", "new york", "ras al khaimah", "singapore", "dubai", "goa",
     "london", "paris", "mumbai", "delhi", "bangalore", "bengaluru", "jaipur",
     "agra", "hyderabad", "kochi", "chennai", "kolkata", "pune", "varanasi",
     "bangkok", "rome", "istanbul",
 )
+DESTINATIONS = tuple(sorted(set(
+    list(BASE_DESTINATIONS) +
+    [c.lower() for c in PAN_INDIA_100_CITIES.keys()] +
+    [s.lower() for s in CITY_SYNONYMS.keys()]
+), key=lambda x: -len(x)))
 LANDMARKS = (
     "burj khalifa", "palm jumeirah", "dubai mall", "city center", "downtown",
     "airport", "beach", "marina", "museum", "desert safari", "india gate",
@@ -84,7 +91,7 @@ def parse_voice_travel_query(transcript: str) -> dict[str, object]:
         result["country_code"] = "IN"
     for destination in DESTINATIONS:
         if re.search(rf"\b{re.escape(destination)}\b", lowered):
-            result["destination"] = {"bengaluru": "Bengaluru", "bangalore": "Bengaluru"}.get(destination, destination.title())
+            result["destination"] = CITY_SYNONYMS.get(destination.lower(), destination.title())
             if destination in {"dubai", "abu dhabi", "ras al khaimah"}:
                 result["country_code"] = "AE"
                 if not currency:

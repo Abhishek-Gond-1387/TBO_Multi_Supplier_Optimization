@@ -15,6 +15,8 @@ import re
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
+from services.pan_india_100_cities import PAN_INDIA_100_CITIES, CITY_SYNONYMS
+
 # Curated Pan-India City Knowledge Base & Interconnectivity Hubs
 PAN_INDIA_HUBS: dict[str, dict[str, Any]] = {
     "delhi": {
@@ -325,36 +327,46 @@ def parse_trip_intent(text: str) -> dict[str, Any]:
     """Extract destination, number of days, and budget level from user natural language query."""
     text_lower = text.lower()
     
-    # Extract destination
+    # 1. Extract destination using synonyms and all 110 cities
     dest = None
-    for city in ["delhi", "mumbai", "goa", "jaipur", "agra", "varanasi", "kochi", "manali", "shimla", "udaipur", "bengaluru", "kolkata", "chennai", "hyderabad", "dubai"]:
-        if re.search(r'\b' + city + r'\b', text_lower):
-            dest = city.title()
+    for syn, canonical in sorted(CITY_SYNONYMS.items(), key=lambda x: -len(x[0])):
+        if re.search(r'\b' + re.escape(syn) + r'\b', text_lower):
+            dest = canonical
             break
 
-    # Extract days
+    if not dest:
+        for city in sorted(PAN_INDIA_100_CITIES.keys(), key=lambda x: -len(x)):
+            if re.search(r'\b' + re.escape(city.lower()) + r'\b', text_lower):
+                dest = city
+                break
+
+    # 2. Extract days (supporting English and Hindi/Hinglish)
     days = None
-    day_match = re.search(r'(\d+)\s*(?:-|to)?\s*(?:days?|nights?|d\b)', text_lower)
+    day_match = re.search(r'(\d+)\s*(?:-|to)?\s*(?:days?|nights?|din|d\b)', text_lower)
     if day_match:
         days = int(day_match.group(1))
-    elif "one day" in text_lower or "1 day" in text_lower or "single day" in text_lower:
+    elif re.search(r'\b(ek din|1 day|one day|single day)\b', text_lower):
         days = 1
-    elif "weekend" in text_lower or "two days" in text_lower or "2 days" in text_lower:
+    elif re.search(r'\b(do din|2 days|two days|weekend)\b', text_lower):
         days = 2
-    elif "three days" in text_lower or "3 days" in text_lower:
+    elif re.search(r'\b(teen din|3 days|three days)\b', text_lower):
         days = 3
-    elif "four days" in text_lower or "4 days" in text_lower:
+    elif re.search(r'\b(chaar din|char din|4 days|four days)\b', text_lower):
         days = 4
-    elif "week" in text_lower or "7 days" in text_lower:
+    elif re.search(r'\b(paanch din|panch din|5 days|five days)\b', text_lower):
+        days = 5
+    elif re.search(r'\b(chhah din|cheh din|6 days|six days)\b', text_lower):
+        days = 6
+    elif re.search(r'\b(saat din|7 days|seven days|hafta|one week|week)\b', text_lower):
         days = 7
 
-    # Extract budget tier
+    # 3. Extract budget tier (English & Hindi)
     budget = "any"
-    if re.search(r'\b(cheap|cheapest|budget|low cost|backpacker|affordable|under \d+k?)\b', text_lower):
+    if re.search(r'\b(cheap|cheapest|budget|sasta|low cost|backpacker|affordable|kam budget|kam daam|under \d+k?)\b', text_lower):
         budget = "budget"
-    elif re.search(r'\b(luxury|expensive|5 star|five star|premium|lavish|royal)\b', text_lower):
+    elif re.search(r'\b(luxury|expensive|mehanga|mehenga|5 star|five star|premium|lavish|royal|shahi)\b', text_lower):
         budget = "luxury"
-    elif re.search(r'\b(mid|medium|moderate|normal|standard|balanced)\b', text_lower):
+    elif re.search(r'\b(mid|medium|moderate|normal|standard|balanced|beech ka|thik thak)\b', text_lower):
         budget = "mid"
 
     return {
@@ -375,9 +387,80 @@ def generate_itinerary(
     data = PAN_INDIA_HUBS.get(city_key, None)
 
     if not data:
-        # Default or fallback with generic coordinates
-        data = PAN_INDIA_HUBS["delhi"]
-        city_name = destination.title()
+        # Check in 110 cities database
+        meta = None
+        for c_name, c_meta in PAN_INDIA_100_CITIES.items():
+            if c_name.lower() == city_key:
+                meta = c_meta
+                destination = c_name
+                break
+        
+        if meta:
+            clon, clat = meta["coords"]
+            data = {
+                "name": destination,
+                "state": meta.get("state", "India"),
+                "description": f"Enchanting destination in {meta.get('state')} celebrated for {meta.get('cuisine')}.",
+                "best_season": "October to March (ideal travel season)",
+                "transit_hub": {
+                    "airport": meta.get("airport", f"{destination} Airport"),
+                    "metro": "City Transit & Prepaid AC Cabs",
+                    "railways": meta.get("railway", f"{destination} Railway Junction"),
+                    "local_cab": "App cabs (Uber/Ola), Pre-paid auto-rickshaws, Local AC Sedans"
+                },
+                "budget_tiers": {
+                    "budget": {"hotel_per_night": 1500, "food_per_day": 650, "transit_per_day": 350, "tours_per_day": 400},
+                    "mid": {"hotel_per_night": 4200, "food_per_day": 1500, "transit_per_day": 850, "tours_per_day": 1100},
+                    "luxury": {"hotel_per_night": 15000, "food_per_day": 4200, "transit_per_day": 2500, "tours_per_day": 3200}
+                },
+                "stays": {
+                    "budget": [
+                        {"name": f"{destination} Travellers Residency", "price": 1400, "rating": 4.3, "tag": "Budget Favorite", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Zostel / Backpacker Inn {destination}", "price": 950, "rating": 4.4, "tag": "Youth Vibe", "area": "Center"}
+                    ],
+                    "mid": [
+                        {"name": f"{destination} Royal Regency & Spa", "price": 4200, "rating": 4.6, "tag": "Recommended", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Radisson / Vivanta {destination}", "price": 5200, "rating": 4.7, "tag": "Business & Leisure", "area": "City Center"}
+                    ],
+                    "luxury": [
+                        {"name": f"{destination} Heritage Palace & 5-Star Resort", "price": 15000, "rating": 4.9, "tag": "VIP Luxury", "area": meta.get("stay_hub", destination)},
+                        {"name": f"Taj / Oberoi {destination}", "price": 22000, "rating": 5.0, "tag": "Ultra-Luxury", "area": "Scenic View"}
+                    ]
+                },
+                "daily_templates": [
+                    {
+                        "title": f"Arrival, Iconic Highlights & {destination} Culinary Walk",
+                        "transport": f"Prepaid AC Sedan from {meta.get('airport', 'transit hub')}.",
+                        "morning": {"title": f"{destination} Morning Heritage Landmark", "lat": round(clat + 0.012, 6), "lon": round(clon + 0.012, 6), "tip": "Reach early for great lighting and fewer crowds."},
+                        "lunch": f"Authentic lunch featuring {meta.get('cuisine', 'regional delicacies')}.",
+                        "afternoon": {"title": f"{destination} Cultural Center & Bazaar", "lat": round(clat - 0.008, 6), "lon": round(clon - 0.008, 6), "tip": "Great for souvenirs and artisan craft."},
+                        "evening": {"title": f"{destination} Scenic Sunset Viewpoint", "lat": round(clat + 0.018, 6), "lon": round(clon - 0.015, 6), "tip": "Witness panoramic sunset views."},
+                        "dinner": f"Iconic evening food trail: {meta.get('cuisine', 'local dishes')}."
+                    },
+                    {
+                        "title": f"Ancient Monuments, Nature Trails & Artisan Heritage",
+                        "transport": "Full day private AC cab for comfortable sightseeing.",
+                        "morning": {"title": f"{destination} Monument & Temple Complex", "lat": round(clat - 0.015, 6), "lon": round(clon + 0.02, 6), "tip": "Hire a licensed guide at the ticket counter."},
+                        "lunch": "Traditional thali meal at a heritage dining hall.",
+                        "afternoon": {"title": f"{destination} Lake / Mountain Nature View", "lat": round(clat + 0.022, 6), "lon": round(clon + 0.018, 6), "tip": "Perfect relaxation spot."},
+                        "evening": {"title": f"{destination} Evening Lights & Cultural Show", "lat": round(clat + 0.005, 6), "lon": round(clon + 0.005, 6), "tip": "Enjoy regional music and dance performance."},
+                        "dinner": "Chef-special dinner at top-rated panoramic restaurant."
+                    },
+                    {
+                        "title": f"Hidden Gems, Souvenir Shopping & Departure",
+                        "transport": "Express cab or metro link to departure terminal.",
+                        "morning": {"title": f"{destination} Artisan Village & Handicrafts", "lat": round(clat - 0.018, 6), "lon": round(clon - 0.012, 6), "tip": "Direct buy from master craftsmen."},
+                        "lunch": "Boutique cafe brunch with regional tea/coffee.",
+                        "afternoon": {"title": f"{destination} Memorial & City Park Walk", "lat": round(clat + 0.008, 6), "lon": round(clon - 0.02, 6), "tip": "Peaceful afternoon stroll."},
+                        "evening": {"title": f"{destination} Final Sunset & Airport Transfer", "lat": round(clat + 0.03, 6), "lon": round(clon + 0.03, 6), "tip": "Allow 2 hours before scheduled departure."},
+                        "dinner": f"Farewell meal with {meta.get('cuisine', 'special sweets')}."
+                    }
+                ]
+            }
+            city_name = destination
+        else:
+            data = PAN_INDIA_HUBS["delhi"]
+            city_name = destination.title()
     else:
         city_name = data["name"]
 

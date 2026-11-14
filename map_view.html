@@ -1075,6 +1075,48 @@
     }
     .ai-send-btn:hover { opacity: 0.9; }
 
+    .ai-voice-mic-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid #d1d5db;
+      background: #f8f9fa;
+      color: #ea4335;
+      font-size: 16px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .ai-voice-mic-btn:hover {
+      background: #fee7e6;
+      border-color: #f28b82;
+      color: #d93025;
+    }
+    .ai-voice-mic-btn.listening {
+      animation: pulse-mic 1s infinite alternate;
+      background: #fee7e6;
+      border-color: #ea4335;
+      color: #c5221f;
+    }
+    .ai-speak-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #4f46e5;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid #c7d2fe;
+      margin-top: 8px;
+      transition: background 0.12s;
+    }
+    .ai-speak-pill:hover { background: #e0e7ff; }
+
     /* Modal Overlay */
     .detail-modal-overlay {
       position: fixed;
@@ -1245,20 +1287,116 @@
       <!-- Destination Quick Switcher -->
       <select id="destination-select" class="filter-select" aria-label="Destination">
         <option value="Pan-India">🇮🇳 Pan-India (1,000,000+ Places)</option>
-        <option value="Delhi" selected>📍 Delhi &amp; NCR (6,500+)</option>
-        <option value="Mumbai">📍 Mumbai (1,200+)</option>
-        <option value="Goa">📍 Goa (1,000+)</option>
-        <option value="Jaipur">📍 Jaipur (800+)</option>
-        <option value="Agra">📍 Agra (500+)</option>
-        <option value="Bengaluru">📍 Bengaluru &amp; Mysuru</option>
-        <option value="Varanasi">📍 Varanasi</option>
-        <option value="Kochi">📍 Kochi &amp; Munnar</option>
-        <option value="Udaipur">📍 Udaipur</option>
-        <option value="Manali">📍 Manali &amp; Himachal</option>
-        <option value="Kolkata">📍 Kolkata</option>
-        <option value="Hyderabad">📍 Hyderabad</option>
-        <option value="Chennai">📍 Chennai</option>
-        <option value="Dubai">📍 Dubai (600+)</option>
+        <option value="Delhi" selected>📍 Delhi &amp; NCR</option>
+        <option value="Mumbai">📍 Mumbai (Maharashtra)</option>
+        <option value="Bengaluru">📍 Bengaluru (Karnataka)</option>
+        <option value="Goa">📍 Goa (Goa)</option>
+        <option value="Jaipur">📍 Jaipur (Rajasthan)</option>
+        <option value="Agra">📍 Agra (Uttar Pradesh)</option>
+        <option value="Varanasi">📍 Varanasi (Uttar Pradesh)</option>
+        <option value="Kochi">📍 Kochi (Kerala)</option>
+        <option value="Udaipur">📍 Udaipur (Rajasthan)</option>
+        <option value="Manali">📍 Manali (Himachal Pradesh)</option>
+        <option value="Kolkata">📍 Kolkata (West Bengal)</option>
+        <option value="Hyderabad">📍 Hyderabad (Telangana)</option>
+        <option value="Chennai">📍 Chennai (Tamil Nadu)</option>
+        <option value="Pune">📍 Pune (Maharashtra)</option>
+        <option value="Ahmedabad">📍 Ahmedabad (Gujarat)</option>
+        <option value="Amritsar">📍 Amritsar (Punjab)</option>
+        <option value="Srinagar">📍 Srinagar (Jammu & Kashmir)</option>
+        <option value="Shimla">📍 Shimla (Himachal Pradesh)</option>
+        <option value="Rishikesh">📍 Rishikesh (Uttarakhand)</option>
+        <option value="Haridwar">📍 Haridwar (Uttarakhand)</option>
+        <option value="Jodhpur">📍 Jodhpur (Rajasthan)</option>
+        <option value="Jaisalmer">📍 Jaisalmer (Rajasthan)</option>
+        <option value="Pushkar">📍 Pushkar (Rajasthan)</option>
+        <option value="Munnar">📍 Munnar (Kerala)</option>
+        <option value="Alleppey">📍 Alleppey (Kerala)</option>
+        <option value="Wayanad">📍 Wayanad (Kerala)</option>
+        <option value="Ooty">📍 Ooty (Tamil Nadu)</option>
+        <option value="Kodaikanal">📍 Kodaikanal (Tamil Nadu)</option>
+        <option value="Mysuru">📍 Mysuru (Karnataka)</option>
+        <option value="Hampi">📍 Hampi (Karnataka)</option>
+        <option value="Coorg">📍 Coorg (Karnataka)</option>
+        <option value="Gokarna">📍 Gokarna (Karnataka)</option>
+        <option value="Pondicherry">📍 Pondicherry (Puducherry)</option>
+        <option value="Madurai">📍 Madurai (Tamil Nadu)</option>
+        <option value="Rameswaram">📍 Rameswaram (Tamil Nadu)</option>
+        <option value="Kanyakumari">📍 Kanyakumari (Tamil Nadu)</option>
+        <option value="Tirupati">📍 Tirupati (Andhra Pradesh)</option>
+        <option value="Visakhapatnam">📍 Visakhapatnam (Andhra Pradesh)</option>
+        <option value="Vijayawada">📍 Vijayawada (Andhra Pradesh)</option>
+        <option value="Bhubaneswar">📍 Bhubaneswar (Odisha)</option>
+        <option value="Puri">📍 Puri (Odisha)</option>
+        <option value="Konark">📍 Konark (Odisha)</option>
+        <option value="Darjeeling">📍 Darjeeling (West Bengal)</option>
+        <option value="Gangtok">📍 Gangtok (Sikkim)</option>
+        <option value="Kalimpong">📍 Kalimpong (West Bengal)</option>
+        <option value="Shillong">📍 Shillong (Meghalaya)</option>
+        <option value="Cherrapunji">📍 Cherrapunji (Meghalaya)</option>
+        <option value="Guwahati">📍 Guwahati (Assam)</option>
+        <option value="Kaziranga">📍 Kaziranga (Assam)</option>
+        <option value="Leh">📍 Leh (Ladakh)</option>
+        <option value="Dharamshala">📍 Dharamshala (Himachal Pradesh)</option>
+        <option value="Dalhousie">📍 Dalhousie (Himachal Pradesh)</option>
+        <option value="Kasol">📍 Kasol (Himachal Pradesh)</option>
+        <option value="Nainital">📍 Nainital (Uttarakhand)</option>
+        <option value="Mussoorie">📍 Mussoorie (Uttarakhand)</option>
+        <option value="Dehradun">📍 Dehradun (Uttarakhand)</option>
+        <option value="Jim Corbett">📍 Jim Corbett (Uttarakhand)</option>
+        <option value="Auli">📍 Auli (Uttarakhand)</option>
+        <option value="Lucknow">📍 Lucknow (Uttar Pradesh)</option>
+        <option value="Ayodhya">📍 Ayodhya (Uttar Pradesh)</option>
+        <option value="Prayagraj">📍 Prayagraj (Uttar Pradesh)</option>
+        <option value="Mathura">📍 Mathura (Uttar Pradesh)</option>
+        <option value="Khajuraho">📍 Khajuraho (Madhya Pradesh)</option>
+        <option value="Bhopal">📍 Bhopal (Madhya Pradesh)</option>
+        <option value="Indore">📍 Indore (Madhya Pradesh)</option>
+        <option value="Ujjain">📍 Ujjain (Madhya Pradesh)</option>
+        <option value="Gwalior">📍 Gwalior (Madhya Pradesh)</option>
+        <option value="Jabalpur">📍 Jabalpur (Madhya Pradesh)</option>
+        <option value="Pachmarhi">📍 Pachmarhi (Madhya Pradesh)</option>
+        <option value="Vadodara">📍 Vadodara (Gujarat)</option>
+        <option value="Surat">📍 Surat (Gujarat)</option>
+        <option value="Rajkot">📍 Rajkot (Gujarat)</option>
+        <option value="Rann of Kutch">📍 Rann of Kutch (Gujarat)</option>
+        <option value="Somnath">📍 Somnath (Gujarat)</option>
+        <option value="Dwarka">📍 Dwarka (Gujarat)</option>
+        <option value="Gir">📍 Gir (Gujarat)</option>
+        <option value="Nashik">📍 Nashik (Maharashtra)</option>
+        <option value="Aurangabad">📍 Aurangabad (Maharashtra)</option>
+        <option value="Mahabaleshwar">📍 Mahabaleshwar (Maharashtra)</option>
+        <option value="Lonavala">📍 Lonavala (Maharashtra)</option>
+        <option value="Alibaug">📍 Alibaug (Maharashtra)</option>
+        <option value="Shirdi">📍 Shirdi (Maharashtra)</option>
+        <option value="Nagpur">📍 Nagpur (Maharashtra)</option>
+        <option value="Chandigarh">📍 Chandigarh (Punjab & Haryana)</option>
+        <option value="Ludhiana">📍 Ludhiana (Punjab)</option>
+        <option value="Patiala">📍 Patiala (Punjab)</option>
+        <option value="Patna">📍 Patna (Bihar)</option>
+        <option value="Bodh Gaya">📍 Bodh Gaya (Bihar)</option>
+        <option value="Ranchi">📍 Ranchi (Jharkhand)</option>
+        <option value="Jamshedpur">📍 Jamshedpur (Jharkhand)</option>
+        <option value="Raipur">📍 Raipur (Chhattisgarh)</option>
+        <option value="Jagdalpur">📍 Jagdalpur (Chhattisgarh)</option>
+        <option value="Port Blair">📍 Port Blair (Andaman & Nicobar)</option>
+        <option value="Havelock Island">📍 Havelock Island (Andaman & Nicobar)</option>
+        <option value="Neil Island">📍 Neil Island (Andaman & Nicobar)</option>
+        <option value="Bikaner">📍 Bikaner (Rajasthan)</option>
+        <option value="Mount Abu">📍 Mount Abu (Rajasthan)</option>
+        <option value="Chittorgarh">📍 Chittorgarh (Rajasthan)</option>
+        <option value="Ranthambore">📍 Ranthambore (Rajasthan)</option>
+        <option value="Mangaluru">📍 Mangaluru (Karnataka)</option>
+        <option value="Chikmagalur">📍 Chikmagalur (Karnataka)</option>
+        <option value="Thiruvananthapuram">📍 Thiruvananthapuram (Kerala)</option>
+        <option value="Varkala">📍 Varkala (Kerala)</option>
+        <option value="Thekkady">📍 Thekkady (Kerala)</option>
+        <option value="Coimbatore">📍 Coimbatore (Tamil Nadu)</option>
+        <option value="Tanjore">📍 Tanjore (Tamil Nadu)</option>
+        <option value="Mahabalipuram">📍 Mahabalipuram (Tamil Nadu)</option>
+        <option value="Tawang">📍 Tawang (Arunachal Pradesh)</option>
+        <option value="Imphal">📍 Imphal (Manipur)</option>
+        <option value="Dubai">📍 Dubai (UAE)</option>
       </select>
 
       <!-- Currency Switcher -->
@@ -1374,6 +1512,9 @@
       <!-- Input Bar -->
       <div class="ai-input-bar">
         <input type="text" id="ai-input" placeholder="Tell me: e.g. 'Plan 4 days in Goa for 2 on a 25,000 budget'..." />
+        <button type="button" class="ai-voice-mic-btn" id="ai-voice-btn" title="Speak trip request">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+        </button>
         <button type="button" class="ai-send-btn" id="ai-send-btn" title="Send message">➤</button>
       </div>
     </div>
@@ -1399,7 +1540,7 @@
   <!-- Scripts -->
   <script src="https://unpkg.com/maplibre-gl@^4.7.1/dist/maplibre-gl.js"></script>
   <script>
-    const API = 'http://127.0.0.1:8000/api/v1';
+    const API = (window.location.port === '8000') ? '/api/v1' : `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
     
     // Google Map Vector & Satellite Styles
     const ROAD_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
@@ -1417,22 +1558,451 @@
     };
 
     const CITY_COORDS = {
-      'Pan-India': [78.9629, 21.5937],
-      'Delhi': [77.2167, 28.6315],
-      'Mumbai': [72.8777, 19.0760],
-      'Goa': [73.8180, 15.4989],
-      'Jaipur': [75.7873, 26.9124],
-      'Agra': [78.0081, 27.1767],
-      'Bengaluru': [77.5946, 12.9716],
-      'Varanasi': [82.9739, 25.3176],
-      'Kochi': [76.2673, 9.9312],
-      'Udaipur': [73.6827, 24.5854],
-      'Manali': [77.1892, 32.2396],
-      'Kolkata': [88.3639, 22.5726],
-      'Hyderabad': [78.4867, 17.3850],
-      'Chennai': [80.2707, 13.0827],
-      'Dubai': [55.2781, 25.2106]
-    };
+    "Pan-India": [
+        78.9629,
+        21.5937
+    ],
+    "Delhi": [
+        77.209,
+        28.6139
+    ],
+    "Mumbai": [
+        72.8777,
+        19.076
+    ],
+    "Bengaluru": [
+        77.5946,
+        12.9716
+    ],
+    "Goa": [
+        73.818,
+        15.4989
+    ],
+    "Jaipur": [
+        75.7873,
+        26.9124
+    ],
+    "Agra": [
+        78.0081,
+        27.1767
+    ],
+    "Varanasi": [
+        82.9739,
+        25.3176
+    ],
+    "Kochi": [
+        76.2673,
+        9.9312
+    ],
+    "Udaipur": [
+        73.6827,
+        24.5854
+    ],
+    "Manali": [
+        77.1892,
+        32.2396
+    ],
+    "Kolkata": [
+        88.3639,
+        22.5726
+    ],
+    "Hyderabad": [
+        78.4867,
+        17.385
+    ],
+    "Chennai": [
+        80.2707,
+        13.0827
+    ],
+    "Pune": [
+        73.8567,
+        18.5204
+    ],
+    "Ahmedabad": [
+        72.5714,
+        23.0225
+    ],
+    "Amritsar": [
+        74.8723,
+        31.634
+    ],
+    "Srinagar": [
+        74.7973,
+        34.0837
+    ],
+    "Shimla": [
+        77.1734,
+        31.1048
+    ],
+    "Rishikesh": [
+        78.2676,
+        30.0869
+    ],
+    "Haridwar": [
+        78.1642,
+        29.9457
+    ],
+    "Jodhpur": [
+        73.0243,
+        26.2389
+    ],
+    "Jaisalmer": [
+        70.9083,
+        26.9157
+    ],
+    "Pushkar": [
+        74.5511,
+        26.4897
+    ],
+    "Munnar": [
+        77.0595,
+        10.0889
+    ],
+    "Alleppey": [
+        76.3388,
+        9.4981
+    ],
+    "Wayanad": [
+        76.132,
+        11.6854
+    ],
+    "Ooty": [
+        76.6953,
+        11.4102
+    ],
+    "Kodaikanal": [
+        77.4892,
+        10.2381
+    ],
+    "Mysuru": [
+        76.6394,
+        12.2958
+    ],
+    "Hampi": [
+        76.46,
+        15.335
+    ],
+    "Coorg": [
+        75.7382,
+        12.4244
+    ],
+    "Gokarna": [
+        74.3188,
+        14.5479
+    ],
+    "Pondicherry": [
+        79.8083,
+        11.9416
+    ],
+    "Madurai": [
+        78.1198,
+        9.9252
+    ],
+    "Rameswaram": [
+        79.3129,
+        9.2876
+    ],
+    "Kanyakumari": [
+        77.5385,
+        8.0883
+    ],
+    "Tirupati": [
+        79.4192,
+        13.6288
+    ],
+    "Visakhapatnam": [
+        83.2185,
+        17.6868
+    ],
+    "Vijayawada": [
+        80.648,
+        16.5062
+    ],
+    "Bhubaneswar": [
+        85.8245,
+        20.2961
+    ],
+    "Puri": [
+        85.8312,
+        19.8135
+    ],
+    "Konark": [
+        86.1145,
+        19.8876
+    ],
+    "Darjeeling": [
+        88.2663,
+        27.041
+    ],
+    "Gangtok": [
+        88.6138,
+        27.3389
+    ],
+    "Kalimpong": [
+        88.4764,
+        27.0594
+    ],
+    "Shillong": [
+        91.8933,
+        25.5788
+    ],
+    "Cherrapunji": [
+        91.7323,
+        25.2986
+    ],
+    "Guwahati": [
+        91.7362,
+        26.1445
+    ],
+    "Kaziranga": [
+        93.1711,
+        26.5775
+    ],
+    "Leh": [
+        77.5771,
+        34.1526
+    ],
+    "Dharamshala": [
+        76.3234,
+        32.219
+    ],
+    "Dalhousie": [
+        75.971,
+        32.5387
+    ],
+    "Kasol": [
+        77.315,
+        32.01
+    ],
+    "Nainital": [
+        79.4591,
+        29.3919
+    ],
+    "Mussoorie": [
+        78.0757,
+        30.4598
+    ],
+    "Dehradun": [
+        78.0322,
+        30.3165
+    ],
+    "Jim Corbett": [
+        79.1325,
+        29.5312
+    ],
+    "Auli": [
+        79.5667,
+        30.5333
+    ],
+    "Lucknow": [
+        80.9462,
+        26.8467
+    ],
+    "Ayodhya": [
+        82.1998,
+        26.7922
+    ],
+    "Prayagraj": [
+        81.8463,
+        25.4358
+    ],
+    "Mathura": [
+        77.6737,
+        27.4924
+    ],
+    "Khajuraho": [
+        79.9199,
+        24.8318
+    ],
+    "Bhopal": [
+        77.4126,
+        23.2599
+    ],
+    "Indore": [
+        75.8577,
+        22.7196
+    ],
+    "Ujjain": [
+        75.7873,
+        23.1765
+    ],
+    "Gwalior": [
+        78.1828,
+        26.2183
+    ],
+    "Jabalpur": [
+        79.9864,
+        23.1815
+    ],
+    "Pachmarhi": [
+        78.4346,
+        22.4674
+    ],
+    "Vadodara": [
+        73.1812,
+        22.3072
+    ],
+    "Surat": [
+        72.8311,
+        21.1702
+    ],
+    "Rajkot": [
+        70.8022,
+        22.3039
+    ],
+    "Rann of Kutch": [
+        69.8597,
+        23.7337
+    ],
+    "Somnath": [
+        70.4012,
+        20.906
+    ],
+    "Dwarka": [
+        68.9685,
+        22.2394
+    ],
+    "Gir": [
+        70.7963,
+        21.1243
+    ],
+    "Nashik": [
+        73.7898,
+        19.9975
+    ],
+    "Aurangabad": [
+        75.3433,
+        19.8762
+    ],
+    "Mahabaleshwar": [
+        73.6586,
+        17.9237
+    ],
+    "Lonavala": [
+        73.4072,
+        18.7557
+    ],
+    "Alibaug": [
+        72.8718,
+        18.6414
+    ],
+    "Shirdi": [
+        74.4762,
+        19.7668
+    ],
+    "Nagpur": [
+        79.0882,
+        21.1458
+    ],
+    "Chandigarh": [
+        76.7794,
+        30.7333
+    ],
+    "Ludhiana": [
+        75.8573,
+        30.901
+    ],
+    "Patiala": [
+        76.3869,
+        30.3398
+    ],
+    "Patna": [
+        85.1376,
+        25.5941
+    ],
+    "Bodh Gaya": [
+        84.9913,
+        24.6961
+    ],
+    "Ranchi": [
+        85.3096,
+        23.3441
+    ],
+    "Jamshedpur": [
+        86.2029,
+        22.8046
+    ],
+    "Raipur": [
+        81.6296,
+        21.2514
+    ],
+    "Jagdalpur": [
+        82.0345,
+        19.0734
+    ],
+    "Port Blair": [
+        92.7265,
+        11.6234
+    ],
+    "Havelock Island": [
+        92.98,
+        11.98
+    ],
+    "Neil Island": [
+        93.05,
+        11.83
+    ],
+    "Bikaner": [
+        73.3119,
+        28.0229
+    ],
+    "Mount Abu": [
+        72.7156,
+        24.5926
+    ],
+    "Chittorgarh": [
+        74.6269,
+        24.8887
+    ],
+    "Ranthambore": [
+        76.5026,
+        26.0173
+    ],
+    "Mangaluru": [
+        74.856,
+        12.9141
+    ],
+    "Chikmagalur": [
+        75.7766,
+        13.3161
+    ],
+    "Thiruvananthapuram": [
+        76.9366,
+        8.5241
+    ],
+    "Varkala": [
+        76.7163,
+        8.7379
+    ],
+    "Thekkady": [
+        77.1691,
+        9.6031
+    ],
+    "Coimbatore": [
+        76.9558,
+        11.0168
+    ],
+    "Tanjore": [
+        79.1378,
+        10.787
+    ],
+    "Mahabalipuram": [
+        80.1983,
+        12.6269
+    ],
+    "Tawang": [
+        91.8687,
+        27.5861
+    ],
+    "Imphal": [
+        93.9368,
+        24.817
+    ],
+    "Dubai": [
+        55.2781,
+        25.2106
+    ]
+};
 
     // Curated Guaranteed HD Fallback Pictures
     const FALLBACK_PHOTOS = {
@@ -2238,10 +2808,12 @@
       const matchedAttractions = [];
       const matchedAreas = new Set();
 
-      const commonAreas = ['Connaught Place', 'Paharganj', 'Karol Bagh', 'Chanakyapuri', 'Aerocity', 'Chandni Chowk', 'South Delhi', 'Noida', 'Gurugram'];
-      commonAreas.forEach(a => {
-        if (a.toLowerCase().includes(qLower)) matchedAreas.add(a);
-      });
+      for (const cityName of Object.keys(CITY_COORDS)) {
+        if (cityName !== 'Pan-India' && cityName.toLowerCase().includes(qLower)) {
+          matchedAreas.add(cityName);
+          if (matchedAreas.size >= 4) break;
+        }
+      }
 
       for (let i = 0; i < allInventory.length; i++) {
         const it = allInventory[i].item;
@@ -2349,7 +2921,13 @@
     function selectSuggestion(type, val) {
       suggestionsDrop.classList.remove('active');
       if (type === 'area') {
-        queryInput.value = val;
+        const destSelect = document.getElementById('destination-select');
+        if (CITY_COORDS[val]) {
+          destSelect.value = val;
+          const coords = CITY_COORDS[val];
+          map.flyTo({ center: coords, zoom: 12, duration: 800, essential: true });
+        }
+        queryInput.value = '';
         applyFilters();
       } else if (type === 'item') {
         openDetails(val);
@@ -2638,10 +3216,17 @@
         <div class="ai-msg-avatar">🤖</div>
         <div class="ai-msg-bubble">
           <div>${formatMarkdownText(data.reply)}</div>
+          <div style="margin-top:8px; display:flex; gap:6px;">
+            <button type="button" class="ai-speak-pill" onclick="speakText(this)">🔊 Listen Summary</button>
+            <button type="button" class="ai-speak-pill" style="color:#ef4444; border-color:#fca5a5;" onclick="stopSpeaking()">⏹ Stop</button>
+          </div>
       `;
 
       if (data.itinerary) {
         const plan = data.itinerary;
+        const cityName = plan.city || plan.destination || 'Destination';
+        const numDays = plan.days || plan.duration_days || 3;
+        const dayList = Array.isArray(plan.itinerary) ? plan.itinerary : (Array.isArray(plan.days) ? plan.days : []);
         const comp = plan.cost_comparison || {};
         const b = comp.budget || {};
         const m = comp.mid || {};
@@ -2649,7 +3234,7 @@
 
         inner += `
           <div style="margin-top:14px; font-weight:800; font-size:12.5px; color:#4b5563; text-transform:uppercase; letter-spacing:0.04em;">
-            💰 3-Tier Price Comparison (${plan.duration_days} Days in ${plan.destination})
+            💰 3-Tier Price Comparison (${numDays} Days in ${cityName})
           </div>
           <div class="ai-pricing-grid">
             <div class="ai-tier-card budget">
@@ -2674,31 +3259,37 @@
           </div>
         `;
 
-        (plan.days || []).forEach(day => {
+        dayList.forEach(day => {
+          const morningText = typeof day.morning === 'object' ? `${day.morning.title} (${day.morning.tip || 'Reach early'})` : (day.morning || 'Sightseeing & heritage exploration');
+          const afternoonText = typeof day.afternoon === 'object' ? `${day.afternoon.title} (${day.afternoon.tip || 'Cultural visit'})` : (day.afternoon || 'Local market & cultural discovery');
+          const eveningText = typeof day.evening === 'object' ? `${day.evening.title} (${day.evening.tip || 'Sunset views'})` : (day.evening || 'Scenic viewpoint & evening leisure');
+          const foodText = (day.lunch ? day.lunch + ' · ' : '') + (day.dinner || '') || (day.recommended_food || []).join(' · ') || 'Regional culinary specialties & thali';
+          const transitText = day.transport || day.transit_advice || 'Local AC cabs & rapid transit connectivity';
+
           inner += `
             <div class="ai-day-card">
               <div class="ai-day-header">
-                <span>📍 Day ${day.day_number}:</span> <span>${escapeHtml(day.theme)}</span>
+                <span>📍 Day ${day.day_number}:</span> <span>${escapeHtml(day.title || day.theme || 'City Discovery')}</span>
               </div>
               <div class="ai-day-row">
                 <span class="ai-day-icon">🌅</span>
-                <div><strong>Morning:</strong> ${escapeHtml(day.morning)}</div>
+                <div><strong>Morning:</strong> ${escapeHtml(morningText)}</div>
               </div>
               <div class="ai-day-row">
                 <span class="ai-day-icon">☀️</span>
-                <div><strong>Afternoon:</strong> ${escapeHtml(day.afternoon)}</div>
+                <div><strong>Afternoon:</strong> ${escapeHtml(afternoonText)}</div>
               </div>
               <div class="ai-day-row">
                 <span class="ai-day-icon">🌆</span>
-                <div><strong>Evening:</strong> ${escapeHtml(day.evening)}</div>
+                <div><strong>Evening:</strong> ${escapeHtml(eveningText)}</div>
               </div>
               <div class="ai-day-row" style="background:#fef2f2; border-radius:8px; padding:6px 10px; margin-top:8px;">
                 <span class="ai-day-icon">🍽️</span>
-                <div><strong>Where to Eat:</strong> ${(day.recommended_food || []).join(' · ')}</div>
+                <div><strong>Where to Eat:</strong> ${escapeHtml(foodText)}</div>
               </div>
               <div class="ai-day-row" style="background:#ecfdf5; border-radius:8px; padding:6px 10px;">
                 <span class="ai-day-icon">🚕</span>
-                <div><strong>Transit:</strong> ${escapeHtml(day.transit_advice || '')}</div>
+                <div><strong>Transit:</strong> ${escapeHtml(transitText)}</div>
               </div>
             </div>
           `;
@@ -2707,9 +3298,9 @@
         inner += `
           <div style="margin-top:16px; display:flex; gap:10px;">
             <button type="button" class="card-action-btn primary" id="btn-plot-itinerary" style="padding:10px 18px; font-weight:700;">
-              🗺️ Plot ${plan.duration_days}-Day Route on Live Map
+              🗺️ Plot ${numDays}-Day Route on Live Map
             </button>
-            <button type="button" class="card-action-btn" onclick="openDetails('${plan.destination.toLowerCase() === 'delhi' ? 'tbo-del-001' : 'tbo-goa-001'}')">
+            <button type="button" class="card-action-btn" onclick="openDetails('${cityName.toLowerCase() === 'delhi' ? 'tbo-del-001' : 'tbo-goa-001'}')">
               🏨 View Hotel Rates
             </button>
           </div>
@@ -2769,6 +3360,57 @@
       }
     }
 
+    function speakText(btn) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const parentBubble = btn.closest('.ai-msg-bubble');
+      const textToSpeak = parentBubble ? parentBubble.innerText.replace(/Listen Summary|Stop/g, '').trim() : '';
+      const utter = new SpeechSynthesisUtterance(textToSpeak.slice(0, 400));
+      utter.rate = 1.0;
+      utter.lang = 'en-IN';
+      window.speechSynthesis.speak(utter);
+    }
+
+    function stopSpeaking() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+
+    const aiVoiceBtn = document.getElementById('ai-voice-btn');
+    if (aiVoiceBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const aiRec = new SpeechRecognition();
+      aiRec.continuous = false;
+      aiRec.interimResults = false;
+      aiRec.lang = 'en-IN';
+
+      aiVoiceBtn.addEventListener('click', () => {
+        aiVoiceBtn.classList.add('listening');
+        aiInput.placeholder = 'Listening... Speak your trip destination, days & budget';
+        try {
+          aiRec.start();
+        } catch(e) {
+          aiVoiceBtn.classList.remove('listening');
+        }
+      });
+
+      aiRec.onresult = (event) => {
+        aiVoiceBtn.classList.remove('listening');
+        const transcript = event.results[0][0].transcript;
+        aiInput.value = transcript;
+        aiInput.placeholder = "Tell me: e.g. 'Plan 4 days in Goa for 2 on a 25,000 budget'...";
+        sendAIMessage();
+      };
+
+      aiRec.onerror = () => {
+        aiVoiceBtn.classList.remove('listening');
+        aiInput.placeholder = "Tell me: e.g. 'Plan 4 days in Goa for 2 on a 25,000 budget'...";
+      };
+      aiRec.onend = () => {
+        aiVoiceBtn.classList.remove('listening');
+        aiInput.placeholder = "Tell me: e.g. 'Plan 4 days in Goa for 2 on a 25,000 budget'...";
+      };
+    }
+
     // ==========================================
     // PLOT ITINERARY ROUTE ON MAP
     // ==========================================
@@ -2787,18 +3429,30 @@
       closeAIDrawer();
 
       const allWaypoints = [];
-      (plan.days || []).forEach(day => {
-        (day.waypoints || []).forEach(wp => {
-          if (wp.coords && wp.coords.length === 2) {
-            allWaypoints.push({
-              name: wp.name,
-              coords: wp.coords,
-              day: day.day_number,
-              type: wp.type
-            });
-          }
+      if (plan.map_waypoints && plan.map_waypoints.length) {
+        plan.map_waypoints.forEach(wp => {
+          allWaypoints.push({
+            name: wp.title || wp.name,
+            coords: [wp.lon, wp.lat],
+            day: wp.day || 1,
+            type: wp.type || 'ATTRACTION'
+          });
         });
-      });
+      } else {
+        const dayList = Array.isArray(plan.itinerary) ? plan.itinerary : (Array.isArray(plan.days) ? plan.days : []);
+        dayList.forEach(day => {
+          (day.waypoints || []).forEach(wp => {
+            if (wp.coords && wp.coords.length === 2) {
+              allWaypoints.push({
+                name: wp.name,
+                coords: wp.coords,
+                day: day.day_number,
+                type: wp.type
+              });
+            }
+          });
+        });
+      }
 
       if (!allWaypoints.length) return;
 
@@ -2811,7 +3465,7 @@
           coordinates: lineCoordinates
         },
         properties: {
-          title: `${plan.destination} Route`
+          title: `${plan.city || plan.destination || 'City'} Route`
         }
       };
 
@@ -2874,7 +3528,7 @@
 
       const banner = document.getElementById('route-banner');
       const bannerText = document.getElementById('route-banner-text');
-      bannerText.textContent = `📍 ${plan.destination} ${plan.duration_days}-Day Trip Route (${allWaypoints.length} stops plotted across city)`;
+      bannerText.textContent = `📍 ${plan.city || plan.destination || 'City'} ${plan.days || plan.duration_days || 3}-Day Trip Route (${allWaypoints.length} stops plotted across city)`;
       banner.classList.add('active');
     }
 

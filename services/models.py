@@ -14,7 +14,7 @@ class SupplierOffer(BaseModel):
     available: bool = True
     cancellation_flexible: bool = False
     reliability_score: float = Field(default=0.75, ge=0, le=1)
-    meal_plan: str = "RO"
+    meal_plan: str | None = "RO"
     payment_terms: str = "PAY_NOW"
     cancellation_policy: dict[str, Any] = Field(default_factory=dict)
     tax_and_fees: float = Field(default=0, ge=0)
