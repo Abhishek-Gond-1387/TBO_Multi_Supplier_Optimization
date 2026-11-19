@@ -1,286 +1,221 @@
-# TBO Multi-Supplier Inventory Optimization & Discovery Platform
+# TBO Multi-Supplier Inventory Optimization Platform
 
-<div align="center">
-
-[![Python checks](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml/badge.svg)](https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization/actions/workflows/tests.yml)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://python.org)
-[![MapLibre GL](https://img.shields.io/badge/MapLibre_GL-4.7+-blue.svg?style=flat&logo=maplibre&logoColor=white)](https://maplibre.org)
-[![GSAP 3](https://img.shields.io/badge/Animations-GSAP_3_&_Lenis-88CE02.svg?style=flat&logo=greensock&logoColor=white)](https://greensock.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-**Enterprise-Grade Real-Time Multi-Supplier Rate Parity, Spatial Geo-Deduplication, Cryptic Taxonomy Normalization & Pan-India Travel Discovery Engine**
-
-[Live Map View](http://127.0.0.1:8000/map_view.html) • [Interactive Landing Page](http://127.0.0.1:8000/index.html) • [Operations Review Hub](http://127.0.0.1:8000/admin.html) • [Swagger API Docs](http://127.0.0.1:8000/docs)
-
-</div>
+An intelligent inventory optimization and discovery engine that normalizes, deduplicates, and ranks multi-supplier travel data across accommodations, tours, transit, and dining.
 
 ---
 
-## 📌 Executive Summary
+## Table of Contents
 
-Modern travel aggregation platforms integrate inventory across heterogeneous global and domestic bedbanks (TBO Preferred, Hotelbeds, Agoda, Booking.com, Expedia, Viator, Headout, Klook). However, fragmented supplier APIs introduce four critical operational bottlenecks:
-
-1. **Duplicate Supplier Listings:** Redundant listings with minor spelling deviations, slightly displaced GPS coordinates, and alternate address strings inflate catalog clutter.
-2. **Cryptic Room Type Incoherence:** Unstandardized supplier codes (e.g., `DLX KNG CT-VW BB BALC` vs. `EXEC STE 1KNG CLB LVL`) prevent meaningful side-by-side room comparison.
-3. **Opaque Tour & Activity Inclusions:** Identically titled sightseeing tours vary drastically in inclusions (e.g., *Shared Coach* vs. *Private Luxury Chauffeur*, *General Admission* vs. *VIP Fast-Track Access*, *Buffet Lunch* vs. *No Meals*).
-4. **Latency & Catalog Scale:** Consumers expect sub-50ms search latency across millions of accommodations, experiences, dining options, and transit junctions.
-
-**TBO Multi-Supplier Inventory Optimization Platform** solves these challenges using a high-throughput Python backend, hybrid spatial deduplication algorithms, an intelligent rule-based room taxonomizer, an inclusion diffing engine, and an interactive Google Maps-grade spatial exploration frontend with smooth kinetic animations.
+- [Overview](#overview)
+- [Key Engineering Modules](#key-engineering-modules)
+  - [1. Hotel Geo-Spatial Deduplication](#1-hotel-geo-spatial-deduplication)
+  - [2. Room Taxonomy Normalization](#2-room-taxonomy-normalization)
+  - [3. Experience Inclusion Diff Engine](#3-experience-inclusion-diff-engine)
+  - [4. Dynamic Supplier Ranking](#4-dynamic-supplier-ranking)
+  - [5. AI Travel Concierge](#5-ai-travel-concierge)
+- [Frontend Interfaces](#frontend-interfaces)
+- [System Architecture](#system-architecture)
+- [API Reference](#api-reference)
+- [Local Setup & Execution](#local-setup--execution)
+- [Verification & Automated Tests](#verification--automated-tests)
 
 ---
 
-## 🏛️ System Architecture
+## Overview
 
-```mermaid
-flowchart TD
-    subgraph Data Sources ["Heterogeneous Supplier Streams"]
-        S1["TBO Preferred Inventory"]
-        S2["Hotelbeds / WebBeds"]
-        S3["Agoda / Booking.com"]
-        S4["Viator / Headout / Klook"]
-        S5["OpenStreetMap / Transit Hubs"]
-    end
+Travel aggregators routinely source identical hotels and sightseeing activities from multiple supplier APIs (such as TBO, Hotelbeds, Agoda, Booking.com, and Viator). Because suppliers format names, coordinates, room descriptions, and inclusions differently, platforms face several challenges:
 
-    subgraph Ingestion ["Ingestion & Normalization Layer"]
-        IV["Ingestion Schema Validator"]
-        RN["Room Taxonomy Normalizer<br/>(Class, Bed, View, Meal, Balcony)"]
-        IQ["Laplacian Blur & Content Intelligence"]
-    end
+- **Duplicate Listings:** Redundant entries with slightly different titles or GPS coordinates clutter search results.
+- **Fragmented Room Codes:** Inconsistent supplier abbreviations (e.g. `DLX KNG CT-VW BB` vs `DELUXE KING CITY VIEW WITH BREAKFAST`) make fair comparisons difficult for users.
+- **Inclusion Ambiguity:** Two tours with identical titles may include completely different perks (such as private transport vs shared bus, or fast-track entry vs standard queues).
+- **Scale and Latency:** Querying broad geographic regions across thousands of live items requires responsive filtering and minimal latency.
 
-    subgraph Core Engines ["Optimization & Processing Engines"]
-        DEDUP["Hybrid Geo-Spatial Deduplicator<br/>(Jaro-Winkler + Haversine &lt;250m + pHash)"]
-        DIFF["Nuanced Tour Inclusion Diff Engine<br/>(Transfers, Meals, Access, Cancellation)"]
-        RANK["Dynamic Multi-Factor Ranking Engine<br/>(Parity, Reliability, Conversion, Quality)"]
-        PLANNER["Personal AI Travel Concierge<br/>(Multi-Tier Budget Allocation & Routes)"]
-    end
+This platform provides dedicated micro-engines to normalize raw supplier feeds, eliminate duplicates, identify subtle inclusion differences, and present optimized results through high-performance web interfaces.
 
-    subgraph Storage ["Scalable Storage & Caching"]
-        CACHE["Two-Tier Distributed Cache<br/>(Memory + Redis Fallback)"]
-        DB["Pan-India Catalog Database<br/>(1,240,000+ Reachable Records)"]
-        REV["Human-in-the-Loop Review Queue"]
-    end
+---
 
-    subgraph Frontend ["Multi-Experience Frontend Suite"]
-        LANDING["Kinetic Landing Experience<br/>(GSAP 3, Lenis Smooth Scroll)"]
-        MAP["Google Maps-Grade Spatial Discovery<br/>(MapLibre GL, Anti-Collision Price Pills)"]
-        ADMIN["Operations & Matching Hub<br/>(Split-Screen Review & Live Diffing)"]
-    end
+## Key Engineering Modules
 
-    Data Sources --> IV
-    IV --> RN & IQ
-    RN & IQ --> DEDUP & DIFF
-    DEDUP --> REV
-    DEDUP & DIFF --> RANK & PLANNER
-    RANK & PLANNER --> CACHE & DB
-    CACHE & DB --> LANDING & MAP & ADMIN
+### 1. Hotel Geo-Spatial Deduplication
+
+Located in [`services/hotel_deduplication.py`](services/hotel_deduplication.py):
+- **Hybrid Similarity Scoring:** Evaluates listing pairs using normalized Jaro-Winkler text distance, token set overlap, and spatial Haversine distance.
+- **Geo-Fencing:** Flags pairs exceeding 250 meters as distinct properties, preventing accidental merges of similarly named chain hotels in different neighborhoods.
+- **Confidence Tiers:**
+  - `Score >= 0.88`: Auto-merge candidate.
+  - `0.65 <= Score < 0.88`: Routes to the Human-in-the-Loop review queue.
+  - `Score < 0.65`: Treated as independent properties.
+
+### 2. Room Taxonomy Normalization
+
+Located in [`services/room_normalizer.py`](services/room_normalizer.py):
+- Parses unstructured, abbreviated supplier room strings into standardized JSON attributes:
+  - **Room Class:** Standard, Deluxe, Executive, Suite, Villa.
+  - **Bed Configuration:** King, Queen, Twin, Double.
+  - **View Type:** City View, Sea/Ocean View, Garden View, Courtyard.
+  - **Meal Plan:** Room Only (RO), Bed & Breakfast (BB), Half Board (HB), Full Board (FB).
+  - **Amenities:** Balcony, Club Lounge Access, Private Pool.
+
+### 3. Experience Inclusion Diff Engine
+
+Located in [`services/sightseeing_difference_engine.py`](services/sightseeing_difference_engine.py):
+- Analyzes titles and descriptions of competing tour offers to compute clear inclusion vectors:
+  - **Transfers:** None, Shared Coach, Private Chauffeur.
+  - **Meals:** None, Breakfast, Lunch, Gourmet Dinner.
+  - **Access Level:** General Admission, Skip-the-Line, VIP Access.
+  - **Cancellation:** Free 24h, Free 48h, Non-Refundable.
+
+### 4. Dynamic Supplier Ranking
+
+Located in [`services/dynamic_ranking_engine.py`](services/dynamic_ranking_engine.py):
+- Multi-factor scoring that balances:
+  $$\text{Final Score} = w_1 \cdot \text{Price} + w_2 \cdot \text{Reliability} + w_3 \cdot \text{Quality} + w_4 \cdot \text{Flexibility} + w_5 \cdot \text{Relevance}$$
+- Automatically highlights the cheapest supplier with rate parity indicators.
+
+### 5. AI Travel Concierge
+
+Located in [`services/ai_trip_planner.py`](services/ai_trip_planner.py):
+- Generates day-by-day travel itineraries based on destination, duration, and pace.
+- Provides 3-tier budget estimates (Budget, Midscale, Luxury) and plots sequential waypoints on the discovery map.
+
+---
+
+## Frontend Interfaces
+
+The project provides three tailored web views:
+
+1. **Discovery Map (`/map_view.html`):**
+   - Interactive MapLibre GL exploration with clustered price pins.
+   - 560px responsive left sidebar displaying verified photos, supplier rate comparisons, and live filters.
+   - Built-in Web Speech API voice search and AI trip planner drawer.
+
+2. **Landing Page (`/index.html`):**
+   - High-performance kinetic presentation utilizing GSAP and Lenis smooth scrolling.
+   - Highlights core platform features and destination showcases.
+
+3. **Operations Review Hub (`/admin.html`):**
+   - Dedicated portal for operational teams to inspect borderline duplicate listings.
+   - Interactive testing tools for room code normalization and tour inclusion diffing.
+
+---
+
+## System Architecture
+
+```
+Supplier Ingestion Streams
+  ├── TBO Preferred Feeds
+  ├── Third-Party Bedbanks (Agoda, Hotelbeds, Booking.com)
+  └── Experience Providers (Viator, Headout)
+           │
+           ▼
+Ingestion & Normalization Layer
+  ├── Ingestion Schema Validation
+  ├── Room Taxonomy Standardizer
+  └── Image Quality Assessor
+           │
+           ▼
+Optimization Engines
+  ├── Hybrid Geo-Spatial Deduplicator (<250m Haversine + Jaro-Winkler)
+  ├── Tour Inclusion Diff Engine
+  └── Multi-Factor Dynamic Ranking
+           │
+           ▼
+Storage & Access Layer
+  ├── Two-Tier Cache (In-Memory + Optional Redis)
+  ├── Catalog Storage (SQLite / PostgreSQL)
+  └── Operational Review Queue
+           │
+           ▼
+Web Endpoints & APIs
+  ├── FastAPI Application (/api/v1/*)
+  ├── Discovery Map Interface (/map_view.html)
+  ├── Landing Page (/index.html)
+  └── Operations Hub (/admin.html)
 ```
 
 ---
 
-## 🌟 Core Technical Capabilities
+## API Reference
 
-### 1. Hybrid Hotel Deduplication & Clustering
-- **Multi-Signal Similarity:** Combines weighted Jaro-Winkler string distance on normalized names, token sort ratio on address strings, and spatial Haversine distance thresholded at `<250 meters`.
-- **Perceptual Image Hashing (pHash):** Evaluates listing photography to match duplicate properties even when supplier names deviate substantially.
-- **Laplacian Blur Quality Scoring:** Discards low-resolution or blurred supplier photography based on Laplacian operator variance ($\sigma^2 < 80.0$).
-- **Human-in-the-Loop Queue:** Borderline similarity matches ($0.65 \le \text{score} < 0.88$) automatically feed into an operations review dashboard for single-click operator approval or separation.
-
-### 2. Standardized Room Taxonomy Normalizer
-Converts cryptic, supplier-specific room shorthand into structured, queryable attributes:
-```json
-{
-  "raw_code": "EXEC STE 1KNG CT-VW BB BALC",
-  "normalized": {
-    "room_class": "Executive Suite",
-    "bed_type": "King",
-    "view_type": "City View",
-    "meal_plan": "Bed & Breakfast",
-    "has_balcony": true,
-    "confidence_score": 0.96
-  }
-}
-```
-
-### 3. Nuanced Tour Inclusion Differentiation Engine
-Sightseeing and activities across Viator, GetYourGuide, and Headout often share similar titles but differ drastically in value. Our diff engine computes exact inclusion vectors across:
-- **Transfers:** `None` vs. `Shared AC Coach` vs. `Private Luxury Chauffeur`
-- **Meals:** `None` vs. `Continental Breakfast` vs. `Buffet Lunch` vs. `Gourmet 3-Course Dinner`
-- **Access Level:** `Standard General Admission` vs. `Skip-The-Line Fast Track` vs. `VIP Lounge Access / Level 148`
-- **Duration:** `1-2 Hours Express` vs. `Half-Day (4h)` vs. `Full-Day (8h)`
-- **Cancellation:** `Free 24h Prior` vs. `Free 48h Prior` vs. `Non-Refundable`
-
-### 4. Pan-India 1,240,000+ Reachable Live Inventory
-Covers **110 Indian Cities, Heritage Regions, and Transit Corridors**, alongside major international hubs (Dubai, Abu Dhabi, Santorini, Athens):
-- 🏨 **520,000+ Stays:** 5-Star Luxury Palaces, Heritage Havelis, Boutique Business, and Budget Stays.
-- 🎡 **334,000+ Sightseeing & Tours:** Fast-Track Monument Entry, Guided Safaris, Cultural Trails.
-- 🚆 **210,000+ Transit Hubs:** Vande Bharat Express corridors, Metro stations, and Airport Junctions.
-- 🍽️ **173,000+ Iconic Dining Spots:** Heritage Royal Dining, Street Food Trails, and Coastal Kitchens.
-
-### 5. Multi-Experience Frontend Suite
-- **Interactive Landing Page (`/index.html`):** Built with **GSAP 3**, **ScrollTrigger**, and **Lenis smooth scrolling** for fluid typography, floating parallax layers, and micro-interactions.
-- **Spatial Discovery Map (`/map_view.html`):** 560px wide Airbnb/OYO-style sidebar with infinite scroll, 60px screen-space anti-collision price pills, real-time autocomplete suggestions, and Web Speech API voice search.
-- **Operations & Review Hub (`/admin.html`):** Production control dashboard with live KPI metrics, automated deduplication queue, interactive room taxonomizer tester, and tour inclusion diff analyzer.
-
----
-
-## ⚡ Quick Start Guide (Windows / macOS / Linux)
-
-### Option 1: One-Click Startup (Windows)
-Double-click `run_demo.bat` or run from PowerShell:
-```powershell
-Set-Location "$HOME\OneDrive\Desktop\TBO_Multi_Supplier_Optimization"
-.\run_demo.bat
-```
-*This automatically checks Python dependencies, validates ports, boots the FastAPI server, and opens your browser.*
-
----
-
-### Option 2: Manual Terminal Startup
-
-#### 1. Clone & Enter Directory
-```bash
-git clone https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization.git
-cd TBO_Multi_Supplier_Optimization
-```
-
-#### 2. Create & Activate Virtual Environment
-```powershell
-# Windows PowerShell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# Linux / macOS
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-#### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-#### 4. Run the Platform Server
-```bash
-python -m uvicorn services.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
----
-
-## 🌐 Web Interface Endpoints
-
-Once the server is running, open the following URLs in your browser:
-
-| Interface | URL | Description |
-| :--- | :--- | :--- |
-| **🚀 Animated Landing Page** | [http://127.0.0.1:8000/index.html](http://127.0.0.1:8000/index.html) | High-performance GSAP + Lenis kinetic hero showcase |
-| **🗺️ Google Discovery Map** | [http://127.0.0.1:8000/map_view.html](http://127.0.0.1:8000/map_view.html) | Live multi-supplier inventory map with anti-collision pills |
-| **🛡️ Operations Review Hub** | [http://127.0.0.1:8000/admin.html](http://127.0.0.1:8000/admin.html) | Human-in-the-loop matching queue & inclusion diff engine |
-| **📖 Interactive API Docs** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Swagger OpenAPI interactive documentation & test client |
-| **📊 Prometheus Metrics** | [http://127.0.0.1:8000/metrics](http://127.0.0.1:8000/metrics) | Real-time scrapeable application performance metrics |
-
----
-
-## 📡 REST API Reference
-
-All REST endpoints are prefixed with `/api/v1`:
+The backend exposes RESTful endpoints under `/api/v1`:
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/search` | Search inventory across hotels, tours, transit, and dining with multi-supplier rate parity. |
-| `GET` | `/api/v1/suggestions` | Fast prefix autocomplete with entity categorization and thumbnail previews. |
-| `POST` | `/api/v1/hotels/deduplicate` | Evaluate two hotel payloads using Jaro-Winkler, Haversine, and address overlap. |
-| `POST` | `/api/v1/tours/diff` | Compute granular inclusion diffs between two tour offers across transfers, meals, and fast-track. |
-| `POST` | `/api/v1/ai/itinerary` | Generate day-by-day itineraries with 3-tier budget breakdown (Budget, Comfort, Luxury). |
-| `GET` | `/api/v1/review-queue` | Retrieve borderline duplicate matches awaiting operational resolution. |
-| `PUT` | `/api/v1/review-queue/{id}` | Approve or reject a candidate match in the operational review queue. |
-| `GET` | `/api/v1/analytics/summary` | Real-time CTR, booking conversion rates, and supplier quote metrics. |
-| `GET` | `/api/v1/health` | Service health check with database and cache connectivity status. |
+| `GET` | `/api/v1/search` | Search inventory across hotels, tours, transit, and dining with multi-supplier rates. |
+| `GET` | `/api/v1/suggestions` | Fast autocomplete suggestions with category tagging. |
+| `POST` | `/api/v1/hotels/deduplicate` | Compare two hotel records for similarity score and merge recommendation. |
+| `POST` | `/api/v1/tours/diff` | Differentiate inclusion perks between two tour offerings. |
+| `POST` | `/api/v1/ai/itinerary` | Generate day-by-day itinerary and multi-tier budget estimates. |
+| `GET` | `/api/v1/review-queue` | List pending borderline duplicate matches requiring review. |
+| `PUT` | `/api/v1/review-queue/{id}` | Approve or reject a candidate listing match. |
+| `GET` | `/api/v1/analytics/summary` | Retrieve search volume, CTR, and conversion metrics. |
+| `GET` | `/api/v1/health` | Service and dependency health status. |
 
 ---
 
-## 🧪 Automated Testing & Verification
+## Local Setup & Execution
 
-Run the automated test suite with pytest:
+### Prerequisites
+- Python 3.10, 3.11, or 3.12
+- Windows PowerShell, macOS Terminal, or Linux Shell
+
+### Installation Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Abhishek-Gond-1387/TBO_Multi_Supplier_Optimization.git
+   cd TBO_Multi_Supplier_Optimization
+   ```
+
+2. **Set up a virtual environment:**
+   ```powershell
+   # Windows PowerShell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Linux / macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Launch the application:**
+   ```powershell
+   .\.venv\Scripts\python.exe -m uvicorn services.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+   *(Or double-click `run_demo.bat` on Windows)*
+
+5. **Access in browser:**
+   - Landing Page: `http://127.0.0.1:8000/index.html`
+   - Discovery Map: `http://127.0.0.1:8000/map_view.html`
+   - Operations Hub: `http://127.0.0.1:8000/admin.html`
+   - API Docs: `http://127.0.0.1:8000/docs`
+
+---
+
+## Verification & Automated Tests
+
+Run the full pytest suite:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -v
 ```
 
-Run the live inventory verification audit:
+Audit the 1,000,000+ catalog and measure query latency:
 ```powershell
 .\.venv\Scripts\python.exe scripts/verify_1m_inventory.py
 ```
 
-Run the interactive console walkthrough demo:
+Run the interactive terminal walkthrough:
 ```powershell
 .\.venv\Scripts\python.exe scripts/demo.py
 ```
 
 ---
 
-## 📁 Repository Structure
+## License
 
-```
-TBO_Multi_Supplier_Optimization/
-├── assets/                          # Static landing assets (GSAP, Lenis, Hero Imagery)
-│   ├── hero_bg.jpg
-│   └── js/
-│       ├── gsap.min.js
-│       ├── lenis.min.js
-│       └── ScrollTrigger.min.js
-├── data/                            # Verified inventory and OpenStreetMap datasets
-│   ├── sample_inventory.json        # Seed multi-supplier dataset
-│   ├── verified_image_catalog.json  # HD curated photography catalog
-│   └── osm_inventory.status.json
-├── database/                        # Database schemas and extensions
-│   ├── init/
-│   │   ├── 01-extensions.sql        # PostGIS & pgvector setup
-│   │   └── 02-schema.sql            # Normalized tables and spatial indexes
-│   └── analytics.sql
-├── frontend/                        # Web applications & client components
-│   ├── index.html                   # GSAP + Lenis Kinetic Landing Page
-│   ├── map_view.html                # Google Discovery Map & Airbnb Sidebar
-│   ├── admin.html                   # Operations Review & Taxonomy Hub
-│   └── components/
-│       └── MatchReviewQueue.tsx
-├── scripts/                         # Automation, seed, and benchmark scripts
-│   ├── demo.py                      # Interactive terminal demo
-│   ├── verify_1m_inventory.py       # Catalog volume & latency audit
-│   ├── build_10k_inventory.py
-│   └── seed_demo_db.py
-├── services/                        # Modular FastAPI backend services
-│   ├── main.py                      # Core API server & route registration
-│   ├── hotel_deduplication.py       # Jaro-Winkler & Haversine clustering
-│   ├── room_normalizer.py           # Taxonomy normalization engine
-│   ├── sightseeing_difference_engine.py # Inclusion diff engine
-│   ├── dynamic_ranking_engine.py    # Multi-supplier score weighting
-│   ├── pan_india_1m_engine.py       # High-throughput spatial inventory search
-│   ├── ai_trip_planner.py           # Intelligent itinerary generation
-│   ├── live_travel_service.py       # Real-time multi-supplier live quotes
-│   ├── cache_service.py             # Memory & Redis cache layer
-│   └── config.py                    # Environment & application settings
-├── tests/                           # Pytest integration & unit test suite
-│   ├── test_api.py
-│   └── test_engines.py
-├── .env.example                     # Environment template configuration
-├── docker-compose.yml               # Production container orchestration
-├── Dockerfile                       # Multi-stage production container build
-├── pytest.ini                       # Test suite runner settings
-├── requirements.txt                 # Core Python production dependencies
-└── run_demo.bat                     # One-click Windows runner
-```
-
----
-
-## 🔒 Security & Resilience
-
-- **Circuit Breaker:** Automatically isolates failing or slow third-party supplier endpoints after 5 consecutive failures, recovering gracefully after 30 seconds.
-- **Supplier Rate Limiting:** Enforces timeout limits (800ms) to ensure external supplier lag never degrades the consumer discovery interface.
-- **Zero Commercial API Dependency:** 100% self-contained utilizing free OpenStreetMap vector tiles, local SQLite/PostgreSQL storage, and open-source models.
-- **RBAC & Token Security:** Secure HMAC-SHA256 JWT tokens with AES-256 symmetric credential encryption for supplier API credentials stored at rest.
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License**. Feel free to use, modify, and distribute with attribution.
+This project is licensed under the [MIT License](LICENSE).
