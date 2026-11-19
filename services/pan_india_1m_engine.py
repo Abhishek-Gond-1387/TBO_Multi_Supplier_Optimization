@@ -34,7 +34,7 @@ HD_PHOTO_POOLS = {
         "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1600100397608-f010f4439007?auto=format&fit=crop&w=800&q=80",
     ],
     "TRANSPORT": [
@@ -42,7 +42,6 @@ HD_PHOTO_POOLS = {
         "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1557223562-6c77ef16210f?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80",
     ],
     "DINING": [
         "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
@@ -231,6 +230,20 @@ class PanIndia1MInventoryEngine:
         offers.sort(key=lambda o: o.price)
 
         item_id = f"inv-{city.lower()[:3]}-{entity_type.lower()[:3]}-{index:06d}"
+        try:
+            from services.image_catalog import resolve_item_images
+            resolved_photos = resolve_item_images({
+                "id": item_id,
+                "name": name,
+                "entity_type": entity_type,
+                "destination": city,
+                "description": desc,
+            })
+            if resolved_photos:
+                photos = resolved_photos
+        except Exception:
+            pass
+
         return InventoryItem(
             id=item_id,
             name=name,

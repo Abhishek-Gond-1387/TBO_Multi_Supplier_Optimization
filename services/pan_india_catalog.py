@@ -146,7 +146,7 @@ PAN_INDIA_TRANSPORT_HUBS = [
         "description": "UNESCO World Heritage Victorian Gothic railway headquarters serving Vande Bharat, Rajdhani, and suburban trains.",
         "source_category": "Railway & Transit Hub",
         "amenities": ["High-Speed Trains", "Taxi Stands", "Suburban Line", "Heritage Museum"],
-        "images": ["https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80"],
+        "images": ["https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=800&q=80"],
         "offers": [{"supplier_name": "TBO Mobility", "price": 450, "currency": "INR", "available": True, "cancellation_flexible": True, "reliability_score": 0.96}]
     },
     {
@@ -161,7 +161,7 @@ PAN_INDIA_TRANSPORT_HUBS = [
         "description": "State-of-the-art North Goa airport with electric bus express shuttles to Calangute, Panaji, and Margao.",
         "source_category": "Airport Hub",
         "amenities": ["Electric AC Bus", "Self-Drive Car Rental", "GoaMiles Cabs"],
-        "images": ["https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&fit=crop&w=800&q=80"],
+        "images": ["https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80"],
         "offers": [{"supplier_name": "TBO Mobility", "price": 400, "currency": "INR", "available": True, "cancellation_flexible": True, "reliability_score": 0.95}]
     },
     {
@@ -191,7 +191,7 @@ PAN_INDIA_TRANSPORT_HUBS = [
         "description": "Main arrival point for high-speed Gatimaan Express from Delhi (100 mins). Direct pre-paid EV cabs to the Taj Mahal.",
         "source_category": "High-Speed Rail Hub",
         "amenities": ["Prepaid EV Cabs", "Tourist Information Bureau", "VIP Lounge"],
-        "images": ["https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80"],
+        "images": ["https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=800&q=80"],
         "offers": [{"supplier_name": "TBO Mobility", "price": 750, "currency": "INR", "available": True, "cancellation_flexible": True, "reliability_score": 0.97}]
     }
 ]

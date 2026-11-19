@@ -21,6 +21,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import BaseModel, Field, model_validator
 
@@ -356,6 +357,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ASSETS_DIR = FRONTEND_DIR / "assets"
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+
 
 @app.middleware("http")
 async def instrument_requests(request: Request, call_next):
@@ -571,6 +576,9 @@ def _stable_cache_key(prefix: str, value: Any) -> str:
 def root(request: Request) -> Any:
     accept = request.headers.get("accept", "")
     if "text/html" in accept and not accept.startswith("application/json"):
+        index_path = FRONTEND_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
         map_path = FRONTEND_DIR / "map_view.html"
         if map_path.exists():
             return FileResponse(map_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
@@ -579,9 +587,16 @@ def root(request: Request) -> Any:
         "status": "ok",
         "docs": "/docs",
         "health": f"{API_V1_PREFIX}/health",
+        "landing": "/index.html",
         "map": "/map_view.html",
         "admin": "/admin.html",
     }
+
+
+@app.get("/index.html", response_class=FileResponse)
+@app.get("/landing", response_class=FileResponse)
+def serve_landing() -> FileResponse:
+    return FileResponse(FRONTEND_DIR / "index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 
 @app.get("/map_view.html", response_class=FileResponse)
@@ -716,8 +731,8 @@ async def search_inventory(
         items = [item for item in items if _has_inclusions(item, inclusions)]
 
     # Seamlessly enrich with live 1M multi-supplier items for India destinations
-    is_dubai = (destination and destination.casefold() == "dubai") or (country_code and country_code.upper() == "AE")
-    if not is_dubai:
+    is_international = (destination and destination.casefold() in {"dubai", "abu dhabi", "santorini", "athens", "oia", "fira"}) or (country_code and country_code.upper() in {"AE", "GR"})
+    if not is_international:
         live_res = live_1m_engine.search_live(
             destination=destination,
             entity_type=entity_type if entity_type and entity_type != "ANY" else None,
