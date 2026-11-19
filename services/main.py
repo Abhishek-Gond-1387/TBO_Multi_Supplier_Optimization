@@ -702,6 +702,7 @@ async def search_inventory(
     min_stars: float | None = Query(default=None, ge=0, le=5),
     landmark: str | None = None,
     inclusions: list[str] = Query(default=[]),
+    dietary: Literal["VEG", "NON_VEG"] | str | None = None,
 ) -> dict[str, Any]:
     items = await load_inventory()
     if destination and destination.casefold() not in {"pan-india", "all", "india"}:
@@ -729,6 +730,14 @@ async def search_inventory(
         items = [item for item in items if _item_matches_landmark(item, landmark)]
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
+    if dietary:
+        d_val = dietary.upper()
+        items = [
+            item for item in items
+            if getattr(item, "dietary", None) == d_val or
+            (d_val == "VEG" and any("veg" in a.lower() for a in item.amenities) and not any("non-veg" in a.lower() for a in item.amenities)) or
+            (d_val == "NON_VEG" and any(k in f"{item.name} {item.description} {' '.join(item.amenities)}".lower() for k in ["non-veg", "seafood", "chicken", "mutton", "fish", "meat", "kebab", "biryani"]))
+        ]
 
     # Seamlessly enrich with live 1M multi-supplier items for India destinations
     is_international = (destination and destination.casefold() in {"dubai", "abu dhabi", "santorini", "athens", "oia", "fira"}) or (country_code and country_code.upper() in {"AE", "GR"})
@@ -739,6 +748,7 @@ async def search_inventory(
             q=q,
             limit=150,
             currency=currency or "INR",
+            dietary=dietary,
         )
         existing_ids = {it.id for it in items}
         for r in live_res.get("results", []):
