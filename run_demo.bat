@@ -2,23 +2,6 @@
 setlocal
 cd /d "%~dp0"
 
-if not exist "requirements.txt" (
-    echo.
-    echo ======================================================================
-    echo ERROR: ZIP FILE EXTRACT NAHI HUA HAI!
-    echo.
-    echo Aap is file ko bina Extract kiye ZIP ke andar se direct run kar rahe hain.
-    echo Kripya pehle ZIP file par Right-Click karein aur "Extract All..." chunein,
-    echo fir extract hue folder ke andar jakar run_demo.bat chalayein.
-    echo.
-    echo Ya Desktop par maujood folder ko open karein:
-    echo C:\Users\abhis\OneDrive\Desktop\TBO_Multi_Supplier_Optimization
-    echo ======================================================================
-    echo.
-    pause
-    exit /b 1
-)
-
 if not exist ".venv\Scripts\python.exe" (
     echo Creating the project virtual environment...
     py -3 -m venv .venv

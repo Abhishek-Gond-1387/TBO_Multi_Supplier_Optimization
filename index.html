@@ -480,8 +480,8 @@
     .hero-title-inner {
       display: inline-block;
       will-change: transform, opacity;
-      transform: translateY(0);
-      opacity: 1;
+      transform: translateY(120%) rotate(2deg);
+      opacity: 0;
     }
 
     .hero-title em {
@@ -2237,503 +2237,289 @@
       position: relative;
     }
 
-    /* ========================================================
-       LIVE INTERACTIVE DISCOVERY CANVAS (GOOGLE MAPS PRECISION)
-       ======================================================== */
     .map-canvas-wrapper {
       position: relative;
-      border-radius: 20px;
+      border-radius: 18px;
       overflow: hidden;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      box-shadow: 0 12px 36px rgba(16, 47, 64, 0.14);
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: var(--shadow-luxury);
       background: #EAF4F6;
-      height: 640px;
+      height: 600px;
       display: flex;
     }
 
     #landingDiscoveryMap {
       width: 100%;
       height: 100%;
-      background: #E8EAED;
+      background: #EAF4F6;
     }
 
-    /* Google Maps Floating Search Bar & City Chips Dock */
-    .gmap-floating-panel {
+    .map-floating-search-bar {
       position: absolute;
-      top: 16px;
-      left: 16px;
+      top: 20px;
+      left: 20px;
       z-index: 10;
+      width: min(380px, calc(100% - 40px));
+      background: rgba(250, 248, 242, 0.95);
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: 0 8px 30px rgba(16, 47, 64, 0.18);
+      padding: 6px 12px;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 10px;
-      max-width: min(480px, calc(100% - 32px));
-      pointer-events: none;
     }
 
-    .gmap-floating-panel > * {
-      pointer-events: auto;
-    }
-
-    .gmap-search-box {
-      position: relative;
-      background: #FFFFFF;
-      border-radius: 28px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      transition: all 0.25s ease;
-    }
-
-    .gmap-search-box:focus-within {
-      box-shadow: 0 4px 18px rgba(26, 115, 232, 0.25), 0 2px 8px rgba(0, 0, 0, 0.2);
-      border-color: #1A73E8;
-    }
-
-    .gmap-search-icon {
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      color: #5F6368;
-      flex-shrink: 0;
-    }
-
-    .gmap-search-input {
-      flex: 1;
+    .map-floating-search-bar input {
       border: none;
       outline: none;
-      font-size: 14.5px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      color: #202124;
       background: transparent;
-      padding: 8px 0;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--color-dark-text);
+      width: 100%;
+      padding: 6px 0;
     }
 
-    .gmap-search-input::placeholder {
-      color: #70757A;
+    .map-floating-search-bar input::placeholder {
+      color: var(--color-muted-grey);
     }
 
-    .gmap-search-btn {
-      background: transparent;
-      border: none;
-      color: #5F6368;
-      cursor: pointer;
-      padding: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-
-    .gmap-search-btn:hover {
-      background: #F1F3F4;
-      color: #202124;
-    }
-
-    /* Google Maps Dropdown */
-    .gmap-search-dropdown {
+    .map-search-autocomplete {
       position: absolute;
-      top: 54px;
+      top: 100%;
       left: 0;
       right: 0;
+      margin-top: 8px;
       background: #FFFFFF;
-      border-radius: 16px;
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-      max-height: 290px;
+      border-radius: 12px;
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: var(--shadow-luxury);
+      max-height: 280px;
       overflow-y: auto;
-      z-index: 30;
-      border: 1px solid #DADCE0;
+      z-index: 20;
       display: none;
     }
 
-    .gmap-dropdown-item {
-      padding: 10px 16px;
-      border-bottom: 1px solid #F1F3F4;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .map-search-autocomplete.active {
+      display: block;
+    }
+
+    .autocomplete-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(23, 75, 99, 0.06);
       cursor: pointer;
-      transition: background 0.15s ease;
-    }
-
-    .gmap-dropdown-item:last-child {
-      border-bottom: none;
-    }
-
-    .gmap-dropdown-item:hover {
-      background: #F8F9FA;
-    }
-
-    .gmap-dropdown-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #E8F0FE;
-      color: #1A73E8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-    }
-
-    .gmap-dropdown-info {
-      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 2px;
+      transition: background 0.15s ease;
     }
 
-    .gmap-dropdown-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #202124;
+    .autocomplete-item:last-child {
+      border-bottom: none;
     }
 
-    .gmap-dropdown-sub {
-      font-size: 12px;
-      color: #70757A;
+    .autocomplete-item:hover {
+      background: var(--color-soft-blue);
     }
 
-    /* Google Maps Quick City Filter Chips */
-    .gmap-city-chips {
+    .autocomplete-item-name {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--color-deep-navy);
+    }
+
+    .autocomplete-item-sub {
+      font-size: 11.5px;
+      color: var(--color-muted-grey);
+    }
+
+    .map-canvas-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
       display: flex;
       gap: 8px;
-      overflow-x: auto;
-      padding: 2px 2px 6px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
     }
 
-    .gmap-city-chips::-webkit-scrollbar {
-      display: none;
-    }
-
-    .gmap-chip {
-      background: #FFFFFF;
-      border: 1px solid #DADCE0;
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #3C4043;
-      white-space: nowrap;
+    .map-ctrl-btn {
+      background: rgba(250, 248, 242, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-deep-navy);
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(16, 47, 64, 0.1);
+      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       gap: 6px;
     }
 
-    .gmap-chip:hover {
-      background: #F8F9FA;
-      border-color: #BDC1C6;
+    .map-ctrl-btn:hover {
+      background: #FFFFFF;
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
     }
 
-    .gmap-chip.active {
-      background: #1A73E8;
-      border-color: #1A73E8;
+    .map-ctrl-btn.active {
+      background: var(--color-primary-blue);
       color: #FFFFFF;
-      font-weight: 600;
-      box-shadow: 0 4px 10px rgba(26, 115, 232, 0.35);
+      border-color: var(--color-primary-blue);
     }
 
-    /* Google Maps Top-Right Map / Satellite Switcher */
-    .gmap-layer-switch {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      z-index: 10;
-      background: #FFFFFF;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
-      padding: 3px;
-      display: flex;
-      gap: 3px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-
-    .gmap-layer-btn {
-      border: none;
-      background: transparent;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #5F6368;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .gmap-layer-btn.active {
-      background: #1A73E8;
-      color: #FFFFFF;
-      box-shadow: 0 1px 4px rgba(26, 115, 232, 0.3);
-    }
-
-    /* Google Maps Bottom-Right Navigation Dock */
-    .gmap-dock-controls {
-      position: absolute;
-      bottom: 24px;
-      right: 16px;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .gmap-dock-btn {
-      width: 40px;
-      height: 40px;
-      background: #FFFFFF;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      color: #5F6368;
-      font-size: 18px;
-      font-weight: 700;
-      transition: all 0.2s ease;
-    }
-
-    .gmap-dock-btn:hover {
-      background: #F8F9FA;
-      color: #1A73E8;
-      transform: scale(1.05);
-    }
-
-    .gmap-dock-zoom-group {
-      display: flex;
-      flex-direction: column;
-      background: #FFFFFF;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-
-    .gmap-dock-zoom-group .gmap-dock-btn {
-      border: none;
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    .gmap-dock-zoom-group .gmap-dock-btn:first-child {
-      border-bottom: 1px solid #E8EAED;
-    }
-
-    /* Google Maps Iconic Red Pin */
-    .gmap-marker-pin {
-      position: relative;
-      width: 34px;
-      height: 44px;
-      cursor: pointer;
-      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-      pointer-events: auto;
-      user-select: none;
-    }
-
-    .gmap-marker-pin svg {
-      width: 34px;
-      height: 44px;
-      display: block;
-    }
-
-    .gmap-search-submit {
-      margin-right: 6px;
-      cursor: pointer;
-    }
-
-    .gmap-dropdown-item.highlighted {
-      background: #F1F3F4;
-    }
-
-    .gmap-marker-pin:hover {
-      transform: scale(1.2) translateY(-6px);
-    }
-
-    .gmap-pin-pulse {
-      position: absolute;
-      bottom: -4px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 14px;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.35);
-      border-radius: 50%;
-      filter: blur(1px);
-    }
-
-    /* Floating Google Maps Place Card / Infowindow */
+    /* Floating Destination Intelligence Card */
     .map-intel-card {
       position: absolute;
       bottom: 24px;
-      left: 20px;
+      right: 24px;
       z-index: 10;
-      width: min(390px, calc(100% - 40px));
-      background: rgba(255, 255, 255, 0.98);
+      width: min(400px, calc(100% - 48px));
+      background: rgba(255, 255, 255, 0.97);
       backdrop-filter: blur(16px);
       border-radius: 16px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-      padding: 18px 20px;
+      border: 1px solid var(--color-border-subtle);
+      box-shadow: 0 20px 48px -10px rgba(16, 47, 64, 0.25);
+      padding: 22px;
       display: none;
-      animation: intelFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: intelFadeIn 0.3s var(--ease-editorial) forwards;
+    }
+
+    @keyframes intelFadeIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .map-intel-card.active {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
-    .intel-card-header {
+    .intel-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
     }
 
-    .intel-card-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #202124;
+    .intel-title {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-deep-navy);
       line-height: 1.25;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    .intel-card-coords {
-      font-size: 12px;
-      color: #5F6368;
+    .intel-sub {
+      font-size: 12.5px;
+      color: var(--color-muted-grey);
       margin-top: 3px;
-      font-family: monospace;
+    }
+
+    .intel-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      color: var(--color-muted-grey);
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px;
     }
 
     .intel-weather-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #E8F0FE;
-      border: 1px solid rgba(26, 115, 232, 0.2);
+      background: var(--color-soft-blue);
+      border: 1px solid rgba(23, 75, 99, 0.12);
       border-radius: 8px;
-      padding: 7px 12px;
+      padding: 8px 12px;
       font-size: 12.5px;
       font-weight: 600;
-      color: #1A73E8;
-    }
-
-    .intel-weather-pill .weather-temp {
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .intel-section-title {
-      font-size: 11.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #5F6368;
-      margin-top: 2px;
+      color: var(--color-deep-navy);
     }
 
     .intel-attractions-list {
+      list-style: none;
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .intel-attractions-list .intel-tag {
-      background: #F1F3F4;
-      color: #3C4043;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11.5px;
-      font-weight: 500;
-      border: 1px solid rgba(0, 0, 0, 0.06);
+    .intel-attraction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12.5px;
+      padding: 6px 10px;
+      background: var(--color-warm-ivory);
+      border-radius: 6px;
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .intel-attraction-name {
+      font-weight: 600;
+      color: var(--color-dark-text);
+    }
+
+    .intel-attraction-price {
+      font-weight: 700;
+      color: var(--color-terracotta);
     }
 
     .intel-actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       margin-top: 4px;
     }
 
-    .btn-intel-plan {
+    .intel-btn-primary {
       flex: 1;
-      min-width: 130px;
-      background: #1A73E8;
+      padding: 10px 16px;
+      background: var(--color-primary-blue);
       color: #FFFFFF;
       border: none;
-      border-radius: 20px;
-      padding: 9px 14px;
-      font-size: 12.5px;
-      font-weight: 600;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
       transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3);
     }
 
-    .btn-intel-plan:hover {
-      background: #1557B0;
+    .intel-btn-primary:hover {
+      background: var(--color-deep-navy);
       transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(26, 115, 232, 0.4);
     }
 
-    .btn-intel-fullscreen {
-      background: #F1F3F4;
-      color: #202124;
-      border: 1px solid #DADCE0;
-      border-radius: 20px;
-      padding: 9px 12px;
+    .intel-btn-secondary {
+      padding: 10px 14px;
+      background: transparent;
+      color: var(--color-primary-blue);
+      border: 1px solid var(--color-primary-blue);
+      border-radius: 8px;
+      font-family: var(--font-sans);
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
     }
 
-    .btn-intel-fullscreen:hover {
-      background: #E8EAED;
-      color: #1A73E8;
-      border-color: #BDC1C6;
-    }
-
-    .btn-intel-gmaps {
-      background: #E8F0FE;
-      color: #1A73E8;
-      border: 1px solid rgba(26, 115, 232, 0.25);
-      border-radius: 20px;
-      padding: 9px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s;
-    }
-
-    .btn-intel-gmaps:hover {
-      background: #D2E3FC;
-      border-color: #1A73E8;
+    .intel-btn-secondary:hover {
+      background: var(--color-soft-blue);
     }
 
     /* Map Custom Marker */
@@ -4160,10 +3946,9 @@
       <!-- Center Navigation Links -->
       <ul class="nav-links">
         <li><a href="#hero">Home</a></li>
-        <li><a href="#live-discovery">Discovery Map</a></li>
-        <li><a href="#intelligence">Supplier Intelligence</a></li>
-        <li><a href="#comparison">Compare Rates</a></li>
-        <li><a href="#plan-journey">Plan Journey</a></li>
+        <li><a href="#destinations">Explore Destinations</a></li>
+        <li><a href="#live-discovery">Live Discovery Map</a></li>
+        <li><a href="#plan-journey">Plan Your Journey</a></li>
         <li><a href="javascript:void(0)" id="navOpenMyTrips">My Trips <span class="nav-trip-count" id="navTripCountBadge" style="display:none; background:#D4AF37; color:#162D3C; font-size:10px; font-weight:800; border-radius:50%; padding:1px 6px; margin-left:2px;">0</span></a></li>
         <li><a href="javascript:void(0)" id="navOpenSavedPlaces">Saved Places</a></li>
         <li><a href="javascript:void(0)" id="navOpenAbout">About</a></li>
@@ -4225,8 +4010,8 @@
       </p>
 
       <div class="hero-cta-group">
-        <a href="#live-discovery" class="btn-primary-luxury">
-          <span>Explore Discovery Map</span>
+        <a href="#destinations" class="btn-primary-luxury">
+          <span>Explore Destinations</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>
@@ -4268,6 +4053,450 @@
         </div>
       </div>
 
+      <!-- Quick Destination Navigation Strip -->
+      <div class="hero-destinations-strip">
+        <span class="strip-label">Curated Enclaves</span>
+        <div class="strip-items">
+          <span class="strip-item active" onclick="window.location.href='./map_view.html?destination=Srinagar'">Kashmir Valleys</span>
+          <span class="strip-item" onclick="window.location.href='./map_view.html?destination=Jaipur'">Rajasthan Palaces</span>
+          <span class="strip-item" onclick="window.location.href='./map_view.html?destination=Alleppey'">Kerala Backwaters</span>
+          <span class="strip-item" onclick="window.location.href='./map_view.html?destination=Goa'">Goa Coastlines</span>
+          <span class="strip-item" onclick="window.location.href='./map_view.html?destination=Leh'">Ladakh Heights</span>
+          <span class="strip-item" onclick="window.location.href='./map_view.html?destination=Varanasi'">Varanasi Ghats</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       DESTINATION DISCOVERY SECTION ("Find Your Somewhere")
+       ======================================================== -->
+  <section class="destinations-section" id="destinations">
+    <div class="section-wrap">
+      <div class="section-header">
+        <div class="section-eyebrow">Destination Showcase</div>
+        <h2 class="section-heading">Find Your Somewhere.</h2>
+        <p class="section-lead">
+          From Himalayan escapes to tropical coastlines, discover the many sides of India across 110+ interconnected cities with zero supplier clutter.
+        </p>
+      </div>
+
+      <div class="destination-asym-grid">
+        <!-- 1. Kashmir (Large Editorial Feature) -->
+        <div class="dest-card dest-card-lg" onclick="window.location.href='./map_view.html?destination=Srinagar'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=1400&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Kashmir Dal Lake Shikara" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Northern Crown &bull; Himalayas</span>
+            <div class="dest-title">
+              <span>Kashmir</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Glide across mist-veiled waters on traditional cedarwood Shikaras, wander Mughal garden terraces, and awaken to snow-capped Pir Panjal ridges.
+            </p>
+            <div class="dest-meta">
+              <span>34 Verified Experiences</span>
+              <span>&bull;</span>
+              <span>Houseboats &amp; Pine Retreats</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Rajasthan & Jaipur (Asymmetrical Medium) -->
+        <div class="dest-card dest-card-md" onclick="window.location.href='./map_view.html?destination=Jaipur'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1000&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Rajasthan Palace Architecture" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Royal Heritage</span>
+            <div class="dest-title">
+              <span>Rajasthan &bull; Jaipur</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Immerse yourself in Jaipur’s pink sandstone courtyards, Udaipur’s shimmering lake palaces, and the golden Thar desert dunes.
+            </p>
+            <div class="dest-meta">
+              <span>68 Curated Stays</span>
+              <span>&bull;</span>
+              <span>Royal Havelis &amp; Forts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Delhi & NCR -->
+        <div class="dest-card dest-card-sm-1" onclick="window.location.href='./map_view.html?destination=Delhi'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="India Gate Delhi" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Imperial Capital</span>
+            <div class="dest-title">
+              <span>Delhi &bull; NCR</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Centuries of living history from Mughal sandstone ramparts to tree-lined colonial boulevards.
+            </p>
+            <div class="dest-meta">
+              <span>2,400+ Verified Places</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Agra & Taj Mahal -->
+        <div class="dest-card dest-card-sm-2" onclick="window.location.href='./map_view.html?destination=Agra'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Taj Mahal Agra" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Mughal Monumentalism</span>
+            <div class="dest-title">
+              <span>Agra</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              The timeless marble poetry of the Taj Mahal reflecting sunrise over the Yamuna River basin.
+            </p>
+            <div class="dest-meta">
+              <span>42 Curated Monuments &amp; Stays</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Mumbai -->
+        <div class="dest-card dest-card-sm-3" onclick="window.location.href='./map_view.html?destination=Mumbai'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Gateway of India Mumbai" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Arabian Sea Gateway</span>
+            <div class="dest-title">
+              <span>Mumbai</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Victorian Gothic seaside promenades, Art Deco skylines, and energetic cosmopolitan culinary corridors.
+            </p>
+            <div class="dest-meta">
+              <span>85 Harbor Stays &amp; Tours</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Kerala Backwaters -->
+        <div class="dest-card dest-card-sm-1" onclick="window.location.href='./map_view.html?destination=Alleppey'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Kerala Backwaters Houseboat" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Tropical Serenity</span>
+            <div class="dest-title">
+              <span>Kerala</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Tranquil emerald backwaters, sun-dappled coconut groves, and fragrant cardamom hill sanctuaries.
+            </p>
+            <div class="dest-meta">
+              <span>102 Verified Inventory</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Goa Coastlines -->
+        <div class="dest-card dest-card-sm-2" onclick="window.location.href='./map_view.html?destination=Goa'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Goa Coastline" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Coastal Living</span>
+            <div class="dest-title">
+              <span>Goa</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Golden palm-fringed sands, Portuguese heritage villas, and tranquil Arabian Sea sunsets.
+            </p>
+            <div class="dest-meta">
+              <span>34 Beachfront Stays</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. International Enclaves: Dubai & Santorini -->
+        <div class="dest-card dest-card-sm-3" onclick="window.location.href='./map_view.html?destination=Dubai'">
+          <div class="dest-media-wrap">
+            <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Dubai & Santorini International" class="dest-img">
+            <div class="dest-overlay"></div>
+          </div>
+          <div class="dest-content">
+            <span class="dest-tag">Global Enclaves</span>
+            <div class="dest-title">
+              <span>Dubai &bull; Santorini</span>
+              <div class="dest-arrow">&rarr;</div>
+            </div>
+            <p class="dest-desc">
+              Seamlessly connected international corridors from Burj Khalifa downtown to Santorini's cliffside Aegean caldera.
+            </p>
+            <div class="dest-meta">
+              <span>760+ Verified Luxury Offers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       EXPERIENCES SECTION ("Experiences Worth Remembering")
+       ======================================================== -->
+  <section class="experiences-section" id="experiences">
+    <div class="section-wrap">
+      <div class="section-header">
+        <div class="section-eyebrow">Curated Collections</div>
+        <h2 class="section-heading">Experiences Worth Remembering.</h2>
+        <p class="section-lead">
+          Immerse yourself in authentic journeys designed around the diverse spirit, living arts, and untamed beauty of India.
+        </p>
+      </div>
+
+      <div class="exp-grid">
+        <!-- Tile 1: Heritage & Culture -->
+        <div class="exp-tile" onclick="window.location.href='./map_view.html?filter=ATTRACTION'">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1600100397608-f010f4439c4a?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Heritage and Culture" class="exp-img">
+            <span class="exp-badge">Living Heritage</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Heritage &amp; Culture</h3>
+              <p class="exp-desc">
+                Step inside UNESCO world heritage sites, centuries-old stepwells, private palace tours, and classical performing arts.
+              </p>
+            </div>
+            <span class="exp-link">Explore 840+ Cultural Sites &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Tile 2: Adventure & Outdoors -->
+        <div class="exp-tile" onclick="window.location.href='./map_view.html?filter=ATTRACTION'">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Adventure & Outdoors" class="exp-img">
+            <span class="exp-badge">High Adrenaline</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Adventure &amp; Outdoors</h3>
+              <p class="exp-desc">
+                Rishikesh grade-IV white water rapids, high Himalayan pass crossings, Zanskar river treks, and desert safaris.
+              </p>
+            </div>
+            <span class="exp-link">Explore Outdoor Expeditions &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Tile 3: Nature & Wildlife -->
+        <div class="exp-tile" onclick="window.location.href='./map_view.html?filter=ATTRACTION'">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Nature & Wildlife" class="exp-img">
+            <span class="exp-badge">Wild India</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Nature &amp; Wildlife</h3>
+              <p class="exp-desc">
+                Track Royal Bengal Tigers in Ranthambore &amp; Jim Corbett, and discover one-horned rhinos in misty Kaziranga plains.
+              </p>
+            </div>
+            <span class="exp-link">Explore Wildlife Reserves &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Tile 4: Beaches & Islands -->
+        <div class="exp-tile" onclick="window.location.href='./map_view.html?filter=ATTRACTION'">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Beaches & Islands" class="exp-img">
+            <span class="exp-badge">Coastal Escape</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Beaches &amp; Islands</h3>
+              <p class="exp-desc">
+                Pristine white sands in Havelock Island, secluded cliffside coves in Varkala, and Arabian Sea luxury retreats in Goa.
+              </p>
+            </div>
+            <span class="exp-link">Explore Island Escapes &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Tile 5: Spiritual Journeys -->
+        <div class="exp-tile" onclick="window.location.href='./map_view.html?filter=ATTRACTION'">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Spiritual Journeys" class="exp-img">
+            <span class="exp-badge">Soulful Routes</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Spiritual Journeys</h3>
+              <p class="exp-desc">
+                Witness the timeless Ganga Aarti in Varanasi at dusk, meditate along the sacred banks of Rishikesh, and marvel at Madurai’s gopurams.
+              </p>
+            </div>
+            <span class="exp-link">Explore Sacred Pilgrimages &rarr;</span>
+          </div>
+        </div>
+
+        <!-- Tile 6: Food & Culinary Experiences -->
+        <div class="exp-tile" onclick="if (lenis) { lenis.scrollTo('#culinary', { duration: 1.15, offset: -24 }); } else { document.getElementById('culinary')?.scrollIntoView({ behavior: 'smooth' }); }">
+          <div class="exp-image-wrap">
+            <img src="https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Food & Culinary" class="exp-img">
+            <span class="exp-badge">Gastronomy</span>
+          </div>
+          <div class="exp-body">
+            <div>
+              <h3 class="exp-title">Food &amp; Culinary</h3>
+              <p class="exp-desc">
+                Awadhi royal slow-cooked banquets in Lucknow, coastal Malabar spice trails, and authentic street food safaris in Old Delhi.
+              </p>
+            </div>
+            <span class="exp-link">Explore Culinary Trails &rarr;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       STAYS & HOTELS SECTION: SANCTUARIES OF HOSPITALITY
+       ======================================================== -->
+  <section class="stays-section" id="stays">
+    <div class="section-wrap">
+      <div class="section-header">
+        <div class="section-eyebrow">Multi-Supplier Audited Inventory</div>
+        <h2 class="section-heading">Sanctuaries of Exceptional Hospitality.</h2>
+        <p class="section-lead">
+          Compare live supplier rates across India’s most distinguished palaces, waterfront sanctuaries, and boutique heritage havelis.
+        </p>
+      </div>
+
+      <div class="stays-grid">
+        <!-- Hotel 1: The Taj Mahal Palace, Mumbai -->
+        <div class="stay-card">
+          <div class="stay-media">
+            <img src="https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="The Taj Mahal Palace Mumbai" class="stay-img">
+            <div class="stay-star-badge">★ 5.0 &bull; Waterfront Legend</div>
+          </div>
+          <div class="stay-body">
+            <div>
+              <div class="stay-city">Mumbai &bull; Colaba</div>
+              <h3 class="stay-title">The Taj Mahal Palace</h3>
+              <p class="stay-description">
+                Iconic 1903 harbour landmark facing the Gateway of India. Butler service, sea-facing suites, and legendary royal dining.
+              </p>
+            </div>
+            <div class="stay-pricing">
+              <div class="price-tbo">
+                <span class="price-label">TBO Preferred</span>
+                <span class="price-amount">&#8377;38,500</span>
+              </div>
+              <div class="price-supplier-comp">
+                <div class="comp-label">Agoda: &#8377;42,200</div>
+                <div class="comp-saving">Save &#8377;3,700</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotel 2: The Oberoi Amarvilas, Agra -->
+        <div class="stay-card">
+          <div class="stay-media">
+            <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="The Oberoi Amarvilas Agra" class="stay-img">
+            <div class="stay-star-badge">★ 5.0 &bull; Taj View</div>
+          </div>
+          <div class="stay-body">
+            <div>
+              <div class="stay-city">Agra &bull; Taj East Gate</div>
+              <h3 class="stay-title">The Oberoi Amarvilas</h3>
+              <p class="stay-description">
+                Located just 600 metres from the Taj Mahal. Uninterrupted monument views from every private room and terrace.
+              </p>
+            </div>
+            <div class="stay-pricing">
+              <div class="price-tbo">
+                <span class="price-label">TBO Preferred</span>
+                <span class="price-amount">&#8377;46,000</span>
+              </div>
+              <div class="price-supplier-comp">
+                <div class="comp-label">Hotelbeds: &#8377;49,800</div>
+                <div class="comp-saving">Save &#8377;3,800</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotel 3: The Leela Palace, Udaipur -->
+        <div class="stay-card">
+          <div class="stay-media">
+            <img src="https://images.unsplash.com/photo-1615836245337-f5b9b2303f10?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="The Leela Palace Udaipur" class="stay-img">
+            <div class="stay-star-badge">★ 5.0 &bull; Lake Pichola</div>
+          </div>
+          <div class="stay-body">
+            <div>
+              <div class="stay-city">Udaipur &bull; Lake Pichola</div>
+              <h3 class="stay-title">The Leela Palace</h3>
+              <p class="stay-description">
+                Arrive by royal boat to an opulent palace adorned with Rajasthani Mewari craftsmanship and sweeping Aravalli vistas.
+              </p>
+            </div>
+            <div class="stay-pricing">
+              <div class="price-tbo">
+                <span class="price-label">TBO Preferred</span>
+                <span class="price-amount">&#8377;52,000</span>
+              </div>
+              <div class="price-supplier-comp">
+                <div class="comp-label">Booking.com: &#8377;56,500</div>
+                <div class="comp-saving">Save &#8377;4,500</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hotel 4: ITC Grand Bharat, Gurgaon -->
+        <div class="stay-card">
+          <div class="stay-media">
+            <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="ITC Grand Bharat" class="stay-img">
+            <div class="stay-star-badge">★ 5.0 &bull; Luxury Retreat</div>
+          </div>
+          <div class="stay-body">
+            <div>
+              <div class="stay-city">Delhi NCR &bull; Aravalli</div>
+              <h3 class="stay-title">ITC Grand Bharat</h3>
+              <p class="stay-description">
+                India's first all-suite luxury retreat. Palatial architecture, 27-hole Jack Nicklaus signature golf course, and wellness sanctuaries.
+              </p>
+            </div>
+            <div class="stay-pricing">
+              <div class="price-tbo">
+                <span class="price-label">TBO Preferred</span>
+                <span class="price-amount">&#8377;29,000</span>
+              </div>
+              <div class="price-supplier-comp">
+                <div class="comp-label">Expedia: &#8377;32,400</div>
+                <div class="comp-saving">Save &#8377;3,400</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -4579,6 +4808,246 @@
   </section>
 
   <!-- ========================================================
+       LOCAL FOOD & CULINARY DISCOVERY SECTION
+       ======================================================== -->
+  <section class="culinary-section" id="culinary">
+    <div class="section-wrap">
+      <div class="section-header">
+        <div class="section-eyebrow">A Taste of Every Destination</div>
+        <h2 class="section-heading">India, Savored Dish by Dish.</h2>
+        <p class="section-lead">
+          From royal slow-cooked Awadhi feasts to coastal Malabar spice trails, discover India through its ancient, unforgettable flavors.
+        </p>
+      </div>
+
+      <div class="culinary-grid">
+        <!-- 1. Lucknow -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Lucknow'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Lucknow Awadhi Cuisine" class="food-img">
+            <span class="food-region-badge">Lucknow &bull; Awadh</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Awadhi Royal Banquets</h3>
+            <div class="food-dishes">Galouti Kebabs &bull; Dum Biryani &bull; Sheermal</div>
+            <p class="food-desc">
+              Centuries-old royal recipes simmered gently over slow charcoal embers in heavy copper deghs.
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. Jaipur -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Jaipur'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Rajasthani Thali" class="food-img">
+            <span class="food-region-badge">Jaipur &bull; Marwar</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Royal Rajasthani Thali</h3>
+            <div class="food-dishes">Dal Baati Churma &bull; Gatte ki Sabzi &bull; Ker Sangri</div>
+            <p class="food-desc">
+              A feast served in traditional bronze kansa bowls, drenched in pure golden ghee and desert spices.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. Kerala -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Kochi'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1610057099431-d73a1c9d2f2f?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Kerala Traditional Sadya" class="food-img">
+            <span class="food-region-badge">Kerala &bull; Malabar</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Malabar Coastal Sadya</h3>
+            <div class="food-dishes">Banana Leaf Sadya &bull; Karimeen &bull; Appam Curry</div>
+            <p class="food-desc">
+              Freshly grated coconut, fragrant black pepper, and banana leaf dining alongside the backwaters.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4. Kolkata -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Kolkata'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Kolkata Cuisine" class="food-img">
+            <span class="food-region-badge">Kolkata &bull; Bengal</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Bengali Heritage &amp; Mishti</h3>
+            <div class="food-dishes">Kosha Mangsho &bull; Shorshe Ilish &bull; Mishti Doi</div>
+            <p class="food-desc">
+              Mustard-infused delicacies and artisanal cottage cheese sweets perfected over generations.
+            </p>
+          </div>
+        </div>
+
+        <!-- 5. Amritsar -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Amritsar'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Amritsari Kulcha" class="food-img">
+            <span class="food-region-badge">Amritsar &bull; Punjab</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Golden City Culinary</h3>
+            <div class="food-dishes">Stuffed Amritsari Kulcha &bull; Dal Makhani &bull; Lassi</div>
+            <p class="food-desc">
+              Flaky layered breads baked in tandoor ovens, accompanied by slow-simmered lentils and rich lassi.
+            </p>
+          </div>
+        </div>
+
+        <!-- 6. Hyderabad -->
+        <div class="food-card" onclick="window.location.href='./map_view.html?destination=Hyderabad'">
+          <div class="food-media">
+            <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80" onerror="this.src='./assets/hero_travel_background.jpg'" alt="Hyderabadi Dum Biryani" class="food-img">
+            <span class="food-region-badge">Hyderabad &bull; Deccan</span>
+          </div>
+          <div class="food-body">
+            <h3 class="food-name">Nizami Dum Biryani</h3>
+            <div class="food-dishes">Kacchi Dum Biryani &bull; Mirchi ka Salan &bull; Double ka Meetha</div>
+            <p class="food-desc">
+              Basmati rice layered with aromatic saffron and spices, sealed with dough in a royal clay handi.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       TRANSIT & CORRIDORS SECTION ("Corridors & Rail")
+       ======================================================== -->
+  <section class="transit-section" id="transit">
+    <div class="section-wrap">
+      <div class="section-header">
+        <div class="section-eyebrow">Interconnected Journeys</div>
+        <h2 class="section-heading">Corridors &amp; Rail.</h2>
+        <p class="section-lead">
+          Connecting heritage capitals, mountain getaways, and coastal sanctuaries through modern express routes and scenic railways.
+        </p>
+      </div>
+
+      <div class="transit-grid">
+        <!-- Card 1: Vande Bharat High-Speed Corridors -->
+        <div class="transit-card">
+          <div>
+            <div class="transit-icon-header">
+              <div class="transit-icon-badge">🚆</div>
+              <div>
+                <span class="transit-type">Semi-High-Speed Rail</span>
+                <h3 class="transit-title">Vande Bharat Express</h3>
+              </div>
+            </div>
+            <p class="transit-desc">
+              World-class executive travel gliding at up to 160 km/h with panoramic glass windows, revolving ergonomic seats, and gourmet dining.
+            </p>
+          </div>
+          <ul class="transit-routes-list">
+            <li class="route-item">
+              <span class="route-name">New Delhi &rarr; Varanasi Cantt</span>
+              <span class="route-time">8h 00m &bull; Daily</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Mumbai CSMT &rarr; Madgaon (Goa)</span>
+              <span class="route-time">7h 45m &bull; Scenic</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Bengaluru &rarr; Mysuru Express</span>
+              <span class="route-time">1h 45m &bull; Fast</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 2: Mountain Heritage Railways -->
+        <div class="transit-card">
+          <div>
+            <div class="transit-icon-header">
+              <div class="transit-icon-badge">🚂</div>
+              <div>
+                <span class="transit-type">UNESCO World Heritage</span>
+                <h3 class="transit-title">Mountain Toy Trains</h3>
+              </div>
+            </div>
+            <p class="transit-desc">
+              Timeless narrow-gauge railways winding through lush pine ridges, dramatic viaduct bridges, and mist-veiled valleys.
+            </p>
+          </div>
+          <ul class="transit-routes-list">
+            <li class="route-item">
+              <span class="route-name">Kalka &rarr; Shimla Heritage Line</span>
+              <span class="route-time">102 Tunnels</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Nilgiri Mountain Railway (Ooty)</span>
+              <span class="route-time">Rack &amp; Pinion</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Darjeeling Himalayan Railway</span>
+              <span class="route-time">Batasia Loop</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 3: Modern Airport Express & Metro -->
+        <div class="transit-card">
+          <div>
+            <div class="transit-icon-header">
+              <div class="transit-icon-badge">🚇</div>
+              <div>
+                <span class="transit-type">Urban Transit Arteries</span>
+                <h3 class="transit-title">Air-Rail Corridors</h3>
+              </div>
+            </div>
+            <p class="transit-desc">
+              Seamless connection between international airport hubs, business financial districts, and historic city centers without traffic friction.
+            </p>
+          </div>
+          <ul class="transit-routes-list">
+            <li class="route-item">
+              <span class="route-name">Delhi Airport Express Metro Line</span>
+              <span class="route-time">19m to City Center</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Mumbai Coastal Road &amp; Sea Link</span>
+              <span class="route-time">Direct Waterfront</span>
+            </li>
+            <li class="route-item">
+              <span class="route-name">Bengaluru Airport Metro Corridor</span>
+              <span class="route-time">Phase 2B Active</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Interactive Map Quick Access Banner -->
+      <div class="map-callout-banner">
+        <div class="map-callout-content">
+          <div class="map-callout-eyebrow">Integrated Travel Intelligence</div>
+          <h3 class="map-callout-title">Interactive Geographic Discovery &amp; Dynamic Planning</h3>
+          <p class="map-callout-desc">
+            Explore live weather forecasts, pan across 110+ verified Indian destinations, drop pins on any landmark, or let our multi-supplier engine calculate a calibrated 3-tier travel plan.
+          </p>
+          <div class="map-callout-actions">
+            <a href="#live-discovery" class="btn-primary-luxury">
+              <span>Explore Interactive Map ↓</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              </svg>
+            </a>
+
+            <a href="#plan-journey" class="btn-secondary-luxury">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+              <span>Dynamic Journey Planner ↓</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
        SECTION: LIVE INTERACTIVE DISCOVERY MAP CANVAS
        ======================================================== -->
   <section class="discovery-canvas-section" id="live-discovery">
@@ -4591,66 +5060,45 @@
         </p>
       </div>
 
-      <div class="map-canvas-wrapper" id="gmapWrapper">
-        <!-- Floating Google Maps Search & City Chips Container -->
-        <div class="gmap-floating-panel">
-          <div class="gmap-search-box">
-            <button class="gmap-search-btn gmap-search-submit" id="mapSearchSubmit" title="Search Place or Landmark" aria-label="Search">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </button>
+      <div class="map-canvas-wrapper">
+        <!-- Floating Autocomplete Search Bar -->
+        <div class="map-floating-search-bar">
+          <div class="map-search-input-wrap">
+            <svg class="map-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
             <input 
               type="text" 
-              class="gmap-search-input" 
+              class="map-search-input" 
               id="mapSearchInput" 
-              placeholder="Search Google Maps — Taj Mahal, Delhi, Goa, Pune, any landmark..." 
+              placeholder="Search any destination, monument, state or city..." 
               autocomplete="off"
-              spellcheck="false"
             >
-            <button class="gmap-search-btn" id="mapSearchClear" style="display:none;" title="Clear search">✕</button>
-            <button class="gmap-search-btn gmap-locate-btn" id="mapSearchLocate" title="Locate Me">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="3" fill="#1A73E8"></circle>
-              </svg>
-            </button>
-            <!-- Dropdown Results -->
-            <div class="gmap-search-dropdown" id="mapSearchDropdown"></div>
+            <button class="map-search-clear" id="mapSearchClear" aria-label="Clear search">&times;</button>
           </div>
+          <div class="map-search-dropdown" id="mapSearchDropdown"></div>
         </div>
 
-        <!-- Google Maps Top-Right Map / Satellite Switcher -->
-        <div class="gmap-layer-switch">
-          <button class="gmap-layer-btn active" id="mapLayerRoad" title="Google Road / Street Map">Map</button>
-          <button class="gmap-layer-btn" id="mapLayerSat" title="Satellite Imagery">Satellite</button>
-        </div>
-
-        <!-- Google Maps Bottom-Right Navigation Dock -->
-        <div class="gmap-dock-controls">
-          <button class="gmap-dock-btn" id="mapResetView" title="Recenter to Whole India">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          </button>
-          <button class="gmap-dock-btn" id="mapLocateMe" title="Your GPS Location">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#1A73E8"/></svg>
-          </button>
-          <div class="gmap-dock-zoom-group">
-            <button class="gmap-dock-btn" id="mapZoomIn" title="Zoom In">+</button>
-            <button class="gmap-dock-btn" id="mapZoomOut" title="Zoom Out">−</button>
+        <!-- Canvas Controls -->
+        <div class="map-canvas-controls">
+          <div class="map-layer-switcher">
+            <button class="map-control-btn active" id="mapLayerRoad" title="Streets View">Road</button>
+            <button class="map-control-btn" id="mapLayerSat" title="Satellite View">Satellite</button>
           </div>
-          <button class="gmap-dock-btn" id="mapFullscreen" title="Toggle Fullscreen">⛶</button>
+          <button class="map-control-btn" id="mapResetView" title="Reset View across India">Reset View</button>
+          <button class="map-control-btn" id="mapLocateMe" title="Pan to Your Location">Locate Me</button>
         </div>
 
-        <!-- Interactive MapLibre GL Canvas -->
+        <!-- Interactive WebGL Map -->
         <div id="landingDiscoveryMap"></div>
 
-        <!-- Google Maps Floating Place Card / Infowindow -->
-        <div class="map-intel-card active" id="mapIntelCard">
+        <!-- Floating Destination Intelligence Card -->
+        <div class="map-intel-card" id="mapIntelCard">
           <div class="intel-card-header">
             <div>
-              <div class="intel-card-title" id="intelTitle">New Delhi, NCR</div>
-              <div class="intel-card-coords" id="intelCoords">28.6139° N, 77.2090° E</div>
+              <div class="intel-card-title" id="intelTitle">Jaipur, Rajasthan</div>
+              <div class="intel-card-coords" id="intelCoords">26.9124° N, 75.7873° E</div>
             </div>
             <span class="price-status-badge badge-live" id="intelWeatherBadge">
               <span class="badge-dot"></span> Live Verified
@@ -4658,22 +5106,24 @@
           </div>
 
           <div class="intel-weather-pill" id="intelWeatherPill">
-            <span class="weather-temp" id="intelTemp">26°C</span>
-            <span class="weather-desc" id="intelCondition">Clear Sky • Humidity 35% • Wind 10 km/h</span>
+            <span class="weather-temp" id="intelTemp">28°C</span>
+            <span class="weather-desc" id="intelCondition">Sunny &bull; Humidity 34% &bull; Wind 8 km/h</span>
           </div>
 
-          
+          <div class="intel-section-title">Verified Regional Attractions</div>
+          <div class="intel-attractions-list" id="intelAttractions">
+            <span class="intel-tag">Amber Palace</span>
+            <span class="intel-tag">Hawa Mahal</span>
+            <span class="intel-tag">City Palace</span>
+            <span class="intel-tag">Jantar Mantar</span>
+          </div>
 
           <div class="intel-actions">
             <button class="btn-intel-plan" id="btnIntelPlan">
-              ⚡ Plan Journey to <span id="intelPlanDestName">New Delhi</span>
+              ⚡ Plan Journey to <span id="intelPlanDestName">Jaipur</span>
             </button>
-            <a href="./map_view.html?destination=New%20Delhi" class="btn-intel-fullscreen" id="btnIntelFull" target="_blank" rel="noopener">
+            <a href="./map_view.html?destination=Jaipur" class="btn-intel-fullscreen" id="btnIntelFull" target="_blank" rel="noopener">
               Open Full Inventory ↗
-            </a>
-            <a href="https://www.google.com/maps/search/?api=1&query=28.6139,77.2090" class="btn-intel-gmaps" id="btnIntelGmaps" target="_blank" rel="noopener" title="Open in Google Maps">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              <span>Google Maps ↗</span>
             </a>
           </div>
         </div>
@@ -4761,13 +5211,15 @@
         <textarea 
           id="aiPromptInput" 
           class="ai-assistant-textarea" 
-          placeholder="e.g. Planning a 4-day corporate leadership retreat to Bengaluru & Mysuru for 12 attendees with a budget of ₹1,50,000. Require 4-star accommodations and dedicated executive transit."
+          placeholder="e.g. Planning a 5-day cultural trip to Udaipur for 4 friends next month with a budget of ₹60,000. We prefer heritage hotels and private cabs."
         ></textarea>
         <div class="ai-prompt-chips">
           <span style="font-size: 11.5px; font-weight: 700; color: var(--color-muted-grey); align-self: center;">Try sample:</span>
-          <button type="button" class="ai-prompt-chip" data-sample="Corporate summit in New Delhi for 15 delegates for 3 days with ₹2,00,000 budget, 5-star hotel and executive transfers">Corporate Delhi 3 Days (₹2.0L)</button>
-          <button type="button" class="ai-prompt-chip" data-sample="Tech team offsite to Bengaluru for 8 guests, 4 days, premium business suites and private van">Tech Offsite Bengaluru (4 Days)</button>
-          <button type="button" class="ai-prompt-chip" data-sample="Multi-city financial corridor trip Mumbai to Pune for 4 executives, 2 days, luxury sedan">Executive Mumbai-Pune (2 Days)</button>
+          <button type="button" class="ai-prompt-chip" data-sample="Solo budget exploration in Jaipur for 2 days under ₹3,000 using express trains">Solo 2-Day Jaipur under ₹3k</button>
+          <button type="button" class="ai-prompt-chip" data-sample="12 college friends visiting Goa for 5 days with a budget of ₹1.2 Lakh total, beach villas and party hubs">12 Friends Goa 5 Days (₹1.2L)</button>
+          <button type="button" class="ai-prompt-chip" data-sample="Family vacation to Munnar Kerala with 4 adults and 2 children for 7 days, luxury tea garden resort and Innova cab">Family of 6 to Munnar (7 Days)</button>
+          <button type="button" class="ai-prompt-chip" data-sample="Luxury anniversary getaway to Srinagar Kashmir for 2 adults, 5 days, 5-star palace, Dal lake houseboat, private chauffeur">Luxury Couple Kashmir (5 Days)</button>
+          <button type="button" class="ai-prompt-chip" data-sample="Manali mountain trek for 4 friends, 4 days, ₹15,000 total budget, scenic views and adventure">4 Friends Manali Trek (₹15k)</button>
         </div>
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
           <button type="button" class="btn-primary-luxury" id="btnParseAiPrompt" style="padding: 12px 26px; font-size: 14px;">
@@ -4788,6 +5240,139 @@
     </div>
 
     <!-- 4. Destination Discovery Gallery (High-Impact Visual Cards) -->
+    <div class="dest-discovery-wrap">
+      <div class="dest-discovery-header">
+        <div>
+          <div class="section-eyebrow">Instant Inspiration</div>
+          <h3 style="font-family: var(--font-serif); font-size: 28px; color: var(--color-deep-navy); margin: 0;">Featured Enclaves Ready for Instant Planning</h3>
+        </div>
+        <p style="font-size: 13.5px; color: var(--color-muted-grey); margin: 0; max-width: 480px;">
+          Click any enclave to load certified route coordinates, live weather, and audited regional suppliers directly into your planner.
+        </p>
+      </div>
+
+      <div class="dest-grid-cards">
+        <!-- Card 1: Jaipur -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Jaipur, Rajasthan', 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=85" alt="Jaipur Rajasthan">
+            <span class="dest-card-badge">Royal Heritage</span>
+            <span class="dest-card-price-pill">From ₹3,800 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Rajasthan, India</div>
+              <h4 class="dest-card-title">Jaipur, The Pink City</h4>
+              <p class="dest-card-desc">Centuries-old Rajput fortresses, Amber Palace courtyards, and astronomical observatories.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>☀️ 28°C Sunny • Oct–Mar</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Srinagar -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Srinagar, Kashmir', 'https://images.unsplash.com/photo-1566833925252-a08046954dac?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1566833925252-a08046954dac?auto=format&fit=crop&w=1200&q=85" alt="Srinagar Kashmir">
+            <span class="dest-card-badge">Alpine Serenity</span>
+            <span class="dest-card-price-pill">From ₹4,500 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Jammu &amp; Kashmir</div>
+              <h4 class="dest-card-title">Srinagar &amp; Dal Lake</h4>
+              <p class="dest-card-desc">Carved cedarwood houseboats, Mughal pleasure gardens, and snow-draped Pir Panjal peaks.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>🌤️ 16°C Crisp • Apr–Oct</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Munnar -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Munnar, Kerala', 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1200&q=85" alt="Munnar Kerala">
+            <span class="dest-card-badge">Tea Sanctuaries</span>
+            <span class="dest-card-price-pill">From ₹3,200 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Kerala Western Ghats</div>
+              <h4 class="dest-card-title">Munnar Misty Hills</h4>
+              <p class="dest-card-desc">Rolling emerald tea estates, spice plantations, and Ayurvedic wellness hideaways.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>🌿 21°C Mist • Sep–May</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Goa -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Goa, India', 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1200&q=85" alt="Goa India">
+            <span class="dest-card-badge">Coastal &amp; Portuguese</span>
+            <span class="dest-card-price-pill">From ₹2,900 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Goan Coastline</div>
+              <h4 class="dest-card-title">Goa Sands &amp; Havelis</h4>
+              <p class="dest-card-desc">Golden sandy beaches, 16th-century Latin quarters of Fontainhas, and seafood trails.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>🌊 30°C Tropical • Nov–Feb</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Varanasi -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Varanasi, Uttar Pradesh', 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1200&q=85" alt="Varanasi Ganges">
+            <span class="dest-card-badge">Sacred Corridor</span>
+            <span class="dest-card-price-pill">From ₹2,400 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Uttar Pradesh</div>
+              <h4 class="dest-card-title">Varanasi Sacred Ghats</h4>
+              <p class="dest-card-desc">Sunrise boat journeys on Mother Ganga, Dashashwamedh evening aarti, and silk weavers.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>🪔 24°C Pleasant • Oct–Mar</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6: Leh Ladakh -->
+        <div class="dest-card-luxury" onclick="selectDestinationEnclave('Leh, Ladakh', 'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=1200&q=85')">
+          <div class="dest-card-thumb-wrap">
+            <img class="dest-card-thumb" src="https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=1200&q=85" alt="Leh Ladakh">
+            <span class="dest-card-badge">High Altitude</span>
+            <span class="dest-card-price-pill">From ₹5,200 / day</span>
+          </div>
+          <div class="dest-card-body">
+            <div>
+              <div class="dest-card-region">Ladakh Territory</div>
+              <h4 class="dest-card-title">Leh &amp; Pangong Tso</h4>
+              <p class="dest-card-desc">High-altitude Buddhist monasteries, Khardung La pass, and crystalline blue glacial lakes.</p>
+            </div>
+            <div class="dest-card-footer">
+              <span>🏔️ 12°C Alpine • May–Sep</span>
+              <button class="btn-card-select">Select Enclave &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 5. Elevated Planning Console (Step 1, Step 2, Step 3) -->
     <div style="max-width: 1240px; margin: 0 auto; padding: 0 24px;">
@@ -5371,14 +5956,14 @@
 
         <!-- Col 1: Destinations -->
         <div>
-          <h4 class="footer-col-title">Platform Features</h4>
+          <h4 class="footer-col-title">Destinations</h4>
           <ul class="footer-links">
-            <li><a href="#live-discovery">Live Discovery Map</a></li>
-            <li><a href="#intelligence">Supplier Intelligence</a></li>
-            <li><a href="#comparison">Sightseeing Diff Engine</a></li>
-            <li><a href="#plan-journey">AI Journey Planner</a></li>
-            <li><a href="./map_view.html">Multi-Supplier Map View</a></li>
-            <li><a href="./admin.html">Deduplication Admin</a></li>
+            <li><a href="./map_view.html?destination=Srinagar">Kashmir Valleys</a></li>
+            <li><a href="./map_view.html?destination=Jaipur">Rajasthan Palaces</a></li>
+            <li><a href="./map_view.html?destination=Alleppey">Kerala Backwaters</a></li>
+            <li><a href="./map_view.html?destination=Goa">Goan Shores</a></li>
+            <li><a href="./map_view.html?destination=Leh">Ladakh Highlands</a></li>
+            <li><a href="./map_view.html?destination=Varanasi">Varanasi Ghats</a></li>
           </ul>
         </div>
 
@@ -5399,9 +5984,9 @@
           <h4 class="footer-col-title">Curated Routes</h4>
           <ul class="footer-links">
             <li><a href="#experiences">Heritage Sanctuaries</a></li>
-            <li><a href="#intelligence">Dynamic Ranking</a></li>
-            <li><a href="#comparison">Diff Engine</a></li>
-            <li><a href="#live-discovery">Discovery Map</a></li>
+            <li><a href="#culinary">Culinary Trails</a></li>
+            <li><a href="#transit">Vande Bharat Corridors</a></li>
+            <li><a href="#transit">Mountain Toy Trains</a></li>
             <li><a href="#stays">5-Star Palace Stays</a></li>
           </ul>
         </div>
@@ -5639,19 +6224,15 @@
       );
 
       // Hero Title Line-by-Line Reveal (Awwwards Mask Effect)
-      heroTL.fromTo('.hero-title-inner',
-        { y: '120%', rotate: 2, opacity: 0 },
-        {
-          y: 0,
-          rotate: 0,
-          opacity: 1,
-          duration: 1.1,
-          stagger: 0.14,
-          ease: 'power3.out',
-          clearProps: 'transform,opacity'
-        },
-        0.5
-      );
+      heroTL.to('.hero-title-inner', {
+        y: 0,
+        rotate: 0,
+        opacity: 1,
+        duration: 1.1,
+        stagger: 0.14,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity'
+      }, 0.5);
 
       // Hero Lead
       heroTL.fromTo('.hero-lead',
@@ -5720,7 +6301,73 @@
       });
 
       // ========================================================
-      // 2. MULTI-SUPPLIER INTELLIGENCE ENGINE SCROLL REVEAL
+      // 2. DESTINATION SHOWCASE SCROLL REVEAL
+      // ========================================================
+      const destTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#destinations',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      destTL.fromTo('#destinations .section-eyebrow, #destinations .section-heading, #destinations .section-lead',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' }
+      );
+
+      destTL.fromTo('.destination-asym-grid .dest-card',
+        { y: 32, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.07, ease: 'power2.out', clearProps: 'transform,opacity' },
+        '-=0.4'
+      );
+
+      // ========================================================
+      // 3. CURATED EXPERIENCES (COLLECTIONS) SCROLL REVEAL
+      // ========================================================
+      const expTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#experiences',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      expTL.fromTo('#experiences .section-eyebrow, #experiences .section-heading, #experiences .section-lead',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' }
+      );
+
+      expTL.fromTo('.exp-grid .exp-tile',
+        { y: 32, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.07, ease: 'power2.out', clearProps: 'transform,opacity' },
+        '-=0.4'
+      );
+
+      // ========================================================
+      // 4. VERIFIED STAYS SCROLL REVEAL
+      // ========================================================
+      const staysTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#stays',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      staysTL.fromTo('#stays .section-eyebrow, #stays .section-heading, #stays .section-lead',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' }
+      );
+
+      staysTL.fromTo('.stays-grid .stay-card',
+        { y: 32, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.07, ease: 'power2.out', clearProps: 'transform,opacity' },
+        '-=0.4'
+      );
+
+      // ========================================================
+      // 5. MULTI-SUPPLIER INTELLIGENCE ENGINE SCROLL REVEAL
       // ========================================================
       const intelTL = gsap.timeline({
         scrollTrigger: {
@@ -5816,7 +6463,75 @@
         }
       }
 
+      // ========================================================
+      // 7. CULINARY HERITAGE SCROLL REVEAL
+      // ========================================================
+      const culinaryTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#culinary',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
+        }
+      });
 
+      culinaryTL.fromTo('#culinary .section-eyebrow, #culinary .section-heading, #culinary .section-lead',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' }
+      );
+
+      culinaryTL.fromTo('.culinary-asym-grid .food-card',
+        { y: 32, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.07, ease: 'power2.out', clearProps: 'transform,opacity' },
+        '-=0.4'
+      );
+
+      // ========================================================
+      // 8. TRANSIT CORRIDORS SCROLL REVEAL
+      // ========================================================
+      const transitTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#transit',
+          start: 'top 82%',
+          toggleActions: 'play none none none'
+        }
+      });
+
+      transitTL.fromTo('#transit .section-eyebrow, #transit .section-heading, #transit .section-lead',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, stagger: 0.08, ease: 'power2.out', clearProps: 'transform,opacity' }
+      );
+
+      transitTL.fromTo('.transit-grid > *',
+        { y: 32, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.07, ease: 'power2.out', clearProps: 'transform,opacity' },
+        '-=0.4'
+      );
+
+      // ========================================================
+      // 9. SUBTLE MAGNETIC MICRO-INTERACTIONS (Fluid & Natural)
+      // ========================================================
+      const magneticTargets = document.querySelectorAll('.btn-primary-luxury, .btn-nav-cta, .btn-secondary-luxury');
+      magneticTargets.forEach(el => {
+        el.addEventListener('mousemove', (e) => {
+          const rect = el.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+          gsap.to(el, {
+            x: x * 0.18,
+            y: y * 0.18,
+            duration: 0.25,
+            ease: 'power2.out'
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          gsap.to(el, {
+            x: 0,
+            y: 0,
+            duration: 0.45,
+            ease: 'power2.out'
+          });
+        });
+      });
 
     } else {
       // Graceful CSS Fallback when reduced motion or no GSAP
@@ -5826,11 +6541,11 @@
       if (pLeft) pLeft.style.transform = 'none';
       if (pRight) pRight.style.transform = 'none';
 
-      document.querySelectorAll('.hero-title-inner').forEach(el => {
+      document.querySelectorAll('.hero-title-inner, .exp-tile, .dest-card, .stay-card, .food-card, .transit-stat-card, .transit-rail-card').forEach(el => {
         el.style.transform = 'none';
         el.style.opacity = '1';
       });
-      document.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta-group').forEach(el => {
+      document.querySelectorAll('.hero-eyebrow, .hero-lead, .hero-cta-group, .hero-destinations-strip').forEach(el => {
         el.style.opacity = '1';
       });
     }
@@ -5946,7 +6661,7 @@
     });
 
     // 4. API Base URL Resolution
-    const API_BASE = (window.location.port === '8000') 
+    const API_BASE = (window.location.protocol === 'http:' || window.location.protocol === 'https:') 
       ? '/api/v1' 
       : 'http://127.0.0.1:8000/api/v1';
 
@@ -6178,162 +6893,15 @@
     });
 
     // ========================================================
-    // 9. GOOGLE MAPS PRECISION INTERACTIVE DISCOVERY CANVAS
+    // 9. MAPLIBRE GL INTERACTIVE DISCOVERY MAP CANVAS
     // ========================================================
     let landingDiscoveryMap = null;
     let landingMapMarker = null;
     let currentMapLocation = {
-      name: 'New Delhi, NCR',
-      lat: 28.6139,
-      lon: 77.2090
+      name: 'Jaipur, Rajasthan',
+      lat: 26.9124,
+      lon: 75.7873
     };
-
-    const GMAP_ROAD_STYLE = 'https://tiles.openfreemap.org/styles/bright';
-    const GMAP_SAT_STYLE = {
-      version: 8,
-      sources: {
-        'esri-satellite': {
-          type: 'raster',
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          attribution: 'Tiles &copy; Esri'
-        }
-      },
-      layers: [{ id: 'esri-satellite-layer', type: 'raster', source: 'esri-satellite' }]
-    };
-
-    // =========================================================================
-    // GOOGLE MAPS PRECISION DISCOVERY ENGINE & GEOCODING SYSTEM
-    // =========================================================================
-    const GMAP_CORE_CATALOG = [
-      // Top Monuments & Cultural Icons
-      { name: 'Taj Mahal', region: 'Agra, Uttar Pradesh', lat: 27.1751, lon: 78.0421, zoom: 16.5, icon: '🕌', type: 'Historical Monument', desc: 'UNESCO World Heritage • Iconic White Marble Mausoleum', aliases: ['taj mahal', 'taj', 'mumtaz mahal'] },
-      { name: 'India Gate', region: 'New Delhi', lat: 28.6129, lon: 77.2295, zoom: 16.5, icon: '🏛️', type: 'National Memorial', desc: 'All India War Memorial • Kartavya Path, New Delhi', aliases: ['india gate', 'amar jawan jyoti'] },
-      { name: 'Connaught Place', region: 'New Delhi', lat: 28.6317, lon: 77.2193, zoom: 15.5, icon: '🏢', type: 'Commercial Center', desc: 'Rajiv Chowk Georgian Commercial Hub • Central Delhi', aliases: ['connaught place', 'cp', 'rajiv chowk'] },
-      { name: 'Red Fort', region: 'Old Delhi', lat: 28.6562, lon: 77.2410, zoom: 16.0, icon: '🏰', type: 'UNESCO World Heritage', desc: 'Lal Qila Mughal Imperial Residence • Chandni Chowk', aliases: ['red fort', 'lal qila', 'lal kila'] },
-      { name: 'Qutub Minar', region: 'New Delhi', lat: 28.5244, lon: 77.1855, zoom: 16.5, icon: '🗼', type: 'UNESCO World Heritage', desc: 'Historic 73m Minaret & Iron Pillar Complex, Mehrauli', aliases: ['qutub minar', 'qutab minar', 'qutub'] },
-      { name: 'Gateway of India', region: 'Mumbai, Maharashtra', lat: 18.9220, lon: 72.8347, zoom: 16.5, icon: '⚓', type: 'Iconic Landmark', desc: 'Historic 26m Basalt Arch on Arabian Sea Harbor', aliases: ['gateway of india', 'gateway', 'colaba'] },
-      { name: 'Marine Drive', region: 'Mumbai, Maharashtra', lat: 18.9432, lon: 72.8230, zoom: 15.5, icon: '🌊', type: 'Coastal Promenade', desc: "Queen's Necklace • 3.6km C-shaped Boulevard along Arabian Sea", aliases: ['marine drive', 'queens necklace'] },
-      { name: 'Hawa Mahal', region: 'Jaipur, Rajasthan', lat: 26.9239, lon: 75.8267, zoom: 16.5, icon: '🪟', type: 'Palace of Winds', desc: 'Iconic 5-Story Pink Sandstone 953-Jharokha Facade', aliases: ['hawa mahal', 'palace of winds'] },
-      { name: 'Amer Fort', region: 'Amer, Jaipur', lat: 26.9855, lon: 75.8513, zoom: 16.0, icon: '🏰', type: 'Hilltop Fortress', desc: 'Majestic Rajput Palace & Sheesh Mahal on Maota Lake', aliases: ['amer fort', 'amber fort', 'sheesh mahal'] },
-      { name: 'City Palace Jaipur', region: 'Jaipur, Rajasthan', lat: 26.9258, lon: 75.8237, zoom: 16.5, icon: '👑', type: 'Royal Residence', desc: 'Chandra Mahal & Mubarak Mahal Palace Complex', aliases: ['city palace jaipur'] },
-      { name: 'Lake Pichola', region: 'Udaipur, Rajasthan', lat: 24.5760, lon: 73.6800, zoom: 15.0, icon: '⛵', type: 'Scenic Lake', desc: 'Lake Palace (Taj Lake Palace) & Jag Mandir Island Sanctuary', aliases: ['lake pichola', 'pichola'] },
-      { name: 'Golden Temple', region: 'Amritsar, Punjab', lat: 31.6200, lon: 74.8765, zoom: 16.5, icon: '✨', type: 'Spiritual Sanctuary', desc: 'Sri Harmandir Sahib & Amrit Sarovar Holy Pool', aliases: ['golden temple', 'harmandir sahib', 'darbar sahib'] },
-      { name: 'Kashi Vishwanath', region: 'Varanasi, Uttar Pradesh', lat: 25.3109, lon: 83.0107, zoom: 16.5, icon: '🕉️', type: 'Sacred Jyotirlinga', desc: 'Holy Shiva Temple Corridor along the River Ganges', aliases: ['kashi vishwanath', 'vishwanath temple', 'kashi'] },
-      { name: 'Assi Ghat', region: 'Varanasi, Uttar Pradesh', lat: 25.2882, lon: 83.0062, zoom: 16.0, icon: '🪔', type: 'Sacred River Ghat', desc: 'Southernmost Sacred Ganga Ghat & Subah-e-Banaras Aarti', aliases: ['assi ghat'] },
-      { name: 'Calangute Beach', region: 'North Goa', lat: 15.5439, lon: 73.7553, zoom: 15.0, icon: '🏖️', type: 'Golden Beach', desc: 'Queen of Beaches • Water Sports & Coastal Promenade', aliases: ['calangute', 'calangute beach'] },
-      { name: 'Baga Beach', region: 'North Goa', lat: 15.5553, lon: 73.7517, zoom: 15.0, icon: '🌊', type: 'Coastal Beach', desc: 'Lively Shoreline, Nightlife & Water Sports Hub', aliases: ['baga', 'baga beach'] },
-      { name: 'Anjuna Beach', region: 'North Goa', lat: 15.5800, lon: 73.7420, zoom: 15.0, icon: '🌴', type: 'Rocky Shoreline', desc: 'Flea Market, Red Cliffs & Coastal Cafes', aliases: ['anjuna', 'anjuna beach'] },
-      { name: 'Palolem Beach', region: 'South Goa', lat: 15.0100, lon: 74.0232, zoom: 15.0, icon: '🏖️', type: 'Scenic Bay', desc: 'Crescent White Sand Beach, Dolphin Cruises & Palm Groves', aliases: ['palolem', 'palolem beach'] },
-      { name: 'Dal Lake', region: 'Srinagar, Kashmir', lat: 34.1167, lon: 74.8667, zoom: 14.5, icon: '🚣', type: 'Alpine Lake', desc: 'Traditional Cedarwood Shikaras & Floating Gardens', aliases: ['dal lake', 'shikara'] },
-      { name: 'Hampi Ruins', region: 'Vijayanagara, Karnataka', lat: 15.3350, lon: 76.4600, zoom: 14.5, icon: '🗿', type: 'UNESCO World Heritage', desc: 'Ancient Vijayanagara Empire Stone Chariot & Virupaksha Temple', aliases: ['hampi', 'hampi ruins', 'virupaksha'] },
-      { name: 'Charminar', region: 'Hyderabad, Telangana', lat: 17.3616, lon: 78.4747, zoom: 16.5, icon: '🕌', type: 'Historical Monument', desc: '1591 Four-Minaret Monument & Laad Bazaar Bangles', aliases: ['charminar'] },
-      { name: 'Victoria Memorial', region: 'Kolkata, West Bengal', lat: 22.5448, lon: 88.3426, zoom: 16.0, icon: '🏛️', type: 'Historic Monument', desc: 'Grand British Colonial White Marble Museum & Gardens', aliases: ['victoria memorial'] },
-      { name: 'Howrah Bridge', region: 'Kolkata, West Bengal', lat: 22.5851, lon: 88.3468, zoom: 15.5, icon: '🌉', type: 'Iconic Bridge', desc: 'Rabindra Setu Cantilever Bridge across the Hooghly River', aliases: ['howrah bridge', 'howrah'] },
-
-      // Major Hubs, Metros & Tourist Cities
-      { name: 'New Delhi', region: 'Delhi NCR', lat: 28.6139, lon: 77.2090, zoom: 12.5, icon: '📍', type: 'National Capital', desc: 'Northern Commercial & Executive Hub', aliases: ['delhi', 'new delhi', 'ncr'] },
-      { name: 'Mumbai', region: 'Maharashtra', lat: 19.0760, lon: 72.8777, zoom: 12.5, icon: '📍', type: 'Financial Capital', desc: 'Western Commercial Gateway & Coastal Metropolis', aliases: ['mumbai', 'bombay'] },
-      { name: 'Goa', region: 'Goa', lat: 15.2993, lon: 74.1240, zoom: 11.0, icon: '📍', type: 'Coastal State', desc: 'Golden Sand Coastline, Portuguese Heritage & Sunsets', aliases: ['goa', 'panaji', 'north goa', 'south goa'] },
-      { name: 'Pune', region: 'Maharashtra', lat: 18.5204, lon: 73.8567, zoom: 13.0, icon: '📍', type: 'Metro Hub', desc: 'Oxford of the East & Auto-Tech Corridor, Maharashtra', aliases: ['pune', 'poona'] },
-      { name: 'Bengaluru', region: 'Karnataka', lat: 12.9716, lon: 77.5946, zoom: 12.5, icon: '📍', type: 'Technology Corridor', desc: 'Silicon Valley of India & Garden City', aliases: ['bengaluru', 'bangalore', 'blr'] },
-      { name: 'Hyderabad', region: 'Telangana', lat: 17.3850, lon: 78.4867, zoom: 12.5, icon: '📍', type: 'Cyber Hub', desc: 'City of Pearls & Southern IT Capital', aliases: ['hyderabad', 'secunderabad'] },
-      { name: 'Chennai', region: 'Tamil Nadu', lat: 13.0827, lon: 80.2707, zoom: 12.5, icon: '📍', type: 'Metropolitan Gateway', desc: 'Coromandel Coastal Commercial Center', aliases: ['chennai', 'madras'] },
-      { name: 'Kolkata', region: 'West Bengal', lat: 22.5726, lon: 88.3639, zoom: 12.5, icon: '📍', type: 'Eastern Hub', desc: 'City of Joy & Eastern River Port', aliases: ['kolkata', 'calcutta'] },
-      { name: 'Jaipur', region: 'Rajasthan', lat: 26.9124, lon: 75.7873, zoom: 13.0, icon: '📍', type: 'Pink City', desc: 'Heritage Capital of Rajasthan & Golden Triangle', aliases: ['jaipur'] },
-      { name: 'Udaipur', region: 'Rajasthan', lat: 24.5854, lon: 73.7125, zoom: 13.0, icon: '📍', type: 'City of Lakes', desc: 'Romantic Palaces on Lake Pichola', aliases: ['udaipur'] },
-      { name: 'Jodhpur', region: 'Rajasthan', lat: 26.2389, lon: 73.0243, zoom: 13.0, icon: '📍', type: 'Blue City', desc: 'Mehrangarh Fortress & Thar Desert Gateway', aliases: ['jodhpur'] },
-      { name: 'Jaisalmer', region: 'Rajasthan', lat: 26.9157, lon: 70.9083, zoom: 13.0, icon: '📍', type: 'Golden City', desc: 'Yellow Sandstone Living Fort & Sam Sand Dunes', aliases: ['jaisalmer'] },
-      { name: 'Agra', region: 'Uttar Pradesh', lat: 27.1767, lon: 78.0081, zoom: 13.0, icon: '📍', type: 'Mughal Heritage City', desc: 'Home to Taj Mahal, Agra Fort & Fatehpur Sikri', aliases: ['agra'] },
-      { name: 'Varanasi', region: 'Uttar Pradesh', lat: 25.3176, lon: 82.9739, zoom: 13.0, icon: '📍', type: 'Spiritual Epicenter', desc: 'Sacred Ganges Ghats with Ancient Aarti Ceremonies', aliases: ['varanasi', 'banaras', 'kashi'] },
-      { name: 'Amritsar', region: 'Punjab', lat: 31.6340, lon: 74.8723, zoom: 13.0, icon: '📍', type: 'Spiritual Hub', desc: 'Golden Temple & Historic Culinary Haven', aliases: ['amritsar'] },
-      { name: 'Srinagar', region: 'Jammu & Kashmir', lat: 34.0837, lon: 74.7973, zoom: 13.0, icon: '📍', type: 'Valley Paradise', desc: 'Dal Lake Shikaras & Snowcapped Pir Panjal', aliases: ['srinagar', 'kashmir'] },
-      { name: 'Leh', region: 'Ladakh', lat: 34.1526, lon: 77.5771, zoom: 13.0, icon: '📍', type: 'High Altitude Hub', desc: 'Trans-Himalayan Monasteries & Khardung La Pass', aliases: ['leh', 'ladakh'] },
-      { name: 'Manali', region: 'Himachal Pradesh', lat: 32.2432, lon: 77.1892, zoom: 13.5, icon: '📍', type: 'Himalayan Resort', desc: 'Beas River, Solang Valley & Rohtang Heights', aliases: ['manali'] },
-      { name: 'Shimla', region: 'Himachal Pradesh', lat: 31.1048, lon: 77.1734, zoom: 13.5, icon: '📍', type: 'Hill Station', desc: 'Colonial Ridge, Mall Road & Pine Forests', aliases: ['shimla'] },
-      { name: 'Rishikesh', region: 'Uttarakhand', lat: 30.0869, lon: 78.2676, zoom: 13.5, icon: '📍', type: 'Yoga Capital', desc: 'Ganges White-Water Rafting & Foothills', aliases: ['rishikesh'] },
-      { name: 'Haridwar', region: 'Uttarakhand', lat: 29.9457, lon: 78.1642, zoom: 13.5, icon: '📍', type: 'Holy Pilgrimage', desc: 'Har Ki Pauri Holy Dip & Evening Ganga Aarti', aliases: ['haridwar'] },
-      { name: 'Nainital', region: 'Uttarakhand', lat: 29.3919, lon: 79.4542, zoom: 13.5, icon: '📍', type: 'Lake District', desc: 'Naini Lake, Boating & Himalayan Viewpoints', aliases: ['nainital'] },
-      { name: 'Mussoorie', region: 'Uttarakhand', lat: 30.4598, lon: 78.0644, zoom: 13.5, icon: '📍', type: 'Queen of Hills', desc: 'Kempty Falls, Mall Road & Doon Valley Views', aliases: ['mussoorie'] },
-      { name: 'Kochi', region: 'Kerala', lat: 9.9312, lon: 76.2673, zoom: 13.0, icon: '📍', type: 'Spice Port', desc: 'Chinese Fishing Nets, Fort Kochi & Spices', aliases: ['kochi', 'cochin'] },
-      { name: 'Alleppey', region: 'Kerala', lat: 9.4981, lon: 76.3388, zoom: 13.0, icon: '📍', type: 'Backwaters Sanctuary', desc: 'Luxury Houseboats & Palm-Fringed Lagoons', aliases: ['alleppey', 'alappuzha'] },
-      { name: 'Munnar', region: 'Kerala', lat: 10.0889, lon: 77.0595, zoom: 13.0, icon: '📍', type: 'Tea Garden Haven', desc: 'Misty Rolling Green Tea Plantations', aliases: ['munnar'] },
-      { name: 'Ooty', region: 'Tamil Nadu', lat: 11.4102, lon: 76.6950, zoom: 13.5, icon: '📍', type: 'Nilgiri Hill Station', desc: 'Nilgiri Mountain Railway & Botanical Gardens', aliases: ['ooty', 'udhagamandalam'] },
-      { name: 'Mysore', region: 'Karnataka', lat: 12.2958, lon: 76.6394, zoom: 13.0, icon: '📍', type: 'Palace City', desc: 'Illuminated Mysore Royal Palace & Chamundi Hill', aliases: ['mysore', 'mysuru'] },
-      { name: 'Darjeeling', region: 'West Bengal', lat: 27.0410, lon: 88.2663, zoom: 13.5, icon: '📍', type: 'Himalayan Ridge', desc: 'Kanchenjunga Sunrise & Heritage Toy Train', aliases: ['darjeeling'] },
-      { name: 'Gangtok', region: 'Sikkim', lat: 27.3389, lon: 88.6065, zoom: 13.5, icon: '📍', type: 'Mountain City', desc: 'Enchey Monastery & Tsomgo Lake Gateway', aliases: ['gangtok'] },
-      { name: 'Ahmedabad', region: 'Gujarat', lat: 23.0225, lon: 72.5714, zoom: 12.5, icon: '📍', type: 'Heritage Metropolis', desc: 'Sabarmati Ashram & UNESCO Walled City', aliases: ['ahmedabad', 'amdavad'] },
-      { name: 'Surat', region: 'Gujarat', lat: 21.1702, lon: 72.8311, zoom: 12.5, icon: '📍', type: 'Diamond City', desc: 'Textile Capital & Tapi Riverfront', aliases: ['surat'] },
-      { name: 'Lucknow', region: 'Uttar Pradesh', lat: 26.8467, lon: 80.9462, zoom: 12.5, icon: '📍', type: 'City of Nawabs', desc: 'Bara Imambara, Awadhi Cuisine & Chikan Embroidery', aliases: ['lucknow'] },
-      { name: 'Indore', region: 'Madhya Pradesh', lat: 22.7196, lon: 75.8577, zoom: 12.5, icon: '📍', type: 'Commercial City', desc: 'Rajwada Palace & Sarafa Night Food Market', aliases: ['indore'] },
-      { name: 'Bhopal', region: 'Madhya Pradesh', lat: 23.2599, lon: 77.4126, zoom: 12.5, icon: '📍', type: 'City of Lakes', desc: 'Upper Lake & Sanchi Stupa Gateway', aliases: ['bhopal'] },
-      { name: 'Chandigarh', region: 'Chandigarh', lat: 30.7333, lon: 76.7794, zoom: 13.0, icon: '📍', type: 'Planned City', desc: 'Rock Garden & Sukhna Lake', aliases: ['chandigarh'] },
-      { name: 'Noida', region: 'Uttar Pradesh', lat: 28.5355, lon: 77.3910, zoom: 13.0, icon: '📍', type: 'Tech Hub NCR', desc: 'Corporate Expressway & Modern Townships', aliases: ['noida'] },
-      { name: 'Gurugram', region: 'Haryana', lat: 28.4595, lon: 77.0266, zoom: 13.0, icon: '📍', type: 'Millennium City', desc: 'Cyber City & High-Rise Corporate Corridor', aliases: ['gurugram', 'gurgaon'] },
-      { name: 'Pondicherry', region: 'Puducherry', lat: 11.9416, lon: 79.8083, zoom: 13.5, icon: '📍', type: 'French Quarter', desc: 'Promenade Beach & Auroville Sanctuary', aliases: ['pondicherry', 'puducherry'] },
-      { name: 'Dubai', region: 'UAE', lat: 25.2048, lon: 55.2708, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Burj Khalifa, Palm Jumeirah & Desert Luxury', aliases: ['dubai'] },
-      { name: 'Singapore', region: 'Singapore', lat: 1.3521, lon: 103.8198, zoom: 12.0, icon: '📍', type: 'Global City', desc: 'Marina Bay Sands & Gardens by the Bay', aliases: ['singapore'] },
-      { name: 'London', region: 'United Kingdom', lat: 51.5074, lon: -0.1278, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Thames River, Big Ben & West End', aliases: ['london'] },
-      { name: 'Paris', region: 'France', lat: 48.8566, lon: 2.3522, zoom: 12.0, icon: '📍', type: 'City of Light', desc: 'Eiffel Tower, Louvre Museum & Seine', aliases: ['paris'] },
-      { name: 'New York', region: 'USA', lat: 40.7128, lon: -74.0060, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Manhattan Skyline, Times Square & Central Park', aliases: ['new york', 'nyc'] }
-    ];
-
-    function scoreLocationMatch(item, query) {
-      if (!item || !query) return 0;
-      const qNorm = query.toLowerCase().trim();
-      if (!qNorm) return 0;
-
-      const name = (item.name || '').toLowerCase().trim();
-      const region = (item.region || '').toLowerCase().trim();
-      const aliases = (item.aliases || []).map(a => a.toLowerCase().trim());
-
-      // 1. Exact Match on name or alias
-      if (name === qNorm || aliases.includes(qNorm)) return 1000;
-
-      // 2. Name Starts With Query
-      if (name.startsWith(qNorm)) return 850;
-
-      // 3. Alias Starts With Query
-      if (aliases.some(a => a.startsWith(qNorm))) return 820;
-
-      // 4. Any Word in Name Equals Query
-      const words = name.split(/\s+/);
-      if (words.some(w => w === qNorm)) return 800;
-
-      // 5. Any Word in Name Starts With Query
-      if (words.some(w => w.startsWith(qNorm))) return 700;
-
-      // 6. Any Word in Alias Starts With Query
-      for (const a of aliases) {
-        const aWords = a.split(/\s+/);
-        if (aWords.some(w => w === qNorm)) return 780;
-        if (aWords.some(w => w.startsWith(qNorm))) return 680;
-      }
-
-      // 7. Substring in Name (at least 3 characters)
-      if (qNorm.length >= 3 && name.includes(qNorm)) return 550;
-
-      // 8. Region Match
-      if (region === qNorm) return 400;
-      if (region.startsWith(qNorm)) return 350;
-      if (qNorm.length >= 3 && region.includes(qNorm)) return 250;
-
-      return 0;
-    }
-
-    function createGoogleRedPin() {
-      const el = document.createElement('div');
-      el.className = 'gmap-marker-pin';
-      el.title = 'Selected Location';
-      el.innerHTML = `
-        <svg width="34" height="44" viewBox="0 0 384 512">
-          <path d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z" fill="#EA4335"/>
-          <circle cx="192" cy="192" r="70" fill="#FFFFFF"/>
-        </svg>
-        <div class="gmap-pin-pulse"></div>
-      `;
-      return el;
-    }
 
     function initInteractiveDiscoveryMap() {
       const mapContainer = document.getElementById('landingDiscoveryMap');
@@ -6341,132 +6909,113 @@
 
       if (typeof maplibregl === 'undefined') {
         console.warn('MapLibre GL library not loaded, using fallback UI');
+        mapContainer.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#162D3C; text-align:center; padding:24px;">
+            <div style="font-size:36px; margin-bottom:12px;">🗺️</div>
+            <h4 style="font-family:var(--font-serif); font-size:22px; margin-bottom:8px;">Pan-India Discovery Map</h4>
+            <p style="max-width:520px; color:#5A6E7D; font-size:14px; margin-bottom:18px;">
+              Explore 110+ destinations, live weather forecasts, and verified supplier rates. Click below to begin planning a journey.
+            </p>
+            <button class="btn-primary-luxury" onclick="setDestination('Jaipur, Rajasthan'); document.getElementById('plan-journey')?.scrollIntoView({behavior:'smooth'});">
+              Plan Journey to Jaipur &rarr;
+            </button>
+          </div>
+        `;
         return;
       }
 
       try {
         landingDiscoveryMap = new maplibregl.Map({
           container: 'landingDiscoveryMap',
-          style: GMAP_ROAD_STYLE,
-          center: [77.2090, 28.6139], // Initial Delhi focus
-          zoom: 12.0,
-          pitch: 28,
-          bearing: 0,
+          style: {
+            version: 8,
+            sources: {
+              'osm-tiles': {
+                type: 'raster',
+                tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                tileSize: 256,
+                attribution: '&copy; OpenStreetMap contributors'
+              }
+            },
+            layers: [{
+              id: 'osm-tiles-layer',
+              type: 'raster',
+              source: 'osm-tiles',
+              minzoom: 0,
+              maxzoom: 19
+            }]
+          },
+          center: [78.9629, 22.5937], // Center of India
+          zoom: 4.8,
           attributionControl: false
         });
 
-        landingDiscoveryMap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+        landingDiscoveryMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 
         landingDiscoveryMap.on('load', () => {
-          dropMapPin(28.6139, 77.2090, 'New Delhi, NCR');
-          refreshDestinationIntel(28.6139, 77.2090, 'New Delhi, NCR');
+          // Place initial marker on Jaipur
+          dropMapPin(26.9124, 75.7873, 'Jaipur, Rajasthan');
         });
 
-        // Click anywhere on map to drop pin and inspect
         landingDiscoveryMap.on('click', async (e) => {
           const { lng, lat } = e.lngLat;
           await handleMapCanvasClick(lat, lng);
         });
-
-        // Setup Google Controls
-        setupGmapControls();
-
-        // Setup Search & Autocomplete
-        setupGmapSearch();
       } catch (err) {
-        console.error('Google Maps canvas initialization error:', err);
+        console.error('MapLibre GL error:', err);
       }
     }
 
     function dropMapPin(lat, lon, label) {
       if (!landingDiscoveryMap) return;
-      const nLat = parseFloat(lat);
-      const nLon = parseFloat(lon);
-      if (isNaN(nLat) || isNaN(nLon)) return;
-
       if (!landingMapMarker) {
-        landingMapMarker = new maplibregl.Marker({
-          element: createGoogleRedPin(),
-          anchor: 'bottom'
-        })
-          .setLngLat([nLon, nLat])
+        const pinEl = document.createElement('div');
+        pinEl.className = 'tbo-live-pin';
+        pinEl.style.cssText = 'width:28px; height:28px; border-radius:50%; background:#162D3C; border:3px solid #D4AF37; box-shadow:0 6px 18px rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-size:12px; font-weight:800; cursor:pointer;';
+        pinEl.innerHTML = '✦';
+        landingMapMarker = new maplibregl.Marker({ element: pinEl })
+          .setLngLat([lon, lat])
           .addTo(landingDiscoveryMap);
       } else {
-        landingMapMarker.setLngLat([nLon, nLat]);
+        landingMapMarker.setLngLat([lon, lat]);
       }
-      currentMapLocation = { name: label, lat: nLat, lon: nLon };
+      currentMapLocation = { name: label, lat, lon };
     }
 
     async function handleMapCanvasClick(lat, lon) {
-      const nLat = parseFloat(lat);
-      const nLon = parseFloat(lon);
-      if (isNaN(nLat) || isNaN(nLon)) return;
+      dropMapPin(lat, lon, `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`);
+      let resolvedName = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
 
-      let placeName = `${nLat.toFixed(4)}° N, ${nLon.toFixed(4)}° E`;
-
-      // Check if clicked close to an iconic catalog landmark (within ~2km)
-      let minD = Infinity;
-      GMAP_CORE_CATALOG.forEach(c => {
-        const d = Math.hypot(c.lat - nLat, c.lon - nLon);
-        if (d < minD && d < 0.02) {
-          minD = d;
-          placeName = c.name + (c.region ? `, ${c.region}` : '');
-        }
-      });
-
-      dropMapPin(nLat, nLon, placeName);
-
-      // Live reverse geocoding via Backend & Photon
       try {
-        const res = await fetch(`${API_BASE}/geo/reverse?lat=${nLat}&lon=${nLon}`);
+        const res = await fetch(`${API_BASE}/geo/reverse?lat=${lat}&lon=${lon}`);
         if (res.ok) {
           const geo = await res.json();
-          if (geo && geo.name && !geo.name.includes('Location (')) {
-            placeName = geo.name + (geo.region ? `, ${geo.region}` : '');
-            currentMapLocation.name = placeName;
-          }
-        } else {
-          // Client-side fallback
-          const revRes = await fetch(`https://photon.komoot.io/reverse?lat=${nLat}&lon=${nLon}`);
-          if (revRes.ok) {
-            const data = await revRes.json();
-            if (data && data.features && data.features[0]) {
-              const p = data.features[0].properties || {};
-              const n = p.name || p.city || p.district || p.street;
-              if (n) {
-                placeName = n + (p.state ? `, ${p.state}` : '');
-                currentMapLocation.name = placeName;
-              }
-            }
+          if (geo && geo.name) {
+            resolvedName = geo.name + (geo.region ? `, ${geo.region}` : '');
+            currentMapLocation.name = resolvedName;
           }
         }
       } catch (e) {
-        console.warn('Reverse geocode fallback:', e);
+        console.warn('Reverse geocode notice:', e);
       }
 
-      await refreshDestinationIntel(nLat, nLon, placeName);
+      await refreshDestinationIntel(lat, lon, resolvedName);
     }
 
     async function refreshDestinationIntel(lat, lon, name) {
-      const nLat = parseFloat(lat);
-      const nLon = parseFloat(lon);
-      const card = document.getElementById('mapIntelCard');
       const titleEl = document.getElementById('intelTitle');
       const coordsEl = document.getElementById('intelCoords');
       const planDestNameEl = document.getElementById('intelPlanDestName');
       const fullLinkEl = document.getElementById('btnIntelFull');
-      const gmapsLinkEl = document.getElementById('btnIntelGmaps');
 
-      if (card) card.classList.add('active');
       if (titleEl) titleEl.textContent = name;
-      if (coordsEl) coordsEl.textContent = `${nLat.toFixed(4)}° N, ${nLon.toFixed(4)}° E`;
+      if (coordsEl) coordsEl.textContent = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
       if (planDestNameEl) planDestNameEl.textContent = name.split(',')[0].trim();
       if (fullLinkEl) fullLinkEl.href = `./map_view.html?destination=${encodeURIComponent(name.split(',')[0].trim())}`;
-      if (gmapsLinkEl) gmapsLinkEl.href = `https://www.google.com/maps/search/?api=1&query=${nLat},${nLon}`;
 
-      // Live Weather Forecast
+      // Fetch Real-time Weather
       try {
-        const wRes = await fetch(`${API_BASE}/weather/forecast?lat=${nLat}&lon=${nLon}`);
+        const wRes = await fetch(`${API_BASE}/weather/forecast?lat=${lat}&lon=${lon}`);
         if (wRes.ok) {
           const w = await wRes.json();
           const tempEl = document.getElementById('intelTemp');
@@ -6474,406 +7023,146 @@
           const badgeEl = document.getElementById('intelWeatherBadge');
 
           if (tempEl) tempEl.textContent = `${w.temperature_c}°C`;
-          if (condEl) condEl.textContent = `${w.condition} • Humidity ${w.humidity_pct || 42}% • Wind ${w.windspeed_kmh || w.wind_speed_kmh || 12} km/h`;
+          if (condEl) condEl.textContent = `${w.condition} • Humidity ${w.humidity_pct}% • Wind ${w.wind_speed_kmh} km/h`;
           if (badgeEl) {
-            badgeEl.className = 'price-status-badge badge-live';
-            badgeEl.innerHTML = '<span class="badge-dot"></span> Live Verified';
+            const isLive = w.status === 'LIVE_VERIFIED';
+            badgeEl.className = `price-status-badge ${isLive ? 'badge-live' : 'badge-estimated'}`;
+            badgeEl.innerHTML = `<span class="badge-dot"></span> ${isLive ? 'Live Verified' : 'Market Estimated'}`;
           }
         }
       } catch (e) {
-        // Direct Open-Meteo Client Fallback
-        try {
-          const omRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${nLat}&longitude=${nLon}&current_weather=true`);
-          if (omRes.ok) {
-            const om = await omRes.json();
-            const tempEl = document.getElementById('intelTemp');
-            const condEl = document.getElementById('intelCondition');
-            if (tempEl) tempEl.textContent = `${Math.round(om.current_weather.temperature)}°C`;
-            if (condEl) condEl.textContent = `Clear Sky • Wind ${Math.round(om.current_weather.windspeed)} km/h`;
-          }
-        } catch (omErr) {}
+        console.warn('Weather fetch notice:', e);
       }
 
-      // Verified Regional Attractions
+      // Fetch Regional Attractions
       try {
-        const aRes = await fetch(`${API_BASE}/geo/attractions?lat=${nLat}&lon=${nLon}&query=${encodeURIComponent(name)}`);
+        const aRes = await fetch(`${API_BASE}/geo/attractions?lat=${lat}&lon=${lon}&query=${encodeURIComponent(name)}`);
         if (aRes.ok) {
           const rawA = await aRes.json();
           const attractions = Array.isArray(rawA) ? rawA : (rawA.attractions || rawA.results || []);
           const container = document.getElementById('intelAttractions');
           if (container && Array.isArray(attractions) && attractions.length > 0) {
-            container.innerHTML = attractions.slice(0, 5).map(a => `<span class="intel-tag">${a.name || a.title || a}</span>`).join('');
+            container.innerHTML = attractions.slice(0, 5).map(a => `<span class="intel-tag">${a.name || a}</span>`).join('');
           }
         }
       } catch (e) {
-        console.warn('Attractions fetch fallback:', e);
+        console.warn('Attractions fetch notice:', e);
       }
     }
 
-    function flyMapTo(lat, lon, name, zoomLevel = 13) {
-      const nLat = parseFloat(lat);
-      const nLon = parseFloat(lon);
-      if (isNaN(nLat) || isNaN(nLon)) return;
-
+    function flyMapTo(lat, lon, name) {
       if (landingDiscoveryMap) {
-        landingDiscoveryMap.stop();
-        landingDiscoveryMap.flyTo({
-          center: [nLon, nLat],
-          zoom: zoomLevel,
-          pitch: 28,
-          bearing: 0,
-          speed: 1.5,
-          curve: 1.2,
-          essential: true
-        });
+        landingDiscoveryMap.flyTo({ center: [lon, lat], zoom: 8.5, speed: 1.2 });
       }
-      dropMapPin(nLat, nLon, name);
-      refreshDestinationIntel(nLat, nLon, name);
+      dropMapPin(lat, lon, name);
+      refreshDestinationIntel(lat, lon, name);
     }
 
-    function setupGmapControls() {
-      // Map Layer: Road / Vector (Google Maps Bright Style)
-      document.getElementById('mapLayerRoad')?.addEventListener('click', () => {
-        if (!landingDiscoveryMap) return;
-        document.getElementById('mapLayerRoad').classList.add('active');
-        document.getElementById('mapLayerSat').classList.remove('active');
-        landingDiscoveryMap.setStyle(GMAP_ROAD_STYLE);
-      });
-
-      // Map Layer: Satellite (Esri Photorealistic Imagery)
-      document.getElementById('mapLayerSat')?.addEventListener('click', () => {
-        if (!landingDiscoveryMap) return;
-        document.getElementById('mapLayerSat').classList.add('active');
-        document.getElementById('mapLayerRoad').classList.remove('active');
-        landingDiscoveryMap.setStyle(GMAP_SAT_STYLE);
-      });
-
-      // Recenter to Whole India View
-      document.getElementById('mapResetView')?.addEventListener('click', () => {
-        if (landingDiscoveryMap) {
-          landingDiscoveryMap.stop();
-          landingDiscoveryMap.flyTo({ center: [78.9629, 22.5937], zoom: 4.8, pitch: 0, bearing: 0, speed: 1.2 });
-        }
-      });
-
-      // Locate Me (GPS)
-      const locateAction = () => {
-        if ('geolocation' in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            pos => flyMapTo(pos.coords.latitude, pos.coords.longitude, 'Your Current Location', 14),
-            err => alert('Location permission was not granted. Please enable GPS in browser.')
-          );
-        } else {
-          alert('Geolocation is not supported by your browser.');
-        }
-      };
-
-      document.getElementById('mapLocateMe')?.addEventListener('click', locateAction);
-      document.getElementById('mapSearchLocate')?.addEventListener('click', locateAction);
-
-      // Zoom Controls
-      document.getElementById('mapZoomIn')?.addEventListener('click', () => {
-        if (landingDiscoveryMap) landingDiscoveryMap.zoomIn({ duration: 250 });
-      });
-      document.getElementById('mapZoomOut')?.addEventListener('click', () => {
-        if (landingDiscoveryMap) landingDiscoveryMap.zoomOut({ duration: 250 });
-      });
-
-      // Fullscreen
-      document.getElementById('mapFullscreen')?.addEventListener('click', () => {
-        const wrap = document.getElementById('gmapWrapper') || document.querySelector('.map-canvas-wrapper');
-        if (!wrap) return;
-        if (!document.fullscreenElement) {
-          wrap.requestFullscreen().catch(err => console.warn(err));
-        } else {
-          document.exitFullscreen().catch(err => console.warn(err));
-        }
-      });
-    }
-
-    async function executeDirectSearch(rawQuery) {
-      const q = (rawQuery || '').trim();
-      if (!q) return;
-
-      const dropdown = document.getElementById('mapSearchDropdown');
-      if (dropdown) dropdown.style.display = 'none';
-
-      // 1. Check local catalog first (instant precision)
-      const scoredCatalog = GMAP_CORE_CATALOG
-        .map(item => ({ item, score: scoreLocationMatch(item, q) }))
-        .filter(x => x.score > 0)
-        .sort((a, b) => b.score - a.score);
-
-      if (scoredCatalog.length > 0) {
-        const winner = scoredCatalog[0].item;
-        flyMapTo(winner.lat, winner.lon, winner.name + (winner.region ? `, ${winner.region}` : ''), winner.zoom || 13);
-        const searchInput = document.getElementById('mapSearchInput');
-        if (searchInput) searchInput.value = winner.name + (winner.region ? `, ${winner.region}` : '');
-        return;
-      }
-
-      // 2. If not found in catalog, fetch live geocoding (Backend + Photon)
-      const searchInput = document.getElementById('mapSearchInput');
-      const originalPlaceholder = searchInput ? searchInput.placeholder : '';
-      if (searchInput) searchInput.placeholder = 'Locating on map...';
-
-      let candidates = [];
-      try {
-        const encoded = encodeURIComponent(q);
-
-        // Try backend first
-        try {
-          const res = await fetch(`${API_BASE}/geo/search?q=${encoded}`);
-          if (res.ok) {
-            const list = await res.json();
-            if (Array.isArray(list) && list.length > 0) {
-              candidates = list.map(item => ({
-                name: item.name,
-                region: item.region || item.country || '',
-                lat: parseFloat(item.lat),
-                lon: parseFloat(item.lon),
-                zoom: 13
-              }));
-            }
+    // Map layer controls
+    document.getElementById('mapLayerRoad')?.addEventListener('click', () => {
+      if (!landingDiscoveryMap) return;
+      document.getElementById('mapLayerRoad').classList.add('active');
+      document.getElementById('mapLayerSat').classList.remove('active');
+      landingDiscoveryMap.setStyle({
+        version: 8,
+        sources: {
+          'osm-tiles': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256
           }
-        } catch (e) {}
+        },
+        layers: [{ id: 'osm-tiles-layer', type: 'raster', source: 'osm-tiles', minzoom: 0, maxzoom: 19 }]
+      });
+    });
 
-        // Direct client-side Photon fallback
-        if (candidates.length === 0) {
-          try {
-            const photonRes = await fetch(`https://photon.komoot.io/api/?q=${encoded}&limit=3`);
-            if (photonRes.ok) {
-              const data = await photonRes.json();
-              if (data && data.features && data.features.length > 0) {
-                candidates = data.features.map(f => {
-                  const p = f.properties || {};
-                  const coords = (f.geometry && f.geometry.coordinates) || [0, 0];
-                  const n = p.name || p.city || p.state || q;
-                  const reg = p.state || p.district || p.county || p.country || '';
-                  return {
-                    name: n,
-                    region: reg,
-                    lat: parseFloat(coords[1]),
-                    lon: parseFloat(coords[0]),
-                    zoom: p.type === 'house' || p.type === 'building' ? 16.5 : (p.type === 'city' ? 13 : 14.5)
-                  };
-                }).filter(x => !isNaN(x.lat) && !isNaN(x.lon));
-              }
-            }
-          } catch (pe) {}
-        }
-
-        if (candidates.length > 0) {
-          const top = candidates[0];
-          const fullName = top.name + (top.region ? `, ${top.region}` : '');
-          flyMapTo(top.lat, top.lon, fullName, top.zoom || 13);
-          if (searchInput) searchInput.value = fullName;
-        } else {
-          alert(`Could not find "${q}". Please check spelling or search for a city or landmark.`);
-        }
-      } catch (err) {
-        console.error('Direct search error:', err);
-      } finally {
-        if (searchInput) searchInput.placeholder = originalPlaceholder || 'Search Google Maps — Taj Mahal, Delhi, Goa, Pune, any landmark...';
-      }
-    }
-
-    function setupGmapSearch() {
-      const searchInput = document.getElementById('mapSearchInput');
-      const dropdown = document.getElementById('mapSearchDropdown');
-      const clearBtn = document.getElementById('mapSearchClear');
-      const submitBtn = document.getElementById('mapSearchSubmit');
-      let debounceTimer = null;
-      let currentResults = [];
-      let highlightedIndex = -1;
-
-      if (!searchInput || !dropdown) return;
-
-      function renderDropdown(items) {
-        currentResults = items;
-        highlightedIndex = -1;
-        if (!items || items.length === 0) {
-          dropdown.style.display = 'none';
-          dropdown.innerHTML = '';
-          return;
-        }
-
-        dropdown.innerHTML = items.slice(0, 8).map((item, idx) => `
-          <div class="gmap-dropdown-item" data-index="${idx}">
-            <div class="gmap-dropdown-icon">${item.icon || '📍'}</div>
-            <div class="gmap-dropdown-info">
-              <div class="gmap-dropdown-name">${item.name}</div>
-              <div class="gmap-dropdown-sub">${item.region ? item.region + ' • ' : ''}${item.desc || item.type || 'Verified Location'}</div>
-            </div>
-          </div>
-        `).join('');
-
-        dropdown.style.display = 'block';
-
-        dropdown.querySelectorAll('.gmap-dropdown-item').forEach(el => {
-          el.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            const idx = parseInt(el.getAttribute('data-index'), 10);
-            if (currentResults[idx]) {
-              selectItem(currentResults[idx]);
-            }
-          });
-        });
-      }
-
-      function updateHighlight() {
-        const items = dropdown.querySelectorAll('.gmap-dropdown-item');
-        items.forEach((item, idx) => {
-          if (idx === highlightedIndex) {
-            item.classList.add('highlighted');
-            item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          } else {
-            item.classList.remove('highlighted');
+    document.getElementById('mapLayerSat')?.addEventListener('click', () => {
+      if (!landingDiscoveryMap) return;
+      document.getElementById('mapLayerSat').classList.add('active');
+      document.getElementById('mapLayerRoad').classList.remove('active');
+      landingDiscoveryMap.setStyle({
+        version: 8,
+        sources: {
+          'esri-sat': {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256
           }
-        });
+        },
+        layers: [{ id: 'esri-sat-layer', type: 'raster', source: 'esri-sat', minzoom: 0, maxzoom: 19 }]
+      });
+    });
+
+    document.getElementById('mapResetView')?.addEventListener('click', () => {
+      if (landingDiscoveryMap) {
+        landingDiscoveryMap.flyTo({ center: [78.9629, 22.5937], zoom: 4.8, speed: 1.0 });
       }
+    });
 
-      function selectItem(item) {
-        const fullName = item.name + (item.region ? `, ${item.region}` : '');
-        searchInput.value = fullName;
-        dropdown.style.display = 'none';
-        dropdown.innerHTML = '';
-        currentResults = [];
-        highlightedIndex = -1;
-        if (clearBtn) clearBtn.style.display = 'block';
-        flyMapTo(item.lat, item.lon, fullName, item.zoom || 13);
+    document.getElementById('mapLocateMe')?.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          pos => flyMapTo(pos.coords.latitude, pos.coords.longitude, 'Your Current Location'),
+          err => alert('Location permission was not granted.')
+        );
       }
+    });
 
-      // Input listener with debounce
-      searchInput.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        const q = searchInput.value.trim();
-        if (clearBtn) clearBtn.style.display = q.length > 0 ? 'block' : 'none';
+    // Map Search with Autocomplete
+    const mapSearchInput = document.getElementById('mapSearchInput');
+    const mapSearchDropdown = document.getElementById('mapSearchDropdown');
+    const mapSearchClear = document.getElementById('mapSearchClear');
+    let mapSearchTimer = null;
 
+    if (mapSearchInput) {
+      mapSearchInput.addEventListener('input', () => {
+        clearTimeout(mapSearchTimer);
+        const q = mapSearchInput.value.trim();
+        if (mapSearchClear) mapSearchClear.style.display = q.length > 0 ? 'block' : 'none';
         if (q.length < 2) {
-          dropdown.style.display = 'none';
-          dropdown.innerHTML = '';
-          currentResults = [];
+          if (mapSearchDropdown) mapSearchDropdown.style.display = 'none';
           return;
         }
 
-        // 1. Instant local scored matches (0ms response)
-        const localMatches = GMAP_CORE_CATALOG
-          .map(item => ({ item, score: scoreLocationMatch(item, q) }))
-          .filter(x => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .map(x => x.item);
-
-        renderDropdown(localMatches);
-
-        // 2. Live geocode fetch in background
-        debounceTimer = setTimeout(async () => {
+        mapSearchTimer = setTimeout(async () => {
           try {
-            const encoded = encodeURIComponent(q);
-            let remoteItems = [];
-
-            try {
-              const res = await fetch(`${API_BASE}/geo/search?q=${encoded}`);
-              if (res.ok) {
-                const list = await res.json();
-                if (Array.isArray(list)) {
-                  remoteItems = list.map(rm => ({
-                    name: rm.name,
-                    region: rm.region || rm.country || '',
-                    lat: parseFloat(rm.lat),
-                    lon: parseFloat(rm.lon),
-                    icon: '📍',
-                    type: rm.type || 'Location',
-                    desc: rm.country || 'Verified Destination',
-                    zoom: 13
-                  }));
-                }
+            const res = await fetch(`${API_BASE}/geo/search?q=${encodeURIComponent(q)}`);
+            if (res.ok) {
+              const raw = await res.json();
+              const list = Array.isArray(raw) ? raw : (raw.results || []);
+              if (list && list.length > 0) {
+                mapSearchDropdown.innerHTML = list.map(item => `
+                  <div class="planner-autocomplete-item" onclick="onPickMapSearch('${item.name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon}, '${(item.region || '').replace(/'/g, "\\'")}')">
+                    <div style="font-weight:600; color:var(--color-deep-navy);">${item.name}</div>
+                    <div style="font-size:11.5px; color:var(--color-muted-grey);">${item.region ? item.region + ', ' : ''}${item.country || 'India'} • ${item.type || 'Enclave'}</div>
+                  </div>
+                `).join('');
+                mapSearchDropdown.style.display = 'block';
+                return;
               }
-            } catch (e) {}
-
-            const combined = [...localMatches];
-            remoteItems.forEach(rm => {
-              if (!combined.some(c => c.name.toLowerCase() === rm.name.toLowerCase())) {
-                combined.push(rm);
-              }
-            });
-
-            if (searchInput.value.trim().toLowerCase() === q.toLowerCase()) {
-              renderDropdown(combined);
             }
-          } catch (err) {}
-        }, 180);
-      });
-
-      // Keydown navigation
-      searchInput.addEventListener('keydown', (e) => {
-        if (dropdown.style.display === 'block' && currentResults.length > 0) {
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            highlightedIndex = (highlightedIndex + 1) % currentResults.length;
-            updateHighlight();
-            return;
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            highlightedIndex = (highlightedIndex - 1 + currentResults.length) % currentResults.length;
-            updateHighlight();
-            return;
-          } else if (e.key === 'Escape') {
-            dropdown.style.display = 'none';
-            return;
+          } catch (e) {
+            console.warn('Map search query fallback');
           }
-        }
-
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          if (highlightedIndex >= 0 && currentResults[highlightedIndex]) {
-            selectItem(currentResults[highlightedIndex]);
-          } else {
-            executeDirectSearch(searchInput.value);
-          }
-        }
-      });
-
-      // Search submit button
-      if (submitBtn) {
-        submitBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (highlightedIndex >= 0 && currentResults[highlightedIndex]) {
-            selectItem(currentResults[highlightedIndex]);
-          } else {
-            executeDirectSearch(searchInput.value);
-          }
-        });
-      }
-
-      // Clear button
-      if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-          searchInput.value = '';
-          clearBtn.style.display = 'none';
-          dropdown.style.display = 'none';
-          dropdown.innerHTML = '';
-          currentResults = [];
-          highlightedIndex = -1;
-          searchInput.focus();
-        });
-      }
-
-      // Close dropdown on outside click
-      document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target) && !(submitBtn && submitBtn.contains(e.target))) {
-          dropdown.style.display = 'none';
-        }
+          if (mapSearchDropdown) mapSearchDropdown.style.display = 'none';
+        }, 220);
       });
     }
 
-    window.onPickGmapSearch = function(name, lat, lon, zoom = 13) {
-      const searchInput = document.getElementById('mapSearchInput');
-      const dropdown = document.getElementById('mapSearchDropdown');
-      if (searchInput) searchInput.value = name;
-      if (dropdown) dropdown.style.display = 'none';
-      flyMapTo(lat, lon, name, zoom);
+    window.onPickMapSearch = function(name, lat, lon, region) {
+      const fullName = region ? `${name}, ${region}` : name;
+      if (mapSearchInput) mapSearchInput.value = fullName;
+      if (mapSearchDropdown) mapSearchDropdown.style.display = 'none';
+      flyMapTo(lat, lon, fullName);
     };
+
+    if (mapSearchClear) {
+      mapSearchClear.addEventListener('click', () => {
+        if (mapSearchInput) mapSearchInput.value = '';
+        mapSearchClear.style.display = 'none';
+        if (mapSearchDropdown) mapSearchDropdown.style.display = 'none';
+      });
+    }
 
     // Seamless Handoff from Map to Dynamic Planner
     document.getElementById('btnIntelPlan')?.addEventListener('click', () => {
@@ -6885,7 +7174,7 @@
           const destField = document.getElementById('planDestInput');
           if (destField) {
             destField.focus();
-            destField.style.boxShadow = '0 0 0 3px rgba(26, 115, 232, 0.45)';
+            destField.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.45)';
             setTimeout(() => { destField.style.boxShadow = ''; }, 1600);
           }
         }, 650);

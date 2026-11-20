@@ -88,32 +88,6 @@ DINING_PREFIXES = [
     "Historic Coffee House & Artisanal Roastery",
 ]
 
-DINING_PREFIXES_VEG = [
-    "Shree Pure Veg Royal Thali & Sweets",
-    "Saravana Bhavan Authentic South Indian Pure Veg",
-    "Govinda's Sattvic & Temple Cuisine (Pure Veg)",
-    "Rajdhani Khandani Pure Veg Thali Feast",
-    "Haldiram's Heritage Sweets, Chaat & Pure Veg",
-    "Chokhi Dhani Royal Rajasthani Pure Veg",
-    "Bikanervala Traditional Sweets & Pure Veg Dining",
-    "Swati Snacks Handcrafted Pure Veg Specialties",
-    "Anand Veg Bhojanalay & Kathiyawadi Thali",
-    "Shree Thaker Bhojanalay Heritage Gujarati Pure Veg",
-]
-
-DINING_PREFIXES_NON_VEG = [
-    "Karim's Historic Mughlai & Dum Tandoor (Non-Veg)",
-    "Trishna Coastal Seafood, Crab & Fish Kitchen",
-    "Bawarchi Royal Hyderabadi Dum Biryani & Kebabs",
-    "Peter Cat Chelo Kebab & Sizzler Grill (Non-Veg)",
-    "Bukhara Tandoori & Peshawari Meat Specialties",
-    "Gunpowder Coastal Seafood & Kerala Roast (Non-Veg)",
-    "Bademiya Seekh Kebab & Tandoor Street Grill",
-    "Dindigul Thalappakatti Mutton Biryani House",
-    "Gajalee Coastal Seafood & Tandoori Fish Lounge",
-    "Al Jawahar Mutton Korma & Mughlai Roast",
-]
-
 # Calculate target allocation across all 110 destinations to reach exactly 1,250,400 items
 TIER1_CITIES = {"Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Chennai", "Kolkata"}
 TIER2_CITIES = {"Jaipur", "Agra", "Goa", "Varanasi", "Kochi", "Udaipur", "Manali", "Shimla", "Srinagar", "Amritsar", "Pune", "Ahmedabad"}
@@ -169,7 +143,6 @@ class PanIndia1MInventoryEngine:
 
         # Entity type distribution: 45% Hotel, 25% Attraction, 15% Transport, 15% Dining
         type_roll = rng.random()
-        dietary: str | None = None
         if type_roll < 0.45:
             entity_type = "HOTEL"
             prefix = rng.choice(HOTEL_BRAND_PREFIXES)
@@ -198,28 +171,15 @@ class PanIndia1MInventoryEngine:
             desc = f"Fast, comfortable transit in {city}. Interconnects major airports, high-speed rail corridors, and key tourist zones with air-conditioned vehicles."
             amenities = ["AC Transit", "Luggage Assistance", "Prepaid Guarantee", "Live GPS Tracking", "EV Fleet Available"]
             photos = rng.sample(HD_PHOTO_POOLS["TRANSPORT"], 2)
-            dietary = None
         else:
             entity_type = "DINING"
-            is_veg = rng.random() < 0.52
-            if is_veg:
-                dietary = "VEG"
-                prefix = rng.choice(DINING_PREFIXES_VEG)
-                cuisine_sample = city_meta.get("cuisine", "Traditional flavors").split(",")[0].strip()
-                name = f"{prefix} - {cuisine_sample} ({city})"
-                base_price = rng.randint(350, 2200)
-                star_rating = round(rng.uniform(4.4, 5.0), 1)
-                desc = f"100% Pure Vegetarian dining in {city} serving authentic {cuisine_sample} and regional thali feasts. Uses fresh desi ghee, farm produce, and Jain-friendly options."
-                amenities = ["🟢 100% Pure Veg", "Jain Food Available", "Authentic Regional Thali", "Reserved Seating", "Air Conditioned"]
-            else:
-                dietary = "NON_VEG"
-                prefix = rng.choice(DINING_PREFIXES_NON_VEG)
-                cuisine_sample = city_meta.get("cuisine", "Traditional flavors").split(",")[0].strip()
-                name = f"{prefix} - Authentic {cuisine_sample} ({city})"
-                base_price = rng.randint(550, 3200)
-                star_rating = round(rng.uniform(4.3, 5.0), 1)
-                desc = f"Legendary Non-Veg culinary destination in {city} renowned for kebabs, dum biryani, and seafood grills. Includes table reservation and chef's tasting platter."
-                amenities = ["🔴 Non-Veg Specialties", "Tandoor & Dum Biryani", "Fresh Catch & Kebabs", "Bar & Wine Selection", "Air Conditioned"]
+            prefix = rng.choice(DINING_PREFIXES)
+            cuisine_sample = city_meta.get("cuisine", "Traditional flavors").split(",")[0].strip()
+            name = f"{prefix} - Authentic {cuisine_sample} ({city})"
+            base_price = rng.randint(400, 2800)
+            star_rating = round(rng.uniform(4.3, 5.0), 1)
+            desc = f"Iconic culinary destination in {city} renowned for authentic {city_meta.get('cuisine', 'flavors')}. Includes table reservation and chef's tasting menu."
+            amenities = ["Authentic Regional Specialties", "Chef's Special Tasting", "Reserved Seating", "Pure Veg Options", "Air Conditioned"]
             photos = rng.sample(HD_PHOTO_POOLS["DINING"], 2)
 
         # Micro-offset for coordinates around city center (within ~6-12 km radius)
@@ -298,7 +258,6 @@ class PanIndia1MInventoryEngine:
             images=photos,
             offers=offers,
             source_category=prefix,
-            dietary=dietary,
         )
 
     def search_live(
@@ -309,7 +268,6 @@ class PanIndia1MInventoryEngine:
         limit: int = 100,
         offset: int = 0,
         currency: str = "INR",
-        dietary: str | None = None,
     ) -> dict[str, Any]:
         """Queries across the 1,250,000+ live item catalog in milliseconds."""
         t0 = time.perf_counter()
@@ -346,17 +304,6 @@ class PanIndia1MInventoryEngine:
             # Filter by entity_type if specified
             if entity_type and entity_type != "ANY" and item.entity_type != entity_type:
                 continue
-
-            # Filter by dietary preference if specified
-            if dietary:
-                d_target = dietary.upper()
-                if item.entity_type == "DINING":
-                    if item.dietary and item.dietary != d_target:
-                        continue
-                elif d_target == "VEG":
-                    has_veg = any("veg" in a.lower() for a in item.amenities)
-                    if not has_veg:
-                        continue
 
             # Filter by query if specified
             if q:

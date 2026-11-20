@@ -64,13 +64,6 @@ from services.sightseeing_difference_engine import (
     generate_inclusion_diff,
 )
 from services.voice_intent_parser import parse_voice_travel_query
-from services.live_travel_service import (
-    search_destinations_global,
-    reverse_geocode_location,
-    get_live_weather,
-    get_nearby_attractions,
-    generate_dynamic_journey_plans,
-)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tbo.api")
@@ -709,7 +702,6 @@ async def search_inventory(
     min_stars: float | None = Query(default=None, ge=0, le=5),
     landmark: str | None = None,
     inclusions: list[str] = Query(default=[]),
-    dietary: Literal["VEG", "NON_VEG"] | str | None = None,
 ) -> dict[str, Any]:
     items = await load_inventory()
     if destination and destination.casefold() not in {"pan-india", "all", "india"}:
@@ -737,14 +729,6 @@ async def search_inventory(
         items = [item for item in items if _item_matches_landmark(item, landmark)]
     if inclusions:
         items = [item for item in items if _has_inclusions(item, inclusions)]
-    if dietary:
-        d_val = dietary.upper()
-        items = [
-            item for item in items
-            if getattr(item, "dietary", None) == d_val or
-            (d_val == "VEG" and any("veg" in a.lower() for a in item.amenities) and not any("non-veg" in a.lower() for a in item.amenities)) or
-            (d_val == "NON_VEG" and any(k in f"{item.name} {item.description} {' '.join(item.amenities)}".lower() for k in ["non-veg", "seafood", "chicken", "mutton", "fish", "meat", "kebab", "biryani"]))
-        ]
 
     # Seamlessly enrich with live 1M multi-supplier items for India destinations
     is_international = (destination and destination.casefold() in {"dubai", "abu dhabi", "santorini", "athens", "oia", "fira"}) or (country_code and country_code.upper() in {"AE", "GR"})
@@ -755,7 +739,6 @@ async def search_inventory(
             q=q,
             limit=150,
             currency=currency or "INR",
-            dietary=dietary,
         )
         existing_ids = {it.id for it in items}
         for r in live_res.get("results", []):
@@ -1240,49 +1223,6 @@ async def geocode_reverse(
     except httpx.HTTPError as error:
         raise HTTPException(502, "Nominatim reverse geocoding is temporarily unavailable") from error
     return result
-
-
-@app.get(f"{API_V1_PREFIX}/geo/search")
-def api_geo_search(q: str = Query(default="", min_length=1)) -> list[dict[str, Any]]:
-    return search_destinations_global(q, limit=10)
-
-
-@app.get(f"{API_V1_PREFIX}/geo/reverse")
-def api_geo_reverse(lat: float = Query(...), lon: float = Query(...)) -> dict[str, Any]:
-    return reverse_geocode_location(lat, lon)
-
-
-@app.get(f"{API_V1_PREFIX}/weather/forecast")
-def api_weather_forecast(lat: float = Query(default=28.6139), lon: float = Query(default=77.2090)) -> dict[str, Any]:
-    return get_live_weather(lat, lon)
-
-
-@app.get(f"{API_V1_PREFIX}/geo/attractions")
-def api_geo_attractions(
-    lat: float = Query(default=28.6139),
-    lon: float = Query(default=77.2090),
-    query: str = Query(default="")
-) -> list[dict[str, Any]]:
-    return get_nearby_attractions(lat, lon, query)
-
-
-@app.post(f"{API_V1_PREFIX}/journey/generate-dynamic")
-async def api_journey_generate_dynamic(request: Request) -> dict[str, Any]:
-    try:
-        payload = await request.json()
-        return generate_dynamic_journey_plans(payload)
-    except Exception as exc:
-        logger.error(f"Error in generate-dynamic: {exc}")
-        return {"error": str(exc), "status": "failed"}
-
-
-@app.post(f"{API_V1_PREFIX}/journey/customize-slot")
-async def api_journey_customize_slot(request: Request) -> dict[str, Any]:
-    try:
-        payload = await request.json()
-        return {"status": "success", "updated_slot": payload}
-    except Exception as exc:
-        return {"error": str(exc), "status": "failed"}
 
 
 @app.post(f"{API_V1_PREFIX}/telemetry/events")

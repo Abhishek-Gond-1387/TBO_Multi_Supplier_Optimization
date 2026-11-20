@@ -36,7 +36,6 @@ class InventoryItem(BaseModel):
     offers: list[SupplierOffer] = Field(default_factory=list)
     conversion_prior: float = Field(default=0.5, ge=0, le=1)
     source_id: str | None = None
-    dietary: Literal["VEG", "NON_VEG"] | str | None = None
 
     @property
     def best_offer(self) -> SupplierOffer | None:
