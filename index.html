@@ -480,8 +480,8 @@
     .hero-title-inner {
       display: inline-block;
       will-change: transform, opacity;
-      transform: translateY(120%) rotate(2deg);
-      opacity: 0;
+      transform: translateY(0);
+      opacity: 1;
     }
 
     .hero-title em {
@@ -6224,15 +6224,19 @@
       );
 
       // Hero Title Line-by-Line Reveal (Awwwards Mask Effect)
-      heroTL.to('.hero-title-inner', {
-        y: 0,
-        rotate: 0,
-        opacity: 1,
-        duration: 1.1,
-        stagger: 0.14,
-        ease: 'power3.out',
-        clearProps: 'transform,opacity'
-      }, 0.5);
+      heroTL.fromTo('.hero-title-inner',
+        { y: '120%', rotate: 2, opacity: 0 },
+        {
+          y: 0,
+          rotate: 0,
+          opacity: 1,
+          duration: 1.1,
+          stagger: 0.14,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity'
+        },
+        0.5
+      );
 
       // Hero Lead
       heroTL.fromTo('.hero-lead',
