@@ -101,6 +101,12 @@
       text-decoration: none;
       color: var(--text-main);
       user-select: none;
+      cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .brand-wrap:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
     }
 
     .brand-badge {
@@ -347,6 +353,22 @@
       color: #FFFFFF;
       transform: translateY(-1px);
       box-shadow: 0 6px 16px rgba(16, 47, 64, 0.3);
+    }
+
+    .top-pill-btn.landing-pill-btn {
+      background: #FFFFFF;
+      border: 1px solid rgba(23, 75, 99, 0.22);
+      color: var(--color-deep-navy);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .top-pill-btn.landing-pill-btn:hover {
+      background: var(--color-primary-blue);
+      border-color: var(--color-primary-blue);
+      color: #FFFFFF;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(23, 75, 99, 0.2);
     }
 
     /* ========================================================
@@ -1668,7 +1690,7 @@
   <!-- Top Header Navigation -->
   <header>
     <div class="top-bar">
-      <a href="./index.html" class="brand-wrap">
+      <a href="./index.html" class="brand-wrap" title="Go to TBO Discovery Landing Page">
         <div class="brand-badge">T</div>
         <div class="brand-text">
           <span class="brand-title">TBO DISCOVERY</span>
@@ -1694,6 +1716,10 @@
       </div>
 
       <div class="top-actions">
+        <a href="./index.html" class="top-pill-btn landing-pill-btn" title="Return to Flagship Landing Page">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Landing Page</span>
+        </a>
         <button type="button" class="top-pill-btn ai-header-pill" id="ai-agent-open-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span>AI Trip Planner</span>
