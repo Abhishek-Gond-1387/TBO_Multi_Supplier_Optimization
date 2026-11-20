@@ -169,6 +169,7 @@ class PanIndia1MInventoryEngine:
 
         # Entity type distribution: 45% Hotel, 25% Attraction, 15% Transport, 15% Dining
         type_roll = rng.random()
+        dietary: str | None = None
         if type_roll < 0.45:
             entity_type = "HOTEL"
             prefix = rng.choice(HOTEL_BRAND_PREFIXES)
