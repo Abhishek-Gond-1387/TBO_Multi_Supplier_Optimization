@@ -396,6 +396,26 @@
       box-shadow: 0 2px 8px rgba(23, 75, 99, 0.2);
     }
 
+    .filter-chip[data-filter="veg"].active {
+      background: #16a34a !important;
+      border-color: #16a34a !important;
+      color: #FFFFFF !important;
+    }
+
+    .filter-chip[data-filter="veg"].active span {
+      background: #FFFFFF !important;
+    }
+
+    .filter-chip[data-filter="non_veg"].active {
+      background: #dc2626 !important;
+      border-color: #dc2626 !important;
+      color: #FFFFFF !important;
+    }
+
+    .filter-chip[data-filter="non_veg"].active span {
+      background: #FFFFFF !important;
+    }
+
     .filter-chip.active::after {
       content: '✕';
       font-size: 10px;
@@ -1618,6 +1638,10 @@
       </div>
 
       <div class="top-actions">
+        <a href="./index.html" class="top-pill-btn" style="background: rgba(26, 115, 232, 0.1); border-color: rgba(26, 115, 232, 0.3); color: #1A73E8; font-weight: 600;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Landing Page</span>
+        </a>
         <button type="button" class="top-pill-btn ai-header-pill" id="ai-agent-open-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span>AI Trip Planner</span>
@@ -1781,6 +1805,8 @@
       <div class="filter-chip" data-filter="rating">⭐ 4.5+ Rating</div>
       <div class="filter-chip" data-filter="flexible">🆓 Free Cancellation</div>
       <div class="filter-chip" data-filter="breakfast">🍳 Breakfast Included</div>
+      <div class="filter-chip" data-filter="veg" id="chip-veg" style="color: #166534; border-color: #86efac; font-weight: 600;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#16a34a; margin-right:4px;"></span>Pure Veg</div>
+      <div class="filter-chip" data-filter="non_veg" id="chip-nonveg" style="color: #991b1b; border-color: #fca5a5; font-weight: 600;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#dc2626; margin-right:4px;"></span>Non-Veg</div>
       <div class="filter-chip" data-filter="transfers">🚗 Transfers Included</div>
       <div class="filter-chip" data-filter="fast_track">⚡ Skip-The-Line</div>
 
@@ -2767,6 +2793,8 @@
       const filterRating = document.querySelector('.filter-chip.active[data-filter="rating"]');
       const filterFlexible = document.querySelector('.filter-chip.active[data-filter="flexible"]');
       const filterBreakfast = document.querySelector('.filter-chip.active[data-filter="breakfast"]');
+      const filterVeg = document.querySelector('.filter-chip.active[data-filter="veg"]');
+      const filterNonVeg = document.querySelector('.filter-chip.active[data-filter="non_veg"]');
       const filterTransfers = document.querySelector('.filter-chip.active[data-filter="transfers"]');
       const filterFastTrack = document.querySelector('.filter-chip.active[data-filter="fast_track"]');
 
@@ -2774,7 +2802,7 @@
         rawQ ||
         entityType !== 'ANY' ||
         selectedMinStars > 0 ||
-        filterRating || filterFlexible || filterBreakfast || filterTransfers || filterFastTrack
+        filterRating || filterFlexible || filterBreakfast || filterVeg || filterNonVeg || filterTransfers || filterFastTrack
       );
       document.getElementById('chip-reset').classList.toggle('visible', hasActiveFilters);
 
@@ -2835,6 +2863,35 @@
           const hasBf = (item.amenities || []).some(a => a.toLowerCase().includes('breakfast')) ||
                         (item.offers || []).some(o => o.meal_plan && ['BB', 'HB', 'FB'].includes(o.meal_plan));
           if (!hasBf) return false;
+        }
+
+        if (filterVeg) {
+          const haystack = `${item.name} ${item.description || ''} ${(item.amenities || []).join(' ')} ${item.category || ''}`.toLowerCase();
+          const isItemVeg = (item.is_veg === true) ||
+                            haystack.includes('pure veg') ||
+                            haystack.includes('vegetarian') ||
+                            haystack.includes('jain') ||
+                            haystack.includes('satvik') ||
+                            (item.amenities || []).some(a => a.toLowerCase().includes('veg'));
+          if (!isItemVeg) return false;
+        }
+
+        if (filterNonVeg) {
+          const haystack = `${item.name} ${item.description || ''} ${(item.amenities || []).join(' ')} ${item.category || ''}`.toLowerCase();
+          const isItemNonVeg = (item.is_non_veg === true) ||
+                               haystack.includes('non-veg') ||
+                               haystack.includes('non veg') ||
+                               haystack.includes('chicken') ||
+                               haystack.includes('mutton') ||
+                               haystack.includes('seafood') ||
+                               haystack.includes('meat') ||
+                               haystack.includes('biryani') ||
+                               haystack.includes('grill') ||
+                               haystack.includes('multi-cuisine') ||
+                               haystack.includes('barbeque') ||
+                               haystack.includes('bbq') ||
+                               (item.amenities || []).some(a => a.toLowerCase().includes('non-veg') || a.toLowerCase().includes('multi-cuisine'));
+          if (!isItemNonVeg) return false;
         }
 
         if (filterTransfers) {
@@ -3062,6 +3119,11 @@
 
         // Category-Specific Authentic Amenities
         let amenitiesHtml = '';
+        if (item.is_veg || (item.amenities && item.amenities.includes('Pure Vegetarian'))) {
+          amenitiesHtml += '<span class="amenity-chip highlight" style="background:#e6f4ea; color:#137333; border-color:#a8dab5; font-weight:700;">🟢 Pure Veg</span>';
+        } else if (item.is_non_veg || (item.amenities && item.amenities.includes('Non-Vegetarian'))) {
+          amenitiesHtml += '<span class="amenity-chip highlight" style="background:#fce8e6; color:#c5221f; border-color:#fad2cf; font-weight:700;">🔴 Non-Veg</span>';
+        }
         if (isAttraction) {
           amenitiesHtml = `
             <span class="amenity-chip highlight">Skip-The-Line Access</span>
@@ -3601,12 +3663,26 @@
       const attractions = data.attractions || [];
       const areas = data.areas || [];
 
-      if (!hotels.length && !attractions.length && !areas.length) {
+      const rawQuery = queryInput.value.trim();
+      let html = '';
+
+      if (rawQuery.length >= 2) {
+        html += `
+          <div class="suggestion-group-title">Google Maps Navigation</div>
+          <div class="suggestion-item selected" onclick="navigateToCustomPlace('${rawQuery.replace(/'/g, "\\'")}')">
+            <span class="suggestion-icon" style="color:#ea4335; font-size:16px;">📍</span>
+            <div class="suggestion-info">
+              <div class="suggestion-title">Navigate to "${escapeHtml(rawQuery)}" on Map</div>
+              <div class="suggestion-subtitle">Search real coordinates globally &amp; fly map</div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!hotels.length && !attractions.length && !areas.length && rawQuery.length < 2) {
         suggestionsDrop.classList.remove('active');
         return;
       }
-
-      let html = '';
 
       if (areas.length) {
         html += `<div class="suggestion-group-title">Neighborhoods &amp; Areas</div>`;
@@ -3696,7 +3772,12 @@
         items[idx].scrollIntoView({ block: 'nearest' });
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (current) current.click();
+        if (current) {
+          current.click();
+        } else {
+          const val = queryInput.value.trim();
+          if (val) navigateToCustomPlace(val);
+        }
       } else if (e.key === 'Escape') {
         suggestionsDrop.classList.remove('active');
       }
@@ -3807,7 +3888,19 @@
             }
           }
         } else {
-          chip.classList.toggle('active');
+          if (chip.dataset.filter === 'veg') {
+            if (!chip.classList.contains('active')) {
+              document.getElementById('chip-nonveg')?.classList.remove('active');
+            }
+            chip.classList.toggle('active');
+          } else if (chip.dataset.filter === 'non_veg') {
+            if (!chip.classList.contains('active')) {
+              document.getElementById('chip-veg')?.classList.remove('active');
+            }
+            chip.classList.toggle('active');
+          } else {
+            chip.classList.toggle('active');
+          }
         }
         applyFilters();
       });

@@ -76,6 +76,7 @@ def main() -> None:
         print(f"  Output: '{norm['normalized_name']}' [Class: {norm['room_class']}, Bed: {norm['bed_type']}, Meal: {norm['meal_plan']}]")
 
     print("\n" + "=" * 76)
+    print(f"  Landing Page UI:       http://127.0.0.1:5500/index.html")
     print(f"  Live Google Map UI:    http://127.0.0.1:5500/map_view.html")
     print(f"  Operations Review Hub: http://127.0.0.1:5500/admin.html")
     print(f"  Interactive API Docs:  {base}/docs")

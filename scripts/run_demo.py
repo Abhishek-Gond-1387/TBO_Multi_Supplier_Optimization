@@ -20,6 +20,7 @@ HOST = "127.0.0.1"
 API_PORT = 8000
 WEB_PORT = 5500
 API_HEALTH_URL = f"http://{HOST}:{API_PORT}/api/v1/health"
+LANDING_URL = f"http://{HOST}:{WEB_PORT}/index.html"
 MAP_URL = f"http://{HOST}:{WEB_PORT}/map_view.html"
 LOG_DIR = ROOT / ".demo-logs"
 
@@ -182,14 +183,15 @@ def main() -> int:
             LOG_DIR / "frontend.log",
         )
 
-        print("\nTBO Multi-Supplier Google Discovery Map is ready:")
-        print(f"  Google Map: http://{HOST}:{WEB_PORT}/map_view.html")
-        print(f"  Admin Hub:  http://{HOST}:{WEB_PORT}/admin.html")
-        print(f"  API docs:   http://{HOST}:{API_PORT}/docs")
-        print("  Inventory:  560+ live hotels & sightseeing experiences with competitive multi-supplier rates.")
-        print("  Features:   Google Maps styling, real-time autocomplete, voice search, room normalization & inclusion diffs.")
-        print("\nOpening the map and running the Delhi walkthrough...")
-        webbrowser.open_new_tab(MAP_URL)
+        print("\nTBO Multi-Supplier Travel Intelligence Platform is ready:")
+        print(f"  Landing Page: http://{HOST}:{WEB_PORT}/index.html")
+        print(f"  Google Map:   http://{HOST}:{WEB_PORT}/map_view.html")
+        print(f"  Admin Hub:    http://{HOST}:{WEB_PORT}/admin.html")
+        print(f"  API docs:     http://{HOST}:{API_PORT}/docs")
+        print("  Inventory:    560+ live hotels & sightseeing experiences with competitive multi-supplier rates.")
+        print("  Features:     Google Maps styling, real-time autocomplete, voice search, room normalization & inclusion diffs.")
+        print("\nOpening the landing page in your browser...")
+        webbrowser.open_new_tab(LANDING_URL)
         demo_result = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "demo.py")],
             cwd=ROOT,
