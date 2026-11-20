@@ -2535,9 +2535,28 @@
     /* Google Maps Iconic Red Pin */
     .gmap-marker-pin {
       position: relative;
+      width: 34px;
+      height: 44px;
       cursor: pointer;
       filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
       transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: auto;
+      user-select: none;
+    }
+
+    .gmap-marker-pin svg {
+      width: 34px;
+      height: 44px;
+      display: block;
+    }
+
+    .gmap-search-submit {
+      margin-right: 6px;
+      cursor: pointer;
+    }
+
+    .gmap-dropdown-item.highlighted {
+      background: #F1F3F4;
     }
 
     .gmap-marker-pin:hover {
@@ -4576,18 +4595,19 @@
         <!-- Floating Google Maps Search & City Chips Container -->
         <div class="gmap-floating-panel">
           <div class="gmap-search-box">
-            <span class="gmap-search-icon">
+            <button class="gmap-search-btn gmap-search-submit" id="mapSearchSubmit" title="Search Place or Landmark" aria-label="Search">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-            </span>
+            </button>
             <input 
               type="text" 
               class="gmap-search-input" 
               id="mapSearchInput" 
-              placeholder="Search Google Maps — Delhi, Mumbai, Bengaluru, any place..." 
+              placeholder="Search Google Maps — Taj Mahal, Delhi, Goa, Pune, any landmark..." 
               autocomplete="off"
+              spellcheck="false"
             >
             <button class="gmap-search-btn" id="mapSearchClear" style="display:none;" title="Clear search">✕</button>
             <button class="gmap-search-btn gmap-locate-btn" id="mapSearchLocate" title="Locate Me">
@@ -6182,15 +6202,124 @@
       layers: [{ id: 'esri-satellite-layer', type: 'raster', source: 'esri-satellite' }]
     };
 
-    // Live Pan-India Coordinates for Clean Google Maps Navigation
-    const GMAP_PRESET_CITIES = [
-      { name: 'New Delhi, NCR', lat: 28.6139, lon: 77.2090, icon: '📍', type: 'National Capital', desc: 'Northern Hub & Executive Corridor' },
-      { name: 'Mumbai, Maharashtra', lat: 19.0760, lon: 72.8777, icon: '📍', type: 'Financial Capital', desc: 'Western Commercial Gateway' },
-      { name: 'Bengaluru, Karnataka', lat: 12.9716, lon: 77.5946, icon: '📍', type: 'Technology Corridor', desc: 'Southern Innovation & Transit Hub' },
-      { name: 'Kolkata, West Bengal', lat: 22.5726, lon: 88.3639, icon: '📍', type: 'Eastern Hub', desc: 'Eastern Commercial & River Port' },
-      { name: 'Hyderabad, Telangana', lat: 17.3850, lon: 78.4867, icon: '📍', type: 'Cyber Hub', desc: 'Central Technology & Heritage Capital' },
-      { name: 'Chennai, Tamil Nadu', lat: 13.0827, lon: 80.2707, icon: '📍', type: 'Metropolitan Gateway', desc: 'Coromandel Coastal Commercial Center' }
+    // =========================================================================
+    // GOOGLE MAPS PRECISION DISCOVERY ENGINE & GEOCODING SYSTEM
+    // =========================================================================
+    const GMAP_CORE_CATALOG = [
+      // Top Monuments & Cultural Icons
+      { name: 'Taj Mahal', region: 'Agra, Uttar Pradesh', lat: 27.1751, lon: 78.0421, zoom: 16.5, icon: '🕌', type: 'Historical Monument', desc: 'UNESCO World Heritage • Iconic White Marble Mausoleum', aliases: ['taj mahal', 'taj', 'mumtaz mahal'] },
+      { name: 'India Gate', region: 'New Delhi', lat: 28.6129, lon: 77.2295, zoom: 16.5, icon: '🏛️', type: 'National Memorial', desc: 'All India War Memorial • Kartavya Path, New Delhi', aliases: ['india gate', 'amar jawan jyoti'] },
+      { name: 'Connaught Place', region: 'New Delhi', lat: 28.6317, lon: 77.2193, zoom: 15.5, icon: '🏢', type: 'Commercial Center', desc: 'Rajiv Chowk Georgian Commercial Hub • Central Delhi', aliases: ['connaught place', 'cp', 'rajiv chowk'] },
+      { name: 'Red Fort', region: 'Old Delhi', lat: 28.6562, lon: 77.2410, zoom: 16.0, icon: '🏰', type: 'UNESCO World Heritage', desc: 'Lal Qila Mughal Imperial Residence • Chandni Chowk', aliases: ['red fort', 'lal qila', 'lal kila'] },
+      { name: 'Qutub Minar', region: 'New Delhi', lat: 28.5244, lon: 77.1855, zoom: 16.5, icon: '🗼', type: 'UNESCO World Heritage', desc: 'Historic 73m Minaret & Iron Pillar Complex, Mehrauli', aliases: ['qutub minar', 'qutab minar', 'qutub'] },
+      { name: 'Gateway of India', region: 'Mumbai, Maharashtra', lat: 18.9220, lon: 72.8347, zoom: 16.5, icon: '⚓', type: 'Iconic Landmark', desc: 'Historic 26m Basalt Arch on Arabian Sea Harbor', aliases: ['gateway of india', 'gateway', 'colaba'] },
+      { name: 'Marine Drive', region: 'Mumbai, Maharashtra', lat: 18.9432, lon: 72.8230, zoom: 15.5, icon: '🌊', type: 'Coastal Promenade', desc: "Queen's Necklace • 3.6km C-shaped Boulevard along Arabian Sea", aliases: ['marine drive', 'queens necklace'] },
+      { name: 'Hawa Mahal', region: 'Jaipur, Rajasthan', lat: 26.9239, lon: 75.8267, zoom: 16.5, icon: '🪟', type: 'Palace of Winds', desc: 'Iconic 5-Story Pink Sandstone 953-Jharokha Facade', aliases: ['hawa mahal', 'palace of winds'] },
+      { name: 'Amer Fort', region: 'Amer, Jaipur', lat: 26.9855, lon: 75.8513, zoom: 16.0, icon: '🏰', type: 'Hilltop Fortress', desc: 'Majestic Rajput Palace & Sheesh Mahal on Maota Lake', aliases: ['amer fort', 'amber fort', 'sheesh mahal'] },
+      { name: 'City Palace Jaipur', region: 'Jaipur, Rajasthan', lat: 26.9258, lon: 75.8237, zoom: 16.5, icon: '👑', type: 'Royal Residence', desc: 'Chandra Mahal & Mubarak Mahal Palace Complex', aliases: ['city palace jaipur'] },
+      { name: 'Lake Pichola', region: 'Udaipur, Rajasthan', lat: 24.5760, lon: 73.6800, zoom: 15.0, icon: '⛵', type: 'Scenic Lake', desc: 'Lake Palace (Taj Lake Palace) & Jag Mandir Island Sanctuary', aliases: ['lake pichola', 'pichola'] },
+      { name: 'Golden Temple', region: 'Amritsar, Punjab', lat: 31.6200, lon: 74.8765, zoom: 16.5, icon: '✨', type: 'Spiritual Sanctuary', desc: 'Sri Harmandir Sahib & Amrit Sarovar Holy Pool', aliases: ['golden temple', 'harmandir sahib', 'darbar sahib'] },
+      { name: 'Kashi Vishwanath', region: 'Varanasi, Uttar Pradesh', lat: 25.3109, lon: 83.0107, zoom: 16.5, icon: '🕉️', type: 'Sacred Jyotirlinga', desc: 'Holy Shiva Temple Corridor along the River Ganges', aliases: ['kashi vishwanath', 'vishwanath temple', 'kashi'] },
+      { name: 'Assi Ghat', region: 'Varanasi, Uttar Pradesh', lat: 25.2882, lon: 83.0062, zoom: 16.0, icon: '🪔', type: 'Sacred River Ghat', desc: 'Southernmost Sacred Ganga Ghat & Subah-e-Banaras Aarti', aliases: ['assi ghat'] },
+      { name: 'Calangute Beach', region: 'North Goa', lat: 15.5439, lon: 73.7553, zoom: 15.0, icon: '🏖️', type: 'Golden Beach', desc: 'Queen of Beaches • Water Sports & Coastal Promenade', aliases: ['calangute', 'calangute beach'] },
+      { name: 'Baga Beach', region: 'North Goa', lat: 15.5553, lon: 73.7517, zoom: 15.0, icon: '🌊', type: 'Coastal Beach', desc: 'Lively Shoreline, Nightlife & Water Sports Hub', aliases: ['baga', 'baga beach'] },
+      { name: 'Anjuna Beach', region: 'North Goa', lat: 15.5800, lon: 73.7420, zoom: 15.0, icon: '🌴', type: 'Rocky Shoreline', desc: 'Flea Market, Red Cliffs & Coastal Cafes', aliases: ['anjuna', 'anjuna beach'] },
+      { name: 'Palolem Beach', region: 'South Goa', lat: 15.0100, lon: 74.0232, zoom: 15.0, icon: '🏖️', type: 'Scenic Bay', desc: 'Crescent White Sand Beach, Dolphin Cruises & Palm Groves', aliases: ['palolem', 'palolem beach'] },
+      { name: 'Dal Lake', region: 'Srinagar, Kashmir', lat: 34.1167, lon: 74.8667, zoom: 14.5, icon: '🚣', type: 'Alpine Lake', desc: 'Traditional Cedarwood Shikaras & Floating Gardens', aliases: ['dal lake', 'shikara'] },
+      { name: 'Hampi Ruins', region: 'Vijayanagara, Karnataka', lat: 15.3350, lon: 76.4600, zoom: 14.5, icon: '🗿', type: 'UNESCO World Heritage', desc: 'Ancient Vijayanagara Empire Stone Chariot & Virupaksha Temple', aliases: ['hampi', 'hampi ruins', 'virupaksha'] },
+      { name: 'Charminar', region: 'Hyderabad, Telangana', lat: 17.3616, lon: 78.4747, zoom: 16.5, icon: '🕌', type: 'Historical Monument', desc: '1591 Four-Minaret Monument & Laad Bazaar Bangles', aliases: ['charminar'] },
+      { name: 'Victoria Memorial', region: 'Kolkata, West Bengal', lat: 22.5448, lon: 88.3426, zoom: 16.0, icon: '🏛️', type: 'Historic Monument', desc: 'Grand British Colonial White Marble Museum & Gardens', aliases: ['victoria memorial'] },
+      { name: 'Howrah Bridge', region: 'Kolkata, West Bengal', lat: 22.5851, lon: 88.3468, zoom: 15.5, icon: '🌉', type: 'Iconic Bridge', desc: 'Rabindra Setu Cantilever Bridge across the Hooghly River', aliases: ['howrah bridge', 'howrah'] },
+
+      // Major Hubs, Metros & Tourist Cities
+      { name: 'New Delhi', region: 'Delhi NCR', lat: 28.6139, lon: 77.2090, zoom: 12.5, icon: '📍', type: 'National Capital', desc: 'Northern Commercial & Executive Hub', aliases: ['delhi', 'new delhi', 'ncr'] },
+      { name: 'Mumbai', region: 'Maharashtra', lat: 19.0760, lon: 72.8777, zoom: 12.5, icon: '📍', type: 'Financial Capital', desc: 'Western Commercial Gateway & Coastal Metropolis', aliases: ['mumbai', 'bombay'] },
+      { name: 'Goa', region: 'Goa', lat: 15.2993, lon: 74.1240, zoom: 11.0, icon: '📍', type: 'Coastal State', desc: 'Golden Sand Coastline, Portuguese Heritage & Sunsets', aliases: ['goa', 'panaji', 'north goa', 'south goa'] },
+      { name: 'Pune', region: 'Maharashtra', lat: 18.5204, lon: 73.8567, zoom: 13.0, icon: '📍', type: 'Metro Hub', desc: 'Oxford of the East & Auto-Tech Corridor, Maharashtra', aliases: ['pune', 'poona'] },
+      { name: 'Bengaluru', region: 'Karnataka', lat: 12.9716, lon: 77.5946, zoom: 12.5, icon: '📍', type: 'Technology Corridor', desc: 'Silicon Valley of India & Garden City', aliases: ['bengaluru', 'bangalore', 'blr'] },
+      { name: 'Hyderabad', region: 'Telangana', lat: 17.3850, lon: 78.4867, zoom: 12.5, icon: '📍', type: 'Cyber Hub', desc: 'City of Pearls & Southern IT Capital', aliases: ['hyderabad', 'secunderabad'] },
+      { name: 'Chennai', region: 'Tamil Nadu', lat: 13.0827, lon: 80.2707, zoom: 12.5, icon: '📍', type: 'Metropolitan Gateway', desc: 'Coromandel Coastal Commercial Center', aliases: ['chennai', 'madras'] },
+      { name: 'Kolkata', region: 'West Bengal', lat: 22.5726, lon: 88.3639, zoom: 12.5, icon: '📍', type: 'Eastern Hub', desc: 'City of Joy & Eastern River Port', aliases: ['kolkata', 'calcutta'] },
+      { name: 'Jaipur', region: 'Rajasthan', lat: 26.9124, lon: 75.7873, zoom: 13.0, icon: '📍', type: 'Pink City', desc: 'Heritage Capital of Rajasthan & Golden Triangle', aliases: ['jaipur'] },
+      { name: 'Udaipur', region: 'Rajasthan', lat: 24.5854, lon: 73.7125, zoom: 13.0, icon: '📍', type: 'City of Lakes', desc: 'Romantic Palaces on Lake Pichola', aliases: ['udaipur'] },
+      { name: 'Jodhpur', region: 'Rajasthan', lat: 26.2389, lon: 73.0243, zoom: 13.0, icon: '📍', type: 'Blue City', desc: 'Mehrangarh Fortress & Thar Desert Gateway', aliases: ['jodhpur'] },
+      { name: 'Jaisalmer', region: 'Rajasthan', lat: 26.9157, lon: 70.9083, zoom: 13.0, icon: '📍', type: 'Golden City', desc: 'Yellow Sandstone Living Fort & Sam Sand Dunes', aliases: ['jaisalmer'] },
+      { name: 'Agra', region: 'Uttar Pradesh', lat: 27.1767, lon: 78.0081, zoom: 13.0, icon: '📍', type: 'Mughal Heritage City', desc: 'Home to Taj Mahal, Agra Fort & Fatehpur Sikri', aliases: ['agra'] },
+      { name: 'Varanasi', region: 'Uttar Pradesh', lat: 25.3176, lon: 82.9739, zoom: 13.0, icon: '📍', type: 'Spiritual Epicenter', desc: 'Sacred Ganges Ghats with Ancient Aarti Ceremonies', aliases: ['varanasi', 'banaras', 'kashi'] },
+      { name: 'Amritsar', region: 'Punjab', lat: 31.6340, lon: 74.8723, zoom: 13.0, icon: '📍', type: 'Spiritual Hub', desc: 'Golden Temple & Historic Culinary Haven', aliases: ['amritsar'] },
+      { name: 'Srinagar', region: 'Jammu & Kashmir', lat: 34.0837, lon: 74.7973, zoom: 13.0, icon: '📍', type: 'Valley Paradise', desc: 'Dal Lake Shikaras & Snowcapped Pir Panjal', aliases: ['srinagar', 'kashmir'] },
+      { name: 'Leh', region: 'Ladakh', lat: 34.1526, lon: 77.5771, zoom: 13.0, icon: '📍', type: 'High Altitude Hub', desc: 'Trans-Himalayan Monasteries & Khardung La Pass', aliases: ['leh', 'ladakh'] },
+      { name: 'Manali', region: 'Himachal Pradesh', lat: 32.2432, lon: 77.1892, zoom: 13.5, icon: '📍', type: 'Himalayan Resort', desc: 'Beas River, Solang Valley & Rohtang Heights', aliases: ['manali'] },
+      { name: 'Shimla', region: 'Himachal Pradesh', lat: 31.1048, lon: 77.1734, zoom: 13.5, icon: '📍', type: 'Hill Station', desc: 'Colonial Ridge, Mall Road & Pine Forests', aliases: ['shimla'] },
+      { name: 'Rishikesh', region: 'Uttarakhand', lat: 30.0869, lon: 78.2676, zoom: 13.5, icon: '📍', type: 'Yoga Capital', desc: 'Ganges White-Water Rafting & Foothills', aliases: ['rishikesh'] },
+      { name: 'Haridwar', region: 'Uttarakhand', lat: 29.9457, lon: 78.1642, zoom: 13.5, icon: '📍', type: 'Holy Pilgrimage', desc: 'Har Ki Pauri Holy Dip & Evening Ganga Aarti', aliases: ['haridwar'] },
+      { name: 'Nainital', region: 'Uttarakhand', lat: 29.3919, lon: 79.4542, zoom: 13.5, icon: '📍', type: 'Lake District', desc: 'Naini Lake, Boating & Himalayan Viewpoints', aliases: ['nainital'] },
+      { name: 'Mussoorie', region: 'Uttarakhand', lat: 30.4598, lon: 78.0644, zoom: 13.5, icon: '📍', type: 'Queen of Hills', desc: 'Kempty Falls, Mall Road & Doon Valley Views', aliases: ['mussoorie'] },
+      { name: 'Kochi', region: 'Kerala', lat: 9.9312, lon: 76.2673, zoom: 13.0, icon: '📍', type: 'Spice Port', desc: 'Chinese Fishing Nets, Fort Kochi & Spices', aliases: ['kochi', 'cochin'] },
+      { name: 'Alleppey', region: 'Kerala', lat: 9.4981, lon: 76.3388, zoom: 13.0, icon: '📍', type: 'Backwaters Sanctuary', desc: 'Luxury Houseboats & Palm-Fringed Lagoons', aliases: ['alleppey', 'alappuzha'] },
+      { name: 'Munnar', region: 'Kerala', lat: 10.0889, lon: 77.0595, zoom: 13.0, icon: '📍', type: 'Tea Garden Haven', desc: 'Misty Rolling Green Tea Plantations', aliases: ['munnar'] },
+      { name: 'Ooty', region: 'Tamil Nadu', lat: 11.4102, lon: 76.6950, zoom: 13.5, icon: '📍', type: 'Nilgiri Hill Station', desc: 'Nilgiri Mountain Railway & Botanical Gardens', aliases: ['ooty', 'udhagamandalam'] },
+      { name: 'Mysore', region: 'Karnataka', lat: 12.2958, lon: 76.6394, zoom: 13.0, icon: '📍', type: 'Palace City', desc: 'Illuminated Mysore Royal Palace & Chamundi Hill', aliases: ['mysore', 'mysuru'] },
+      { name: 'Darjeeling', region: 'West Bengal', lat: 27.0410, lon: 88.2663, zoom: 13.5, icon: '📍', type: 'Himalayan Ridge', desc: 'Kanchenjunga Sunrise & Heritage Toy Train', aliases: ['darjeeling'] },
+      { name: 'Gangtok', region: 'Sikkim', lat: 27.3389, lon: 88.6065, zoom: 13.5, icon: '📍', type: 'Mountain City', desc: 'Enchey Monastery & Tsomgo Lake Gateway', aliases: ['gangtok'] },
+      { name: 'Ahmedabad', region: 'Gujarat', lat: 23.0225, lon: 72.5714, zoom: 12.5, icon: '📍', type: 'Heritage Metropolis', desc: 'Sabarmati Ashram & UNESCO Walled City', aliases: ['ahmedabad', 'amdavad'] },
+      { name: 'Surat', region: 'Gujarat', lat: 21.1702, lon: 72.8311, zoom: 12.5, icon: '📍', type: 'Diamond City', desc: 'Textile Capital & Tapi Riverfront', aliases: ['surat'] },
+      { name: 'Lucknow', region: 'Uttar Pradesh', lat: 26.8467, lon: 80.9462, zoom: 12.5, icon: '📍', type: 'City of Nawabs', desc: 'Bara Imambara, Awadhi Cuisine & Chikan Embroidery', aliases: ['lucknow'] },
+      { name: 'Indore', region: 'Madhya Pradesh', lat: 22.7196, lon: 75.8577, zoom: 12.5, icon: '📍', type: 'Commercial City', desc: 'Rajwada Palace & Sarafa Night Food Market', aliases: ['indore'] },
+      { name: 'Bhopal', region: 'Madhya Pradesh', lat: 23.2599, lon: 77.4126, zoom: 12.5, icon: '📍', type: 'City of Lakes', desc: 'Upper Lake & Sanchi Stupa Gateway', aliases: ['bhopal'] },
+      { name: 'Chandigarh', region: 'Chandigarh', lat: 30.7333, lon: 76.7794, zoom: 13.0, icon: '📍', type: 'Planned City', desc: 'Rock Garden & Sukhna Lake', aliases: ['chandigarh'] },
+      { name: 'Noida', region: 'Uttar Pradesh', lat: 28.5355, lon: 77.3910, zoom: 13.0, icon: '📍', type: 'Tech Hub NCR', desc: 'Corporate Expressway & Modern Townships', aliases: ['noida'] },
+      { name: 'Gurugram', region: 'Haryana', lat: 28.4595, lon: 77.0266, zoom: 13.0, icon: '📍', type: 'Millennium City', desc: 'Cyber City & High-Rise Corporate Corridor', aliases: ['gurugram', 'gurgaon'] },
+      { name: 'Pondicherry', region: 'Puducherry', lat: 11.9416, lon: 79.8083, zoom: 13.5, icon: '📍', type: 'French Quarter', desc: 'Promenade Beach & Auroville Sanctuary', aliases: ['pondicherry', 'puducherry'] },
+      { name: 'Dubai', region: 'UAE', lat: 25.2048, lon: 55.2708, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Burj Khalifa, Palm Jumeirah & Desert Luxury', aliases: ['dubai'] },
+      { name: 'Singapore', region: 'Singapore', lat: 1.3521, lon: 103.8198, zoom: 12.0, icon: '📍', type: 'Global City', desc: 'Marina Bay Sands & Gardens by the Bay', aliases: ['singapore'] },
+      { name: 'London', region: 'United Kingdom', lat: 51.5074, lon: -0.1278, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Thames River, Big Ben & West End', aliases: ['london'] },
+      { name: 'Paris', region: 'France', lat: 48.8566, lon: 2.3522, zoom: 12.0, icon: '📍', type: 'City of Light', desc: 'Eiffel Tower, Louvre Museum & Seine', aliases: ['paris'] },
+      { name: 'New York', region: 'USA', lat: 40.7128, lon: -74.0060, zoom: 12.0, icon: '📍', type: 'Global Metropolis', desc: 'Manhattan Skyline, Times Square & Central Park', aliases: ['new york', 'nyc'] }
     ];
+
+    function scoreLocationMatch(item, query) {
+      if (!item || !query) return 0;
+      const qNorm = query.toLowerCase().trim();
+      if (!qNorm) return 0;
+
+      const name = (item.name || '').toLowerCase().trim();
+      const region = (item.region || '').toLowerCase().trim();
+      const aliases = (item.aliases || []).map(a => a.toLowerCase().trim());
+
+      // 1. Exact Match on name or alias
+      if (name === qNorm || aliases.includes(qNorm)) return 1000;
+
+      // 2. Name Starts With Query
+      if (name.startsWith(qNorm)) return 850;
+
+      // 3. Alias Starts With Query
+      if (aliases.some(a => a.startsWith(qNorm))) return 820;
+
+      // 4. Any Word in Name Equals Query
+      const words = name.split(/\s+/);
+      if (words.some(w => w === qNorm)) return 800;
+
+      // 5. Any Word in Name Starts With Query
+      if (words.some(w => w.startsWith(qNorm))) return 700;
+
+      // 6. Any Word in Alias Starts With Query
+      for (const a of aliases) {
+        const aWords = a.split(/\s+/);
+        if (aWords.some(w => w === qNorm)) return 780;
+        if (aWords.some(w => w.startsWith(qNorm))) return 680;
+      }
+
+      // 7. Substring in Name (at least 3 characters)
+      if (qNorm.length >= 3 && name.includes(qNorm)) return 550;
+
+      // 8. Region Match
+      if (region === qNorm) return 400;
+      if (region.startsWith(qNorm)) return 350;
+      if (qNorm.length >= 3 && region.includes(qNorm)) return 250;
+
+      return 0;
+    }
 
     function createGoogleRedPin() {
       const el = document.createElement('div');
@@ -6219,8 +6348,8 @@
         landingDiscoveryMap = new maplibregl.Map({
           container: 'landingDiscoveryMap',
           style: GMAP_ROAD_STYLE,
-          center: [77.2090, 28.6139], // Initial Jaipur focus
-          zoom: 11.5,
+          center: [77.2090, 28.6139], // Initial Delhi focus
+          zoom: 12.0,
           pitch: 28,
           bearing: 0,
           attributionControl: false
@@ -6239,9 +6368,6 @@
           await handleMapCanvasClick(lat, lng);
         });
 
-        // Setup City Shortcut Chips
-        // setupGmapCityChips removed for clean Google Maps view
-
         // Setup Google Controls
         setupGmapControls();
 
@@ -6254,51 +6380,76 @@
 
     function dropMapPin(lat, lon, label) {
       if (!landingDiscoveryMap) return;
+      const nLat = parseFloat(lat);
+      const nLon = parseFloat(lon);
+      if (isNaN(nLat) || isNaN(nLon)) return;
+
       if (!landingMapMarker) {
         landingMapMarker = new maplibregl.Marker({
           element: createGoogleRedPin(),
           anchor: 'bottom'
         })
-          .setLngLat([lon, lat])
+          .setLngLat([nLon, nLat])
           .addTo(landingDiscoveryMap);
       } else {
-        landingMapMarker.setLngLat([lon, lat]);
+        landingMapMarker.setLngLat([nLon, nLat]);
       }
-      currentMapLocation = { name: label, lat, lon };
+      currentMapLocation = { name: label, lat: nLat, lon: nLon };
     }
 
     async function handleMapCanvasClick(lat, lon) {
-      // Find closest known city or use lat/lon
-      let nearestName = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
-      let minDistance = Infinity;
+      const nLat = parseFloat(lat);
+      const nLon = parseFloat(lon);
+      if (isNaN(nLat) || isNaN(nLon)) return;
 
-      GMAP_PRESET_CITIES.forEach(c => {
-        const d = Math.hypot(c.lat - lat, c.lon - lon);
-        if (d < minDistance) {
-          minDistance = d;
-          if (d < 0.45) nearestName = c.name;
+      let placeName = `${nLat.toFixed(4)}° N, ${nLon.toFixed(4)}° E`;
+
+      // Check if clicked close to an iconic catalog landmark (within ~2km)
+      let minD = Infinity;
+      GMAP_CORE_CATALOG.forEach(c => {
+        const d = Math.hypot(c.lat - nLat, c.lon - nLon);
+        if (d < minD && d < 0.02) {
+          minD = d;
+          placeName = c.name + (c.region ? `, ${c.region}` : '');
         }
       });
 
-      dropMapPin(lat, lon, nearestName);
+      dropMapPin(nLat, nLon, placeName);
 
+      // Live reverse geocoding via Backend & Photon
       try {
-        const res = await fetch(`${API_BASE}/geo/reverse?lat=${lat}&lon=${lon}`);
+        const res = await fetch(`${API_BASE}/geo/reverse?lat=${nLat}&lon=${nLon}`);
         if (res.ok) {
           const geo = await res.json();
-          if (geo && geo.name) {
-            nearestName = geo.name + (geo.region ? `, ${geo.region}` : '');
-            currentMapLocation.name = nearestName;
+          if (geo && geo.name && !geo.name.includes('Location (')) {
+            placeName = geo.name + (geo.region ? `, ${geo.region}` : '');
+            currentMapLocation.name = placeName;
+          }
+        } else {
+          // Client-side fallback
+          const revRes = await fetch(`https://photon.komoot.io/reverse?lat=${nLat}&lon=${nLon}`);
+          if (revRes.ok) {
+            const data = await revRes.json();
+            if (data && data.features && data.features[0]) {
+              const p = data.features[0].properties || {};
+              const n = p.name || p.city || p.district || p.street;
+              if (n) {
+                placeName = n + (p.state ? `, ${p.state}` : '');
+                currentMapLocation.name = placeName;
+              }
+            }
           }
         }
       } catch (e) {
         console.warn('Reverse geocode fallback:', e);
       }
 
-      await refreshDestinationIntel(lat, lon, nearestName);
+      await refreshDestinationIntel(nLat, nLon, placeName);
     }
 
     async function refreshDestinationIntel(lat, lon, name) {
+      const nLat = parseFloat(lat);
+      const nLon = parseFloat(lon);
       const card = document.getElementById('mapIntelCard');
       const titleEl = document.getElementById('intelTitle');
       const coordsEl = document.getElementById('intelCoords');
@@ -6308,14 +6459,14 @@
 
       if (card) card.classList.add('active');
       if (titleEl) titleEl.textContent = name;
-      if (coordsEl) coordsEl.textContent = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+      if (coordsEl) coordsEl.textContent = `${nLat.toFixed(4)}° N, ${nLon.toFixed(4)}° E`;
       if (planDestNameEl) planDestNameEl.textContent = name.split(',')[0].trim();
       if (fullLinkEl) fullLinkEl.href = `./map_view.html?destination=${encodeURIComponent(name.split(',')[0].trim())}`;
-      if (gmapsLinkEl) gmapsLinkEl.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+      if (gmapsLinkEl) gmapsLinkEl.href = `https://www.google.com/maps/search/?api=1&query=${nLat},${nLon}`;
 
       // Live Weather Forecast
       try {
-        const wRes = await fetch(`${API_BASE}/weather/forecast?lat=${lat}&lon=${lon}`);
+        const wRes = await fetch(`${API_BASE}/weather/forecast?lat=${nLat}&lon=${nLon}`);
         if (wRes.ok) {
           const w = await wRes.json();
           const tempEl = document.getElementById('intelTemp');
@@ -6332,7 +6483,7 @@
       } catch (e) {
         // Direct Open-Meteo Client Fallback
         try {
-          const omRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+          const omRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${nLat}&longitude=${nLon}&current_weather=true`);
           if (omRes.ok) {
             const om = await omRes.json();
             const tempEl = document.getElementById('intelTemp');
@@ -6345,7 +6496,7 @@
 
       // Verified Regional Attractions
       try {
-        const aRes = await fetch(`${API_BASE}/geo/attractions?lat=${lat}&lon=${lon}&query=${encodeURIComponent(name)}`);
+        const aRes = await fetch(`${API_BASE}/geo/attractions?lat=${nLat}&lon=${nLon}&query=${encodeURIComponent(name)}`);
         if (aRes.ok) {
           const rawA = await aRes.json();
           const attractions = Array.isArray(rawA) ? rawA : (rawA.attractions || rawA.results || []);
@@ -6359,19 +6510,25 @@
       }
     }
 
-    function flyMapTo(lat, lon, name, zoomLevel = 12.5) {
+    function flyMapTo(lat, lon, name, zoomLevel = 13) {
+      const nLat = parseFloat(lat);
+      const nLon = parseFloat(lon);
+      if (isNaN(nLat) || isNaN(nLon)) return;
+
       if (landingDiscoveryMap) {
+        landingDiscoveryMap.stop();
         landingDiscoveryMap.flyTo({
-          center: [lon, lat],
+          center: [nLon, nLat],
           zoom: zoomLevel,
-          pitch: 32,
-          speed: 1.4,
+          pitch: 28,
+          bearing: 0,
+          speed: 1.5,
           curve: 1.2,
           essential: true
         });
       }
-      dropMapPin(lat, lon, name);
-      refreshDestinationIntel(lat, lon, name);
+      dropMapPin(nLat, nLon, name);
+      refreshDestinationIntel(nLat, nLon, name);
     }
 
     function setupGmapControls() {
@@ -6394,6 +6551,7 @@
       // Recenter to Whole India View
       document.getElementById('mapResetView')?.addEventListener('click', () => {
         if (landingDiscoveryMap) {
+          landingDiscoveryMap.stop();
           landingDiscoveryMap.flyTo({ center: [78.9629, 22.5937], zoom: 4.8, pitch: 0, bearing: 0, speed: 1.2 });
         }
       });
@@ -6433,101 +6591,288 @@
       });
     }
 
+    async function executeDirectSearch(rawQuery) {
+      const q = (rawQuery || '').trim();
+      if (!q) return;
+
+      const dropdown = document.getElementById('mapSearchDropdown');
+      if (dropdown) dropdown.style.display = 'none';
+
+      // 1. Check local catalog first (instant precision)
+      const scoredCatalog = GMAP_CORE_CATALOG
+        .map(item => ({ item, score: scoreLocationMatch(item, q) }))
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      if (scoredCatalog.length > 0) {
+        const winner = scoredCatalog[0].item;
+        flyMapTo(winner.lat, winner.lon, winner.name + (winner.region ? `, ${winner.region}` : ''), winner.zoom || 13);
+        const searchInput = document.getElementById('mapSearchInput');
+        if (searchInput) searchInput.value = winner.name + (winner.region ? `, ${winner.region}` : '');
+        return;
+      }
+
+      // 2. If not found in catalog, fetch live geocoding (Backend + Photon)
+      const searchInput = document.getElementById('mapSearchInput');
+      const originalPlaceholder = searchInput ? searchInput.placeholder : '';
+      if (searchInput) searchInput.placeholder = 'Locating on map...';
+
+      let candidates = [];
+      try {
+        const encoded = encodeURIComponent(q);
+
+        // Try backend first
+        try {
+          const res = await fetch(`${API_BASE}/geo/search?q=${encoded}`);
+          if (res.ok) {
+            const list = await res.json();
+            if (Array.isArray(list) && list.length > 0) {
+              candidates = list.map(item => ({
+                name: item.name,
+                region: item.region || item.country || '',
+                lat: parseFloat(item.lat),
+                lon: parseFloat(item.lon),
+                zoom: 13
+              }));
+            }
+          }
+        } catch (e) {}
+
+        // Direct client-side Photon fallback
+        if (candidates.length === 0) {
+          try {
+            const photonRes = await fetch(`https://photon.komoot.io/api/?q=${encoded}&limit=3`);
+            if (photonRes.ok) {
+              const data = await photonRes.json();
+              if (data && data.features && data.features.length > 0) {
+                candidates = data.features.map(f => {
+                  const p = f.properties || {};
+                  const coords = (f.geometry && f.geometry.coordinates) || [0, 0];
+                  const n = p.name || p.city || p.state || q;
+                  const reg = p.state || p.district || p.county || p.country || '';
+                  return {
+                    name: n,
+                    region: reg,
+                    lat: parseFloat(coords[1]),
+                    lon: parseFloat(coords[0]),
+                    zoom: p.type === 'house' || p.type === 'building' ? 16.5 : (p.type === 'city' ? 13 : 14.5)
+                  };
+                }).filter(x => !isNaN(x.lat) && !isNaN(x.lon));
+              }
+            }
+          } catch (pe) {}
+        }
+
+        if (candidates.length > 0) {
+          const top = candidates[0];
+          const fullName = top.name + (top.region ? `, ${top.region}` : '');
+          flyMapTo(top.lat, top.lon, fullName, top.zoom || 13);
+          if (searchInput) searchInput.value = fullName;
+        } else {
+          alert(`Could not find "${q}". Please check spelling or search for a city or landmark.`);
+        }
+      } catch (err) {
+        console.error('Direct search error:', err);
+      } finally {
+        if (searchInput) searchInput.placeholder = originalPlaceholder || 'Search Google Maps — Taj Mahal, Delhi, Goa, Pune, any landmark...';
+      }
+    }
+
     function setupGmapSearch() {
       const searchInput = document.getElementById('mapSearchInput');
       const dropdown = document.getElementById('mapSearchDropdown');
       const clearBtn = document.getElementById('mapSearchClear');
-      let timer = null;
+      const submitBtn = document.getElementById('mapSearchSubmit');
+      let debounceTimer = null;
+      let currentResults = [];
+      let highlightedIndex = -1;
 
       if (!searchInput || !dropdown) return;
 
+      function renderDropdown(items) {
+        currentResults = items;
+        highlightedIndex = -1;
+        if (!items || items.length === 0) {
+          dropdown.style.display = 'none';
+          dropdown.innerHTML = '';
+          return;
+        }
+
+        dropdown.innerHTML = items.slice(0, 8).map((item, idx) => `
+          <div class="gmap-dropdown-item" data-index="${idx}">
+            <div class="gmap-dropdown-icon">${item.icon || '📍'}</div>
+            <div class="gmap-dropdown-info">
+              <div class="gmap-dropdown-name">${item.name}</div>
+              <div class="gmap-dropdown-sub">${item.region ? item.region + ' • ' : ''}${item.desc || item.type || 'Verified Location'}</div>
+            </div>
+          </div>
+        `).join('');
+
+        dropdown.style.display = 'block';
+
+        dropdown.querySelectorAll('.gmap-dropdown-item').forEach(el => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const idx = parseInt(el.getAttribute('data-index'), 10);
+            if (currentResults[idx]) {
+              selectItem(currentResults[idx]);
+            }
+          });
+        });
+      }
+
+      function updateHighlight() {
+        const items = dropdown.querySelectorAll('.gmap-dropdown-item');
+        items.forEach((item, idx) => {
+          if (idx === highlightedIndex) {
+            item.classList.add('highlighted');
+            item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          } else {
+            item.classList.remove('highlighted');
+          }
+        });
+      }
+
+      function selectItem(item) {
+        const fullName = item.name + (item.region ? `, ${item.region}` : '');
+        searchInput.value = fullName;
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        currentResults = [];
+        highlightedIndex = -1;
+        if (clearBtn) clearBtn.style.display = 'block';
+        flyMapTo(item.lat, item.lon, fullName, item.zoom || 13);
+      }
+
+      // Input listener with debounce
       searchInput.addEventListener('input', () => {
-        clearTimeout(timer);
-        const q = searchInput.value.trim().toLowerCase();
+        clearTimeout(debounceTimer);
+        const q = searchInput.value.trim();
         if (clearBtn) clearBtn.style.display = q.length > 0 ? 'block' : 'none';
 
         if (q.length < 2) {
           dropdown.style.display = 'none';
+          dropdown.innerHTML = '';
+          currentResults = [];
           return;
         }
 
-        timer = setTimeout(async () => {
-          // 1. Instant Preset Matches
-          const localMatches = GMAP_PRESET_CITIES.filter(c => 
-            c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)
-          );
+        // 1. Instant local scored matches (0ms response)
+        const localMatches = GMAP_CORE_CATALOG
+          .map(item => ({ item, score: scoreLocationMatch(item, q) }))
+          .filter(x => x.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(x => x.item);
 
-          // 2. Fetch from backend if available
-          let remoteMatches = [];
+        renderDropdown(localMatches);
+
+        // 2. Live geocode fetch in background
+        debounceTimer = setTimeout(async () => {
           try {
-            const res = await fetch(`${API_BASE}/geo/search?q=${encodeURIComponent(q)}`);
-            if (res.ok) {
-              const list = await res.json();
-              if (Array.isArray(list)) remoteMatches = list;
-            }
-          } catch (e) {}
+            const encoded = encodeURIComponent(q);
+            let remoteItems = [];
 
-          // Combine results
-          const combined = [...localMatches];
-          remoteMatches.forEach(rm => {
-            if (!combined.some(c => c.name.toLowerCase() === rm.name.toLowerCase())) {
-              combined.push({
-                name: rm.region ? `${rm.name}, ${rm.region}` : rm.name,
-                lat: rm.lat,
-                lon: rm.lon,
-                icon: '📍',
-                type: rm.type || 'Location',
-                desc: `${rm.country || 'India'}`
-              });
-            }
-          });
+            try {
+              const res = await fetch(`${API_BASE}/geo/search?q=${encoded}`);
+              if (res.ok) {
+                const list = await res.json();
+                if (Array.isArray(list)) {
+                  remoteItems = list.map(rm => ({
+                    name: rm.name,
+                    region: rm.region || rm.country || '',
+                    lat: parseFloat(rm.lat),
+                    lon: parseFloat(rm.lon),
+                    icon: '📍',
+                    type: rm.type || 'Location',
+                    desc: rm.country || 'Verified Destination',
+                    zoom: 13
+                  }));
+                }
+              }
+            } catch (e) {}
 
-          if (combined.length > 0) {
-            dropdown.innerHTML = combined.slice(0, 8).map(item => `
-              <div class="gmap-dropdown-item" onclick="onPickGmapSearch('${item.name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
-                <div class="gmap-dropdown-icon">${item.icon || '📍'}</div>
-                <div class="gmap-dropdown-info">
-                  <div class="gmap-dropdown-name">${item.name}</div>
-                  <div class="gmap-dropdown-sub">${item.type || 'Destination'} • ${item.desc || 'Explore with verified intelligence'}</div>
-                </div>
-              </div>
-            `).join('');
-            dropdown.style.display = 'block';
-          } else {
-            dropdown.style.display = 'none';
-          }
+            const combined = [...localMatches];
+            remoteItems.forEach(rm => {
+              if (!combined.some(c => c.name.toLowerCase() === rm.name.toLowerCase())) {
+                combined.push(rm);
+              }
+            });
+
+            if (searchInput.value.trim().toLowerCase() === q.toLowerCase()) {
+              renderDropdown(combined);
+            }
+          } catch (err) {}
         }, 180);
       });
 
+      // Keydown navigation
       searchInput.addEventListener('keydown', (e) => {
+        if (dropdown.style.display === 'block' && currentResults.length > 0) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex + 1) % currentResults.length;
+            updateHighlight();
+            return;
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex - 1 + currentResults.length) % currentResults.length;
+            updateHighlight();
+            return;
+          } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+            return;
+          }
+        }
+
         if (e.key === 'Enter') {
           e.preventDefault();
-          const first = dropdown.querySelector('.gmap-dropdown-item');
-          if (first) first.click();
+          if (highlightedIndex >= 0 && currentResults[highlightedIndex]) {
+            selectItem(currentResults[highlightedIndex]);
+          } else {
+            executeDirectSearch(searchInput.value);
+          }
         }
       });
 
+      // Search submit button
+      if (submitBtn) {
+        submitBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (highlightedIndex >= 0 && currentResults[highlightedIndex]) {
+            selectItem(currentResults[highlightedIndex]);
+          } else {
+            executeDirectSearch(searchInput.value);
+          }
+        });
+      }
+
+      // Clear button
       if (clearBtn) {
         clearBtn.addEventListener('click', () => {
           searchInput.value = '';
           clearBtn.style.display = 'none';
           dropdown.style.display = 'none';
+          dropdown.innerHTML = '';
+          currentResults = [];
+          highlightedIndex = -1;
+          searchInput.focus();
         });
       }
 
+      // Close dropdown on outside click
       document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target) && !(submitBtn && submitBtn.contains(e.target))) {
           dropdown.style.display = 'none';
         }
       });
     }
 
-    window.onPickGmapSearch = function(name, lat, lon) {
+    window.onPickGmapSearch = function(name, lat, lon, zoom = 13) {
       const searchInput = document.getElementById('mapSearchInput');
       const dropdown = document.getElementById('mapSearchDropdown');
       if (searchInput) searchInput.value = name;
       if (dropdown) dropdown.style.display = 'none';
-      flyMapTo(lat, lon, name, 13);
+      flyMapTo(lat, lon, name, zoom);
     };
 
     // Seamless Handoff from Map to Dynamic Planner

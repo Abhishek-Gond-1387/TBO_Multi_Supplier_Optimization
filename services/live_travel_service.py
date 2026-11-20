@@ -48,6 +48,17 @@ CACHE_TTL_LONG = 86400      # 24 hours for geocoding
 CORE_GEO_DATABASE = [
     # Top Indian Destinations & Transit Hubs
     {"name": "New Delhi", "region": "Delhi", "country": "India", "country_code": "IN", "lat": 28.6139, "lon": 77.2090, "type": "capital", "tier": "METRO"},
+    {"name": "Taj Mahal", "region": "Agra, Uttar Pradesh", "country": "India", "country_code": "IN", "lat": 27.1751, "lon": 78.0421, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Goa", "region": "Goa", "country": "India", "country_code": "IN", "lat": 15.2993, "lon": 74.1240, "type": "state", "tier": "COASTAL"},
+    {"name": "Pune", "region": "Maharashtra", "country": "India", "country_code": "IN", "lat": 18.5204, "lon": 73.8567, "type": "city", "tier": "METRO"},
+    {"name": "India Gate", "region": "New Delhi", "country": "India", "country_code": "IN", "lat": 28.6129, "lon": 77.2295, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Connaught Place", "region": "New Delhi", "country": "India", "country_code": "IN", "lat": 28.6317, "lon": 77.2193, "type": "commercial", "tier": "METRO"},
+    {"name": "Red Fort", "region": "Old Delhi", "country": "India", "country_code": "IN", "lat": 28.6562, "lon": 77.2410, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Qutub Minar", "region": "New Delhi", "country": "India", "country_code": "IN", "lat": 28.5244, "lon": 77.1855, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Gateway of India", "region": "Mumbai, Maharashtra", "country": "India", "country_code": "IN", "lat": 18.9220, "lon": 72.8347, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Marine Drive", "region": "Mumbai, Maharashtra", "country": "India", "country_code": "IN", "lat": 18.9432, "lon": 72.8230, "type": "promenade", "tier": "COASTAL"},
+    {"name": "Hawa Mahal", "region": "Jaipur, Rajasthan", "country": "India", "country_code": "IN", "lat": 26.9239, "lon": 75.8267, "type": "monument", "tier": "HERITAGE"},
+    {"name": "Golden Temple", "region": "Amritsar, Punjab", "country": "India", "country_code": "IN", "lat": 31.6200, "lon": 74.8765, "type": "spiritual", "tier": "SPIRITUAL"},
     {"name": "Mumbai", "region": "Maharashtra", "country": "India", "country_code": "IN", "lat": 19.0760, "lon": 72.8777, "type": "city", "tier": "METRO"},
     {"name": "Bengaluru", "region": "Karnataka", "country": "India", "country_code": "IN", "lat": 12.9716, "lon": 77.5946, "type": "city", "tier": "METRO"},
     {"name": "Hyderabad", "region": "Telangana", "country": "India", "country_code": "IN", "lat": 17.3850, "lon": 78.4867, "type": "city", "tier": "METRO"},
@@ -234,15 +245,39 @@ def search_destinations_global(query: str, limit: int = 8) -> List[Dict[str, Any
 
     results: List[Dict[str, Any]] = []
 
-    # 1. Match against local core database first for sub-millisecond response
+    # 1. Scored matching against local core database for instant precision
     q_lower = q.lower()
+    scored_local = []
     for item in CORE_GEO_DATABASE:
-        haystack = f"{item['name']} {item['region']} {item['country']}".lower()
-        if q_lower in haystack or all(w in haystack for w in q_lower.split()):
-            results.append(item)
-            if len(results) >= limit:
-                _CACHE[cache_key] = (now, results)
-                return results
+        n = item["name"].lower()
+        r = item.get("region", "").lower()
+        c = item.get("country", "").lower()
+        
+        score = 0
+        if n == q_lower:
+            score = 1000
+        elif n.startswith(q_lower):
+            score = 850
+        elif any(w.startswith(q_lower) for w in n.split()):
+            score = 750
+        elif q_lower in n and len(q_lower) >= 3:
+            score = 550
+        elif r == q_lower or c == q_lower:
+            score = 400
+        elif r.startswith(q_lower):
+            score = 350
+        elif len(q_lower) >= 3 and (q_lower in r or q_lower in c):
+            score = 250
+            
+        if score > 0:
+            scored_local.append((score, item))
+
+    scored_local.sort(key=lambda x: x[0], reverse=True)
+    for _, item in scored_local:
+        results.append(item)
+        if len(results) >= limit:
+            _CACHE[cache_key] = (now, results)
+            return results
 
     # 2. Call live Photon / OpenStreetMap API for arbitrary worldwide locations
     try:
@@ -263,6 +298,9 @@ def search_destinations_global(query: str, limit: int = 8) -> List[Dict[str, Any
                     country = props.get("country") or ""
                     country_code = (props.get("countrycode") or "IN").upper()
                     
+                    if any(r["name"].lower() == name.lower() for r in results):
+                        continue
+
                     results.append({
                         "name": name,
                         "region": region,
@@ -278,28 +316,20 @@ def search_destinations_global(query: str, limit: int = 8) -> List[Dict[str, Any
     except Exception:
         pass
 
-    # 3. Fallback to fuzzy substring in core database if remote fails
-    if not results:
-        for item in CORE_GEO_DATABASE:
-            if any(term in item["name"].lower() for term in q_lower.split()):
-                results.append(item)
-                if len(results) >= limit:
-                    break
-
     _CACHE[cache_key] = (now, results)
     return results
 
 
 def reverse_geocode_location(lat: float, lon: float) -> Dict[str, Any]:
     """Reverse geocodes a map click coordinate into a named destination."""
-    cache_key = f"rev_{round(lat, 3)}_{round(lon, 3)}"
+    cache_key = f"rev_{round(lat, 4)}_{round(lon, 4)}"
     now = time.time()
     if cache_key in _CACHE:
         ts, data = _CACHE[cache_key]
         if now - ts < CACHE_TTL_LONG:
             return data
 
-    # Find closest known in core database if within 25km
+    # Only snap if clicking right on the city point (within 1.5 km)
     closest = None
     min_dist = float("inf")
     for item in CORE_GEO_DATABASE:
@@ -308,13 +338,41 @@ def reverse_geocode_location(lat: float, lon: float) -> Dict[str, Any]:
             min_dist = d
             closest = item
 
-    if closest and min_dist <= 25.0:
+    if closest and min_dist <= 1.5:
         res = dict(closest)
         res["distance_from_pin_km"] = min_dist
         _CACHE[cache_key] = (now, res)
         return res
 
-    # Call OpenStreetMap Nominatim for arbitrary map click
+    # Call Photon reverse geocode first for fast & accurate coordinates lookup
+    try:
+        photon_rev_url = f"https://photon.komoot.io/reverse?lat={lat}&lon={lon}"
+        req = urllib.request.Request(photon_rev_url, headers={"User-Agent": "TBO-Discovery-Platform/2.0"})
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                features = data.get("features", [])
+                if features:
+                    props = features[0].get("properties", {})
+                    name = props.get("name") or props.get("city") or props.get("district") or props.get("street")
+                    if name:
+                        region = props.get("state") or props.get("county") or ""
+                        country = props.get("country") or "India"
+                        res = {
+                            "name": name,
+                            "region": region,
+                            "country": country,
+                            "country_code": (props.get("countrycode") or "IN").upper(),
+                            "lat": lat,
+                            "lon": lon,
+                            "type": props.get("type", "custom_pin")
+                        }
+                        _CACHE[cache_key] = (now, res)
+                        return res
+    except Exception:
+        pass
+
+    # Call OpenStreetMap Nominatim fallback
     try:
         url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=14&addressdetails=1"
         req = urllib.request.Request(url, headers={"User-Agent": "TBO-Discovery-Platform/2.0"})
@@ -342,10 +400,10 @@ def reverse_geocode_location(lat: float, lon: float) -> Dict[str, Any]:
 
     # Generic coordinate fallback
     res = {
-        "name": f"Location ({lat:.3f}°N, {lon:.3f}°E)",
-        "region": closest["region"] if closest else "Global Corridor",
-        "country": closest["country"] if closest else "World",
-        "country_code": closest["country_code"] if closest else "UN",
+        "name": f"{lat:.4f}° N, {lon:.4f}° E",
+        "region": closest["region"] if closest else "India",
+        "country": closest["country"] if closest else "India",
+        "country_code": closest["country_code"] if closest else "IN",
         "lat": lat,
         "lon": lon,
         "type": "coordinate_pin"
